@@ -18,6 +18,8 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'teal'>('teal');
   // 页面切换状态
   const [currentPage, setCurrentPage] = useState<'home' | 'profile'>('home');
+  // 移动端下拉菜单状态
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // 主题配置
   const themes = {
@@ -88,7 +90,8 @@ const App: React.FC = () => {
                </span>
             </div>
             
-            <div className="flex items-center gap-4">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-4">
               {/* 页面切换按钮 */}
               <div className="flex gap-2">
                 <button
@@ -132,6 +135,55 @@ const App: React.FC = () => {
                 </button>
               </div>
             </div>
+            
+            {/* Mobile Navigation */}
+            <div className="flex items-center gap-3 md:hidden">
+              {/* 页面切换按钮 - 简化版 */}
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setCurrentPage('home')}
+                  className={`px-3 py-1.5 rounded-md font-medium text-sm transition-all ${currentPage === 'home' ? `${currentTheme.primary} text-white` : `${currentTheme.secondary} ${currentTheme.text}`}`}
+                >
+                  首页
+                </button>
+                <button
+                  onClick={() => setCurrentPage('profile')}
+                  className={`px-3 py-1.5 rounded-md font-medium text-sm transition-all ${currentPage === 'profile' ? `${currentTheme.primary} text-white` : `${currentTheme.secondary} ${currentTheme.text}`}`}
+                >
+                  我的
+                </button>
+              </div>
+              
+              {/* 主题切换器 - 简化版 */}
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setTheme('light')}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${theme === 'light' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
+                  aria-label="浅色主题"
+                >
+                  ☀️
+                </button>
+                <button
+                  onClick={() => setTheme('dark')}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${theme === 'dark' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
+                  aria-label="深色主题"
+                >
+                  🌙
+                </button>
+                <button
+                  onClick={() => setTheme('teal')}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${theme === 'teal' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
+                  aria-label="青色主题"
+                >
+                  🏞️
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          {/* Mobile Weather Widget */}
+          <div className="md:hidden px-4 pb-4">
+            <WeatherWidget />
           </div>
         </div>
       </nav>

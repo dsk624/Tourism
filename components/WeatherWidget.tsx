@@ -11,13 +11,12 @@ export const WeatherWidget: React.FC = () => {
   const [isDefaultLocation, setIsDefaultLocation] = useState<boolean>(false);
 
   useEffect(() => {
-    // Set Date
+    // Set Date - Simplified format for smaller display
     const now = new Date();
     const options: Intl.DateTimeFormatOptions = { 
-      year: 'numeric', 
-      month: 'long', 
+      month: 'short', 
       day: 'numeric', 
-      weekday: 'long' 
+      weekday: 'short' 
     };
     setDateStr(now.toLocaleDateString('zh-CN', options));
 
@@ -46,26 +45,26 @@ export const WeatherWidget: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex flex-col md:flex-row items-start md:items-center gap-4 text-teal-900 bg-white/70 backdrop-blur-md px-4 py-2 rounded-full shadow-sm border border-teal-100">
-      <div className="text-sm font-medium tracking-wide">
+    <div className="flex flex-row items-center gap-1.5 text-[rgb(13,148,136)] bg-white/60 dark:bg-slate-800/60 backdrop-blur-md px-2.5 py-1 rounded-full shadow-sm border border-[rgb(13,148,136)]/20 w-fit whitespace-nowrap">
+      <div className="text-[10px] font-medium tracking-wide">
         {dateStr}
       </div>
-      <div className="h-4 w-px bg-teal-200 hidden md:block"></div>
-      <div className="flex items-center gap-2 text-sm font-semibold">
+      <div className="h-2 w-px bg-[rgb(13,148,136)]/30"></div>
+      <div className="flex items-center gap-1 text-[10px] font-medium">
         {loading ? (
-          <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
+          <Loader2 className="w-3 h-3 animate-spin text-[rgb(13,148,136)]" />
         ) : weather ? (
           <>
-            <span className="text-lg">{getWeatherIcon(weather.weatherCode)}</span>
-            <span>{weather.temperature}°C</span>
-            <span className="text-teal-600 font-normal">{getWeatherDescription(weather.weatherCode)}</span>
-            <div className="flex items-center gap-1 text-xs text-teal-500 ml-2 font-normal">
-               <MapPin className="w-3 h-3" />
-               <span>{isDefaultLocation ? '郑州' : '当前位置'}</span>
+            <span className="text-sm">{getWeatherIcon(weather.weatherCode)}</span>
+            <span>{weather.temperature}°</span>
+            <span className="text-[rgb(13,148,136)]/80 font-normal truncate max-w-[35px]">{getWeatherDescription(weather.weatherCode)}</span>
+            <div className="flex items-center gap-0.5 text-[rgb(13,148,136)]/70 ml-1 font-normal">
+               <MapPin className="w-2 h-2" />
+               <span className="text-[9px] truncate max-w-[30px]">{isDefaultLocation ? '郑州' : location}</span>
             </div>
           </>
         ) : (
-          <span className="text-gray-400 text-xs">天气信息不可用</span>
+          <span className="text-gray-400 text-[9px]">天气信息不可用</span>
         )}
       </div>
     </div>
