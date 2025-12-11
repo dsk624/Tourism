@@ -3,18 +3,31 @@ import { Attraction } from '../types';
 import { MapPin, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+interface ThemeConfig {
+  primary: string;
+  primaryText: string;
+  primaryHover: string;
+  secondary: string;
+  text: string;
+  bg: string;
+  cardBg: string;
+  border: string;
+}
+
 interface Props {
   attraction: Attraction;
   onClick: (attraction: Attraction) => void;
+  theme: 'light' | 'dark' | 'teal';
+  currentTheme: ThemeConfig;
 }
 
-export const AttractionCard: React.FC<Props> = ({ attraction, onClick }) => {
+export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, currentTheme }) => {
   return (
     <motion.div
       layoutId={`card-${attraction.id}`}
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
       onClick={() => onClick(attraction)}
-      className="group cursor-pointer bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 border border-slate-100"
+      className={`group cursor-pointer ${currentTheme.cardBg} rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 border ${currentTheme.border}`}
     >
       <div className="relative h-48 overflow-hidden">
         <img
@@ -33,16 +46,16 @@ export const AttractionCard: React.FC<Props> = ({ attraction, onClick }) => {
       </div>
       
       <div className="p-4">
-        <div className="flex items-center gap-1 text-teal-600 text-xs mb-2 font-medium">
+        <div className={`flex items-center gap-1 ${currentTheme.primaryText} text-xs mb-2 font-medium`}>
           <MapPin className="w-3 h-3" />
           {attraction.province}
         </div>
-        <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed mb-3">
+        <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} text-sm line-clamp-2 leading-relaxed mb-3`}>
           {attraction.description}
         </p>
         <div className="flex flex-wrap gap-2">
           {attraction.tags.map((tag) => (
-            <span key={tag} className="text-[10px] uppercase tracking-wider text-slate-400 bg-slate-50 px-2 py-1 rounded-full border border-slate-100">
+            <span key={tag} className={`text-[10px] uppercase tracking-wider ${theme === 'dark' ? 'text-slate-400 bg-slate-800 border-slate-700' : 'text-slate-400 bg-slate-50 border-slate-100'} px-2 py-1 rounded-full border`}>
               {tag}
             </span>
           ))}

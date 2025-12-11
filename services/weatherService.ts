@@ -1,5 +1,37 @@
 import { WeatherData } from '../types';
 
+// 获取IP位置信息
+export const getLocationByIP = async (): Promise<{ latitude: number; longitude: number; city?: string }> => {
+  try {
+    // 使用免费的IP定位服务
+    const response = await fetch('https://ipapi.co/json/');
+    const data = await response.json();
+    
+    if (data.latitude && data.longitude) {
+      return {
+        latitude: data.latitude,
+        longitude: data.longitude,
+        city: data.city
+      };
+    }
+    
+    // 如果IP定位失败，使用默认位置（郑州）
+    return {
+      latitude: 34.7466,
+      longitude: 113.6253,
+      city: '郑州'
+    };
+  } catch (error) {
+    console.error("Error getting location by IP:", error);
+    // 如果IP定位失败，使用默认位置（郑州）
+    return {
+      latitude: 34.7466,
+      longitude: 113.6253,
+      city: '郑州'
+    };
+  }
+};
+
 export const fetchWeather = async (lat: number, lon: number): Promise<WeatherData> => {
   try {
     const response = await fetch(
