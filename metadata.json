@@ -1,0 +1,7 @@
+{
+  "name": "China Travel Guide",
+  "description": "A fresh, atmospheric guide to tourist attractions across China, featuring real-time weather and AI-powered travel insights.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
