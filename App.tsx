@@ -138,52 +138,82 @@ const App: React.FC = () => {
             
             {/* Mobile Navigation */}
             <div className="flex items-center gap-3 md:hidden">
-              {/* 页面切换按钮 - 简化版 */}
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setCurrentPage('home')}
-                  className={`px-3 py-1.5 rounded-md font-medium text-sm transition-all ${currentPage === 'home' ? `${currentTheme.primary} text-white` : `${currentTheme.secondary} ${currentTheme.text}`}`}
-                >
-                  首页
-                </button>
-                <button
-                  onClick={() => setCurrentPage('profile')}
-                  className={`px-3 py-1.5 rounded-md font-medium text-sm transition-all ${currentPage === 'profile' ? `${currentTheme.primary} text-white` : `${currentTheme.secondary} ${currentTheme.text}`}`}
-                >
-                  我的
-                </button>
-              </div>
+              <WeatherWidget />
               
-              {/* 主题切换器 - 简化版 */}
-              <div className="flex gap-1">
+              {/* 移动端下拉菜单 */}
+              <div className="relative">
                 <button
-                  onClick={() => setTheme('light')}
-                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${theme === 'light' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
-                  aria-label="浅色主题"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className={`${currentTheme.primary} p-2 rounded-lg flex items-center justify-center`}
+                  aria-label="菜单"
                 >
-                  ☀️
+                  <span className="text-white">☰</span>
                 </button>
-                <button
-                  onClick={() => setTheme('dark')}
-                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${theme === 'dark' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
-                  aria-label="深色主题"
-                >
-                  🌙
-                </button>
-                <button
-                  onClick={() => setTheme('teal')}
-                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${theme === 'teal' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
-                  aria-label="青色主题"
-                >
-                  🏞️
-                </button>
+                
+                {/* 下拉菜单 */}
+                {mobileMenuOpen && (
+                  <div className={`absolute right-0 mt-2 w-48 ${currentTheme.cardBg} rounded-xl shadow-2xl ${currentTheme.border} z-50 animate__animated animate__fadeIn animate__fast`}>
+                    <div className="py-2">
+                      {/* 页面切换 */}
+                      <div className="px-4 py-2 text-sm font-medium ${currentTheme.text} border-b ${currentTheme.border}">页面导航</div>
+                      <button
+                        onClick={() => {
+                          setCurrentPage('home');
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm transition-all ${currentPage === 'home' ? `${currentTheme.primary} text-white` : `${currentTheme.text} hover:${currentTheme.primary} hover:text-white`}`}
+                      >
+                        首页
+                      </button>
+                      <button
+                        onClick={() => {
+                          setCurrentPage('profile');
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm transition-all ${currentPage === 'profile' ? `${currentTheme.primary} text-white` : `${currentTheme.text} hover:${currentTheme.primary} hover:text-white`}`}
+                      >
+                        我的
+                      </button>
+                      
+                      {/* 主题切换 */}
+                      <div className="px-4 py-2 text-sm font-medium ${currentTheme.text} border-b ${currentTheme.border} mt-2">主题设置</div>
+                      <div className="flex justify-around px-4 py-2 gap-2">
+                        <button
+                          onClick={() => {
+                            setTheme('light');
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${theme === 'light' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
+                          aria-label="浅色主题"
+                        >
+                          ☀️
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTheme('dark');
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${theme === 'dark' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
+                          aria-label="深色主题"
+                        >
+                          🌙
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTheme('teal');
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${theme === 'teal' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
+                          aria-label="青色主题"
+                        >
+                          🏞️
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-          
-          {/* Mobile Weather Widget */}
-          <div className="md:hidden px-4 pb-4">
-            <WeatherWidget />
           </div>
         </div>
       </nav>
