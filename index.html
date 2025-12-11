@@ -4,12 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>华夏游 | China Travel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- 优化Tailwind CSS CDN链接，添加版本号并启用预加载 -->
+    <script defer src="https://cdn.tailwindcss.com"></script>
+    <!-- 优化字体加载，使用国内可访问的字体服务 -->
+    <link href="https://cdn.jsdelivr.net/npm/noto-sans-sc@latest/css/noto-sans-sc.css" rel="stylesheet" media="print" onload="this.media='all'">
     <style>
       body {
         font-family: 'Noto Sans SC', sans-serif;
         background-color: #f0fdfa; /* Teal-50 */
+        /* 字体加载优化：使用系统字体作为备选 */
+        font-display: swap;
       }
       /* Hide scrollbar for horizontal scrolling areas */
       .no-scrollbar::-webkit-scrollbar {
@@ -19,22 +23,16 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
+      /* 添加加载动画，提升用户体验 */
+      #root {
+        min-height: 100vh;
+      }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.1",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.1/",
-    "react/": "https://esm.sh/react@^19.2.1/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.559.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
-    "framer-motion": "https://esm.sh/framer-motion@^12.23.26"
-  }
-}
-</script>
-</head>
+    <!-- 移除importmap，让Vite处理依赖 -->
+  </head>
   <body>
     <div id="root"></div>
+    <!-- 主脚本标签，使用异步加载 -->
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

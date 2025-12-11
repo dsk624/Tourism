@@ -46,6 +46,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose }) => {
                 src={attraction.imageUrl}
                 alt={attraction.name}
                 className="w-full h-full object-cover"
+                loading="lazy"
               />
               <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent md:hidden">
                  <h2 className="text-2xl font-bold text-white">{attraction.name}</h2>

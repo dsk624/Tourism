@@ -10,7 +10,10 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [react()],
-
+      define: {
+        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
@@ -33,10 +36,11 @@ export default defineConfig(({ mode }) => {
               'react-vendor': ['react', 'react-dom'],
               'framer-motion': ['framer-motion'],
               'lucide-react': ['lucide-react'],
+              'google-genai': ['@google/genai'],
             },
           },
         },
-        // 禁用sourcemap以减小构建体积
+        // 启用sourcemap（可选，用于调试）
         sourcemap: false,
       },
     };

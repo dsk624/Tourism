@@ -56,6 +56,7 @@ const App: React.FC = () => {
           src="https://picsum.photos/1920/1080?random=100" 
           className="absolute inset-0 w-full h-full object-cover opacity-60"
           alt="Hero"
+          loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/20 to-slate-900/90" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">

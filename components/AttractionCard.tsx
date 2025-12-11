@@ -21,6 +21,7 @@ export const AttractionCard: React.FC<Props> = ({ attraction, onClick }) => {
           src={attraction.imageUrl}
           alt={attraction.name}
           className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+          loading="lazy"
         />
         <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1 text-xs font-bold text-amber-500 shadow-sm">
           <Star className="w-3 h-3 fill-amber-500" />
