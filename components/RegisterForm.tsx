@@ -99,7 +99,7 @@ const RegisterForm: React.FC = () => {
         // 重置表单
         setFormData({ username: '', email: '', password: '', confirmPassword: '' });
       } else {
-        setErrors({ submit: data.error });
+        setErrors({ submit: data.message || '注册失败' });
       }
     } catch (error) {
       setErrors({ submit: '注册失败，请稍后重试' });
@@ -109,12 +109,12 @@ const RegisterForm: React.FC = () => {
   };
 
   return (
-    <div className="register-form">
-      <h2>用户注册</h2>
-      {message && <div className="success-message">{message}</div>}
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="username">用户名</label>
+    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">用户注册</h2>
+      {message && <div className="bg-green-100 text-green-700 p-3 rounded-md mb-4 text-center">{message}</div>}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
           <input
             type="text"
             id="username"
@@ -122,12 +122,13 @@ const RegisterForm: React.FC = () => {
             value={formData.username}
             onChange={handleChange}
             placeholder="请输入用户名"
+            className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:outline-none transition-all ${errors.username ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-500'}`}
           />
-          {errors.username && <span className="error">{errors.username}</span>}
+          {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
         </div>
 
-        <div className="form-group">
-          <label htmlFor="email">邮箱</label>
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
           <input
             type="email"
             id="email"
@@ -135,12 +136,13 @@ const RegisterForm: React.FC = () => {
             value={formData.email}
             onChange={handleChange}
             placeholder="请输入邮箱"
+            className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:outline-none transition-all ${errors.email ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-500'}`}
           />
-          {errors.email && <span className="error">{errors.email}</span>}
+          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
         </div>
 
-        <div className="form-group">
-          <label htmlFor="password">密码</label>
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">密码</label>
           <input
             type="password"
             id="password"
@@ -148,12 +150,13 @@ const RegisterForm: React.FC = () => {
             value={formData.password}
             onChange={handleChange}
             placeholder="请输入密码"
+            className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:outline-none transition-all ${errors.password ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-500'}`}
           />
-          {errors.password && <span className="error">{errors.password}</span>}
+          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
         </div>
 
-        <div className="form-group">
-          <label htmlFor="confirmPassword">确认密码</label>
+        <div>
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
           <input
             type="password"
             id="confirmPassword"
@@ -161,13 +164,18 @@ const RegisterForm: React.FC = () => {
             value={formData.confirmPassword}
             onChange={handleChange}
             placeholder="请确认密码"
+            className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:outline-none transition-all ${errors.confirmPassword ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-500'}`}
           />
-          {errors.confirmPassword && <span className="error">{errors.confirmPassword}</span>}
+          {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
         </div>
 
-        {errors.submit && <div className="error-message">{errors.submit}</div>}
+        {errors.submit && <div className="bg-red-100 text-red-700 p-3 rounded-md text-center">{errors.submit}</div>}
 
-        <button type="submit" disabled={isSubmitting}>
+        <button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+        >
           {isSubmitting ? '注册中...' : '注册'}
         </button>
       </form>

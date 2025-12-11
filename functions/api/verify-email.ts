@@ -1,27 +1,32 @@
-import { Hono } from 'hono';
 import type { Env } from '../../types';
 
-const app = new Hono<{ Bindings: Env }>();
-
-app.get('/api/verify-email', async (c) => {
+export const onRequest = async (context: any) => {
+  const { request, env } = context;
+  
+  // 只允许GET请求
+  if (request.method !== 'GET') {
+    return new Response(null, { status: 405 });
+  }
+  
   try {
-    const token = c.req.query('token');
+    const url = new URL(request.url);
+    const token = url.searchParams.get('token');
     if (!token) {
-      return c.text('无效的验证链接', 400);
+      return new Response('无效的验证链接', { status: 400 });
     }
 
-    const db = c.env.DB;
+    const db = env.DB;
 
     // 查找用户
     const user = await db.prepare('SELECT * FROM users WHERE verification_token = ?').bind(token).first();
     if (!user) {
-      return c.text('无效的验证令牌', 400);
+      return new Response('无效的验证令牌', { status: 400 });
     }
 
     // 检查令牌是否过期
     const tokenExpires = new Date(user.verification_expires);
     if (tokenExpires < new Date()) {
-      return c.text('验证令牌已过期', 400);
+      return new Response('验证令牌已过期', { status: 400 });
     }
 
     // 更新用户邮箱验证状态
@@ -31,11 +36,9 @@ app.get('/api/verify-email', async (c) => {
       WHERE id = ?
     `).bind(user.id).run();
 
-    return c.text('邮箱验证成功！您现在可以登录了', 200);
+    return new Response('邮箱验证成功！您现在可以登录了', { status: 200 });
   } catch (error) {
     console.error('邮箱验证失败:', error);
-    return c.text('邮箱验证失败，请稍后重试', 500);
+    return new Response('邮箱验证失败，请稍后重试', { status: 500 });
   }
-});
-
-export default app;
+};

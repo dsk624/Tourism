@@ -89,54 +89,60 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">用户登录</h2>
+    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">用户登录</h2>
       
-      {message && <div className="bg-green-100 text-green-700 p-2 rounded mb-4">{message}</div>}
+      {message && <div className="bg-green-100 text-green-700 p-3 rounded-md mb-4 text-center">{message}</div>}
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">邮箱</label>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
           <input
             type="email"
             id="email"
-            className={`w-full px-3 py-2 border rounded-md ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+            className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:outline-none transition-all ${errors.email ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-500'}`}
             value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            onChange={handleChange}
+            placeholder="请输入邮箱"
           />
           {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700">密码</label>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">密码</label>
           <input
             type="password"
             id="password"
-            className={`w-full px-3 py-2 border rounded-md ${errors.password ? 'border-red-500' : 'border-gray-300'}`}
+            className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:outline-none transition-all ${errors.password ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-500'}`}
             value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            onChange={handleChange}
+            placeholder="请输入密码"
           />
           {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
         </div>
 
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="rememberMe"
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            checked={formData.rememberMe}
-            onChange={(e) => setFormData({ ...formData, rememberMe: e.target.checked })}
-          />
-          <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">记住我</label>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="rememberMe"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+              checked={formData.rememberMe}
+              onChange={handleChange}
+            />
+            <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700 cursor-pointer">记住我</label>
+          </div>
+          <a href="#" className="text-sm text-blue-500 hover:text-blue-600 transition-colors">忘记密码？</a>
         </div>
 
-        {errors.general && <p className="text-red-500 text-sm mt-1">{errors.general}</p>}
+        {errors.general && <div className="bg-red-100 text-red-700 p-3 rounded-md text-center">{errors.general}</div>}
 
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
+          disabled={isSubmitting}
+          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
         >
-          登录
+          {isSubmitting ? '登录中...' : '登录'}
         </button>
       </form>
     </div>
