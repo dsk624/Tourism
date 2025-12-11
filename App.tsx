@@ -270,7 +270,7 @@ const App: React.FC = () => {
               </div>
             </div>
 
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-10 pb-20">
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 sm:-mt-20 relative z-10 pb-20">
             
             {/* Province Filter */}
             <div className={`${currentTheme.cardBg} rounded-2xl shadow-xl p-6 mb-12 ${currentTheme.border}`}>
