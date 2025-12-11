@@ -32,6 +32,82 @@ export const getLocationByIP = async (): Promise<{ latitude: number; longitude: 
   }
 };
 
+// 使用浏览器地理定位获取位置（更精确）
+export const getLocationByBrowser = (): Promise<{ latitude: number; longitude: number }> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('浏览器不支持地理定位'));
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        });
+      },
+      (error) => {
+        reject(new Error(`浏览器定位失败: ${error.message}`));
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 300000 // 5分钟缓存
+      }
+    );
+  });
+};
+
+// 获取城市名称
+export const getCityByCoordinates = async (lat: number, lon: number): Promise<string> => {
+  try {
+    // 使用OpenStreetMap Nominatim反向地理编码服务
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=zh-CN`
+    );
+    const data = await response.json();
+    if (data.address) {
+      return data.address.city || data.address.town || data.address.village || '当前位置';
+    }
+    return '当前位置';
+  } catch (error) {
+    console.error("Error getting city by coordinates:", error);
+    return '当前位置';
+  }
+};
+
+// 主定位函数：优先使用浏览器定位，失败则使用IP定位
+export const getCurrentLocation = async (): Promise<{ latitude: number; longitude: number; city: string }> => {
+  try {
+    // 优先使用浏览器地理定位（更精确）
+    const browserLocation = await getLocationByBrowser();
+    const city = await getCityByCoordinates(browserLocation.latitude, browserLocation.longitude);
+    return {
+      ...browserLocation,
+      city
+    };
+  } catch (browserError) {
+    console.log("Browser geolocation failed, falling back to IP geolocation:", browserError.message);
+    
+    // 如果浏览器定位失败，使用IP定位
+    const ipLocation = await getLocationByIP();
+    if (ipLocation.city) {
+      return {
+        ...ipLocation,
+        city: ipLocation.city
+      };
+    }
+    
+    // 如果IP定位没有返回城市，使用坐标获取城市名称
+    const city = await getCityByCoordinates(ipLocation.latitude, ipLocation.longitude);
+    return {
+      ...ipLocation,
+      city
+    };
+  }
+};
+
 export const fetchWeather = async (lat: number, lon: number): Promise<WeatherData> => {
   try {
     const response = await fetch(

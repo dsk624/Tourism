@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchWeather, getWeatherDescription, getWeatherIcon, getLocationByIP } from '../services/weatherService';
+import { fetchWeather, getWeatherDescription, getWeatherIcon, getCurrentLocation } from '../services/weatherService';
 import { WeatherData } from '../types';
 import { MapPin, Loader2 } from 'lucide-react';
 
@@ -20,17 +20,17 @@ export const WeatherWidget: React.FC = () => {
     };
     setDateStr(now.toLocaleDateString('zh-CN', options));
 
-    // 使用IP定位获取天气，无需用户授权
+    // 使用优先浏览器定位，失败则使用IP定位的策略
     const getWeather = async () => {
       try {
-        const ipLocation = await getLocationByIP();
-        const data = await fetchWeather(ipLocation.latitude, ipLocation.longitude);
+        const currentLocation = await getCurrentLocation();
+        const data = await fetchWeather(currentLocation.latitude, currentLocation.longitude);
         setWeather(data);
-        setLocation(ipLocation.city || '当前位置');
+        setLocation(currentLocation.city);
         setIsDefaultLocation(false);
       } catch (e) {
         console.error("Error fetching weather:", e);
-        // 如果IP定位失败，使用默认位置（郑州）
+        // 如果所有定位都失败，使用默认位置（郑州）
         const data = await fetchWeather(34.7466, 113.6253);
         setWeather(data);
         setLocation('郑州');

@@ -29,15 +29,16 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose }) => {
           />
           
           <motion.div
-            layoutId={`card-${attraction.id}`}
-            className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
-            onClick={(e) => e.stopPropagation()}
-          >
+              layoutId={`card-${attraction.id}`}
+              className="relative w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
+              onClick={(e) => e.stopPropagation()}
+            >
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 z-10 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full transition-colors backdrop-blur-sm"
+              className="absolute top-4 right-4 z-10 bg-black/20 hover:bg-black/40 text-white p-3 rounded-full transition-colors backdrop-blur-sm"
+              style={{ minWidth: '44px', minHeight: '44px' }}
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
 
             {/* Image Section */}
@@ -48,16 +49,16 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose }) => {
                 className="w-full h-full object-cover"
                 loading="lazy"
               />
-              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent md:hidden">
-                 <h2 className="text-2xl font-bold text-white">{attraction.name}</h2>
+              <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/80 to-transparent md:hidden">
+                 <h2 className="text-xl sm:text-2xl font-bold text-white">{attraction.name}</h2>
                  <p className="text-white/80 flex items-center gap-1 mt-1">
-                   <MapPin className="w-4 h-4" /> {attraction.province}
+                   <MapPin className="w-3 h-3 sm:w-4 sm:h-4" /> {attraction.province}
                  </p>
               </div>
             </div>
 
             {/* Content Section */}
-            <div className="w-full md:w-1/2 p-6 md:p-8 overflow-y-auto no-scrollbar bg-white flex flex-col">
+            <div className="w-full md:w-1/2 p-4 sm:p-6 md:p-8 overflow-y-auto no-scrollbar bg-white flex flex-col">
               <div className="hidden md:block mb-6">
                  <h2 className="text-3xl font-bold text-slate-800 mb-2">{attraction.name}</h2>
                  <div className="flex items-center gap-2 text-teal-600 font-medium">
@@ -66,18 +67,18 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose }) => {
                  </div>
               </div>
 
-              <div className="prose prose-slate prose-sm mb-8 flex-grow">
-                <p className="text-lg leading-relaxed text-slate-600">{attraction.description}</p>
+              <div className="prose prose-slate prose-sm sm:prose-base mb-6 sm:mb-8 flex-grow">
+                <p className="text-base sm:text-lg leading-relaxed text-slate-600">{attraction.description}</p>
               </div>
 
               {/* Baidu Search Section */}
-              <div className="bg-blue-50 rounded-2xl p-6 border border-blue-100 mt-auto">
+              <div className="bg-blue-50 rounded-2xl p-4 sm:p-6 border border-blue-100 mt-auto">
                 <div className="flex items-center gap-2 mb-3">
-                  <Search className="w-5 h-5 text-blue-600" />
-                  <h3 className="font-bold text-blue-800 text-lg">智能探索</h3>
+                  <Search className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                  <h3 className="font-bold text-blue-800 text-base sm:text-lg">智能探索</h3>
                 </div>
                 
-                <p className="text-sm text-blue-700/80 mb-4">
+                <p className="text-sm sm:text-base text-blue-700/80 mb-3 sm:mb-4">
                   想了解更多关于 {attraction.name} 的实时攻略、门票价格和游玩路线？
                 </p>
 
@@ -91,9 +92,9 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose }) => {
                 </button>
               </div>
 
-              <div className="mt-8 flex gap-3 flex-wrap">
+              <div className="mt-6 sm:mt-8 flex gap-2 sm:gap-3 flex-wrap">
                  {attraction.tags.map(tag => (
-                   <span key={tag} className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-medium">
+                   <span key={tag} className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs sm:text-sm font-medium">
                      #{tag}
                    </span>
                  ))}

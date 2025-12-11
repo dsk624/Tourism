@@ -55,14 +55,15 @@ export const FeedbackWidget: React.FC = () => {
               <h3 className="font-bold text-slate-800 dark:text-white">意见反馈</h3>
               <button 
                 onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-2 rounded-lg"
+                style={{ minWidth: '44px', minHeight: '44px' }}
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {isSuccess ? (
-              <div className="flex flex-col items-center justify-center py-6 text-[rgb(13,148,136)] animate__animated animate__fadeIn">
+              <div className="flex flex-col items-center justify-center py-6 text-[rgb(13,148,136)]">
                 <CheckCircle2 className="w-12 h-12 mb-2" />
                 <span className="font-medium">感谢您的反馈！</span>
               </div>
@@ -79,7 +80,8 @@ export const FeedbackWidget: React.FC = () => {
                 <button
                   type="submit"
                   disabled={!content.trim() || isSubmitting}
-                  className="mt-3 w-full bg-[rgb(13,148,136)] hover:bg-[rgb(10,130,120)] disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg hover:shadow-[rgb(13,148,136)]/20"
+                  className="mt-3 w-full bg-[rgb(13,148,136)] hover:bg-[rgb(10,130,120)] disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl py-3 text-sm font-medium flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg hover:shadow-[rgb(13,148,136)]/20"
+                  style={{ minHeight: '44px' }}
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
