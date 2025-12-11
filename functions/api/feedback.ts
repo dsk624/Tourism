@@ -1,6 +1,4 @@
-interface Env {
-  DB: D1Database;
-}
+import { Env, PagesFunction, D1Database } from '../../types';
 
 // 防恶意请求配置
 const RATE_LIMIT_CONFIG = {
@@ -97,7 +95,9 @@ const checkRateLimit = async (ip: string, db: D1Database): Promise<boolean> => {
 };
 
 export const onRequest: PagesFunction<Env> = async (context) => {
-  const { request, env, ip } = context;
+  const { request, env } = context;
+  // 获取客户端IP地址
+  const ip = request.headers.get('X-Forwarded-For')?.split(',')[0] || request.headers.get('CF-Connecting-IP') || 'unknown';
   
   // CORS headers
   const corsHeaders = {
