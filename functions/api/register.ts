@@ -20,7 +20,7 @@ export const onRequest = async (context: any) => {
   }
   
   try {
-    const { username, email, password } = await request.json();
+    const { username, password, browserFingerprint } = await request.json();
     const db = env.DB;
 
     // 验证密码复杂度
@@ -47,12 +47,14 @@ export const onRequest = async (context: any) => {
       });
     }
 
-    // 检查邮箱是否已存在
-    const existingEmail = await db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
-    if (existingEmail) {
+    // 解析浏览器指纹数据
+    let fingerprintData;
+    try {
+      fingerprintData = JSON.parse(atob(browserFingerprint));
+    } catch (parseError) {
       return new Response(JSON.stringify({
-        message: '邮箱已存在',
-        errors: { email: '邮箱已存在' }
+        message: '浏览器指纹数据无效',
+        errors: { browserFingerprint: '浏览器指纹数据无效' }
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
@@ -63,23 +65,81 @@ export const onRequest = async (context: any) => {
     const salt = uuidv4().slice(0, 16);
     const password_hash = await generateHash(password + salt) + ':' + salt;
 
-    // 生成验证令牌
-    const verification_token = uuidv4();
-    const verification_expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24小时过期
+    // 生成指纹哈希
+    const fingerprint_hash = await generateHash(browserFingerprint);
 
-    // 插入用户数据
-    await db.prepare(`
-      INSERT INTO users (username, email, password_hash, verification_token, verification_expires)
-      VALUES (?, ?, ?, ?, ?)
-    `).bind(username, email, password_hash, verification_token, verification_expires).run();
+    // 开始事务
+    await db.prepare('BEGIN TRANSACTION').run();
 
-    // 发送验证邮件（这里需要根据实际情况实现邮件发送逻辑）
-    // sendVerificationEmail(email, verification_token);
+    try {
+      // 插入用户数据
+      const userResult = await db.prepare(`
+        INSERT INTO users (username, password_hash)
+        VALUES (?, ?)
+      `).bind(username, password_hash).run();
 
-    return new Response(JSON.stringify({ message: '注册成功，请查收邮箱验证邮件' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+      const userId = userResult.meta.last_row_id;
+
+      // 插入浏览器指纹信息
+      await db.prepare(`
+        INSERT OR IGNORE INTO browser_fingerprints 
+        (fingerprint_hash, user_agent, screen_info, browser_info, canvas_fingerprint, plugins_info)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(
+        fingerprint_hash,
+        fingerprintData.userAgent,
+        `${fingerprintData.screenResolution}-${fingerprintData.colorDepth}`,
+        `${fingerprintData.language}-${fingerprintData.timeZone}-${fingerprintData.platform}-${fingerprintData.hardwareConcurrency}`,
+        fingerprintData.canvasFingerprint,
+        `${fingerprintData.plugins}-${fingerprintData.mimeTypes}`
+      ).run();
+
+      // 解析用户代理，生成设备名称
+      const userAgent = fingerprintData.userAgent;
+      let deviceName = 'Unknown Device';
+      
+      if (userAgent.includes('Chrome')) {
+        deviceName = 'Chrome on ' + (userAgent.includes('Windows') ? 'Windows' : 
+                                     userAgent.includes('Mac') ? 'Mac' : 
+                                     userAgent.includes('Linux') ? 'Linux' : 
+                                     userAgent.includes('Android') ? 'Android' : 
+                                     userAgent.includes('iOS') ? 'iOS' : 'Unknown OS');
+      } else if (userAgent.includes('Firefox')) {
+        deviceName = 'Firefox on ' + (userAgent.includes('Windows') ? 'Windows' : 
+                                      userAgent.includes('Mac') ? 'Mac' : 
+                                      userAgent.includes('Linux') ? 'Linux' : 
+                                      userAgent.includes('Android') ? 'Android' : 
+                                      userAgent.includes('iOS') ? 'iOS' : 'Unknown OS');
+      } else if (userAgent.includes('Safari')) {
+        deviceName = 'Safari on ' + (userAgent.includes('Mac') ? 'Mac' : 
+                                     userAgent.includes('iOS') ? 'iOS' : 'Unknown OS');
+      } else if (userAgent.includes('Edge')) {
+        deviceName = 'Edge on ' + (userAgent.includes('Windows') ? 'Windows' : 
+                                   userAgent.includes('Mac') ? 'Mac' : 'Unknown OS');
+      }
+
+      // 插入用户设备信息
+      await db.prepare(`
+        INSERT INTO user_devices (user_id, device_name, device_fingerprint)
+        VALUES (?, ?, ?)
+      `).bind(
+        userId,
+        deviceName,
+        fingerprint_hash
+      ).run();
+
+      // 提交事务
+      await db.prepare('COMMIT').run();
+
+      return new Response(JSON.stringify({ message: '注册成功' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (transactionError) {
+      // 回滚事务
+      await db.prepare('ROLLBACK').run();
+      throw transactionError;
+    }
   } catch (error) {
     console.error('注册失败:', error);
     return new Response(JSON.stringify({ message: '注册失败，请稍后重试' }), {

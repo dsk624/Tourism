@@ -1,8 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const LoginForm: React.FC = () => {
+// 生成浏览器指纹
+const generateBrowserFingerprint = (): string => {
+  const navigatorInfo = navigator as any;
+  const screenInfo = screen;
+  
+  const fingerprintData = {
+    userAgent: navigator.userAgent,
+    language: navigator.language,
+    platform: navigator.platform,
+    hardwareConcurrency: navigator.hardwareConcurrency,
+    screenResolution: `${screenInfo.width}x${screenInfo.height}`,
+    colorDepth: screenInfo.colorDepth,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    hasTouch: 'ontouchstart' in window,
+    hasGeolocation: 'geolocation' in navigator,
+    hasWebGL: 'WebGLRenderingContext' in window,
+    plugins: Array.from(navigator.plugins).map(p => p.name).join(','),
+    mimeTypes: Array.from(navigator.mimeTypes).map(m => m.type).join(','),
+    canvasFingerprint: generateCanvasFingerprint()
+  };
+  
+  return btoa(JSON.stringify(fingerprintData));
+};
+
+// 生成Canvas指纹
+const generateCanvasFingerprint = (): string => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 200;
+  canvas.height = 50;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+  
+  ctx.fillStyle = '#f5f5f5';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#000000';
+  ctx.font = '20px Arial';
+  ctx.fillText('Browser Fingerprint', 10, 30);
+  ctx.strokeStyle = '#ff0000';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(5, 5, 190, 40);
+  
+  return canvas.toDataURL('image/png');
+};
+
+interface LoginFormProps {
+  testCaptchaLoaded?: boolean;
+}
+
+const LoginForm: React.FC<LoginFormProps> = ({ testCaptchaLoaded }) => {
+  const [browserFingerprint, setBrowserFingerprint] = useState('');
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: '',
     rememberMe: false
   });
@@ -10,16 +59,44 @@ const LoginForm: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaLoaded, setCaptchaLoaded] = useState(!!testCaptchaLoaded);
+
+  // 加载reCAPTCHA脚本
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !captchaLoaded) {
+      const script = document.createElement('script');
+      script.src = 'https://www.google.com/recaptcha/api.js?render=6LdT0-MpAAAAAKyM6QcFZ8Q8VYdQw8Z8Q8VYdQw8';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        setCaptchaLoaded(true);
+      };
+      document.body.appendChild(script);
+    }
+  }, [captchaLoaded]);
+
+  // 重置reCAPTCHA
+  const resetCaptcha = () => {
+    if (typeof window !== 'undefined' && (window as any).grecaptcha) {
+      (window as any).grecaptcha.reset();
+      setCaptchaToken('');
+    }
+  };
+
+  // 组件加载时生成浏览器指纹
+  useEffect(() => {
+    const fingerprint = generateBrowserFingerprint();
+    setBrowserFingerprint(fingerprint);
+  }, []);
 
   // 表单验证
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // 验证邮箱
-    if (!formData.email.trim()) {
-      newErrors.email = '邮箱不能为空';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = '请输入有效的邮箱地址';
+    // 验证用户名
+    if (!formData.username.trim()) {
+      newErrors.username = '用户名不能为空';
     }
 
     // 验证密码
@@ -59,15 +136,33 @@ const LoginForm: React.FC = () => {
     setErrors({});
     
     try {
+      // 生成reCAPTCHA令牌
+      let token = '';
+      if (captchaLoaded && typeof window !== 'undefined' && (window as any).grecaptcha) {
+        token = await (window as any).grecaptcha.execute('6LdT0-MpAAAAAKyM6QcFZ8Q8VYdQw8Z8Q8VYdQw8', {
+          action: 'login'
+        });
+      }
+      
+      if (!token) {
+        setErrors({ general: '人机验证失败，请重试' });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      setCaptchaToken(token);
+
       const response = await fetch('/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: formData.email,
+          username: formData.username,
           password: formData.password,
-          rememberMe: formData.rememberMe
+          rememberMe: formData.rememberMe,
+          browserFingerprint,
+          captchaToken: token
         }),
         credentials: 'include'
       });
@@ -80,9 +175,11 @@ const LoginForm: React.FC = () => {
         window.location.href = '/';
       } else {
         setErrors(data.errors || { general: data.error || '登录失败' });
+        resetCaptcha(); // 重置reCAPTCHA
       }
     } catch (error) {
       setErrors({ general: '登录失败，请稍后重试' });
+      resetCaptcha(); // 重置reCAPTCHA
     } finally {
       setIsSubmitting(false);
     }
@@ -96,16 +193,17 @@ const LoginForm: React.FC = () => {
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
           <input
-            type="email"
-            id="email"
-            className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:outline-none transition-all ${errors.email ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-500'}`}
-            value={formData.email}
+            type="text"
+            id="username"
+            name="username"
+            className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:outline-none transition-all ${errors.username ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-500'}`}
+            value={formData.username}
             onChange={handleChange}
-            placeholder="请输入邮箱"
+            placeholder="请输入用户名"
           />
-          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+          {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
         </div>
 
         <div>
@@ -113,6 +211,7 @@ const LoginForm: React.FC = () => {
           <input
             type="password"
             id="password"
+            name="password"
             className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:outline-none transition-all ${errors.password ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-500'}`}
             value={formData.password}
             onChange={handleChange}
@@ -126,6 +225,7 @@ const LoginForm: React.FC = () => {
             <input
               type="checkbox"
               id="rememberMe"
+              name="rememberMe"
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
               checked={formData.rememberMe}
               onChange={handleChange}
