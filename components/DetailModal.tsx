@@ -33,9 +33,8 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, 
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
           />
           
-          <motion.div
-              layoutId={`card-${attraction.id}`}
-              className="relative w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
+          <div
+              className="relative w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate__animated animate__zoomIn animate__faster"
               onClick={(e) => e.stopPropagation()}
             >
             <div className="absolute top-4 right-4 z-10 flex gap-2">
@@ -62,7 +61,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, 
                <img
                 src={attraction.imageUrl}
                 alt={attraction.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover animate__animated animate__fadeIn"
                 loading="lazy"
               />
               <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-black/80 to-transparent md:hidden">
@@ -76,7 +75,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, 
             {/* Content Section */}
             <div className="w-full md:w-1/2 p-4 sm:p-6 md:p-8 overflow-y-auto no-scrollbar bg-white flex flex-col">
               
-              <div className="hidden md:block mb-4">
+              <div className="hidden md:block mb-4 animate__animated animate__fadeInDown animate__delay-1s">
                  <h2 className="text-3xl font-bold text-slate-800 mb-2">{attraction.name}</h2>
                  <div className="flex items-center gap-2 text-teal-600 font-medium">
                     <MapPin className="w-4 h-4" />
@@ -101,7 +100,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, 
               </div>
 
               {activeTab === 'info' ? (
-                <>
+                <div className="animate__animated animate__fadeIn flex flex-col flex-grow">
                   <div className="prose prose-slate prose-sm sm:prose-base mb-6 sm:mb-8 flex-grow">
                     <p className="text-base sm:text-lg leading-relaxed text-slate-600">{attraction.description}</p>
                   </div>
@@ -134,9 +133,9 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, 
                        </span>
                      ))}
                   </div>
-                </>
+                </div>
               ) : (
-                <div className="flex-grow min-h-[300px] flex flex-col">
+                <div className="flex-grow min-h-[300px] flex flex-col animate__animated animate__fadeIn">
                   {attraction.coordinates ? (
                     <LeafletMap 
                       lat={attraction.coordinates.lat} 
@@ -155,7 +154,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, 
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
     </AnimatePresence>

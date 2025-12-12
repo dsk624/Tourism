@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getUserLocation, getWeather, getWeatherIcon, getWeatherDescription } from '../services/weatherService';
 import { LocationData, WeatherData } from '../types';
-import { MapPin, Calendar, Clock, Droplets, Sunrise, Sunset, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { MapPin, Calendar, Clock, Droplets, Sunrise, Sunset, Loader2, ChevronUp } from 'lucide-react';
 
 export const WeatherWidget: React.FC = () => {
   const [location, setLocation] = useState<LocationData | null>(null);
@@ -50,21 +50,20 @@ export const WeatherWidget: React.FC = () => {
   if (loading) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      // Updated: Visible on mobile (removed hidden lg:block), positioned slightly higher on mobile
-      className="fixed top-20 right-4 md:top-24 z-30"
-    >
+    <div className="fixed top-20 right-4 md:top-24 z-30 animate__animated animate__fadeInDown animate__fast">
       <motion.div 
         layout
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-700 rounded-2xl shadow-xl cursor-pointer overflow-hidden transition-all duration-300 ${isExpanded ? 'w-72 p-4' : 'w-auto px-3 py-2 md:px-4 md:py-2 hover:bg-white/90 dark:hover:bg-slate-800/90'}`}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-700 rounded-2xl shadow-xl cursor-pointer overflow-hidden ${isExpanded ? 'w-72 p-4' : 'w-auto px-3 py-2 md:px-4 md:py-2 hover:bg-white/90 dark:hover:bg-slate-800/90'}`}
       >
         
         {/* Compact View (Default) */}
         {!isExpanded && (
-           <div className="flex items-center gap-2 md:gap-3">
+           <motion.div 
+             layout="position"
+             className="flex items-center gap-2 md:gap-3 animate__animated animate__fadeIn animate__faster"
+           >
               <div className="text-xl md:text-2xl">
                  {weather ? getWeatherIcon(weather.weatherCode, weather.isDay) : <Loader2 className="animate-spin w-5 h-5" />}
               </div>
@@ -80,16 +79,18 @@ export const WeatherWidget: React.FC = () => {
                    {location?.city}
                  </div>
               </div>
-           </div>
+           </motion.div>
         )}
 
         {/* Expanded View */}
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {isExpanded && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="animate__animated animate__fadeIn"
             >
               {/* Date Header */}
               <div className="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
@@ -105,7 +106,7 @@ export const WeatherWidget: React.FC = () => {
 
               {/* Location & Main Weather */}
               <div className="flex justify-between items-start mb-4">
-                 <div>
+                 <div className="animate__animated animate__fadeInLeft animate__fast">
                    <div className="flex items-center gap-1 text-slate-600 dark:text-slate-300 text-sm font-medium mb-1">
                      <MapPin className="w-3 h-3 text-teal-500" />
                      {location?.city || location?.province}
@@ -117,14 +118,14 @@ export const WeatherWidget: React.FC = () => {
                      </span>
                    </div>
                  </div>
-                 <div className="text-4xl filter drop-shadow-md">
+                 <div className="text-4xl filter drop-shadow-md animate__animated animate__fadeInRight animate__fast">
                    {weather ? getWeatherIcon(weather.weatherCode, weather.isDay) : <Loader2 className="animate-spin w-8 h-8 text-slate-300" />}
                  </div>
               </div>
 
               {/* Details Grid */}
               {weather && (
-                <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl">
+                <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl animate__animated animate__fadeInUp animate__fast">
                    <div className="flex items-center gap-1.5">
                      <Droplets className="w-3 h-3 text-blue-400" />
                      <span>降水: {weather.precipitation}mm</span>
@@ -149,6 +150,6 @@ export const WeatherWidget: React.FC = () => {
         </div>
 
       </motion.div>
-    </motion.div>
+    </div>
   );
 };
