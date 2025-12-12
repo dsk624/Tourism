@@ -19,15 +19,12 @@ export default defineConfig(({ mode }) => {
           '@': path.resolve(__dirname, '.'),
         }
       },
+      esbuild: {
+        drop: ['console', 'debugger'],
+      },
       build: {
         // 优化构建输出
-        minify: 'terser',
-        terserOptions: {
-          compress: {
-            drop_console: true,
-            drop_debugger: true,
-          },
-        },
+        minify: 'esbuild',
         // 代码分割
         rollupOptions: {
           output: {

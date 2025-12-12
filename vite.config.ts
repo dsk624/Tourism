@@ -20,17 +20,14 @@ export default defineConfig(({ mode }) => {
           '@': path.resolve(__dirname, '.'),
         }
       },
+      esbuild: {
+        drop: mode === 'production' ? ['console', 'debugger'] : [],
+      },
       build: {
         outDir: 'dist',
         assetsDir: 'assets',
         // 生产环境移除 console 和 debugger
-        minify: 'terser',
-        terserOptions: {
-          compress: {
-            drop_console: mode === 'production',
-            drop_debugger: mode === 'production',
-          },
-        },
+        minify: 'esbuild',
         // 代码分割策略
         rollupOptions: {
           output: {
