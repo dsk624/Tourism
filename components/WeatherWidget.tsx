@@ -51,31 +51,32 @@ export const WeatherWidget: React.FC = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="fixed top-24 right-4 z-30 hidden lg:block"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      // Updated: Visible on mobile (removed hidden lg:block), positioned slightly higher on mobile
+      className="fixed top-20 right-4 md:top-24 z-30"
     >
       <motion.div 
         layout
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-700 rounded-2xl shadow-xl cursor-pointer overflow-hidden transition-all duration-300 ${isExpanded ? 'w-72 p-4' : 'w-auto px-4 py-2 hover:bg-white/90 dark:hover:bg-slate-800/90'}`}
+        className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-700 rounded-2xl shadow-xl cursor-pointer overflow-hidden transition-all duration-300 ${isExpanded ? 'w-72 p-4' : 'w-auto px-3 py-2 md:px-4 md:py-2 hover:bg-white/90 dark:hover:bg-slate-800/90'}`}
       >
         
         {/* Compact View (Default) */}
         {!isExpanded && (
-           <div className="flex items-center gap-3">
-              <div className="text-2xl">
+           <div className="flex items-center gap-2 md:gap-3">
+              <div className="text-xl md:text-2xl">
                  {weather ? getWeatherIcon(weather.weatherCode, weather.isDay) : <Loader2 className="animate-spin w-5 h-5" />}
               </div>
               <div className="flex flex-col">
-                 <div className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1">
+                 <div className="text-xs md:text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1">
                    {weather ? Math.round(weather.temperature) : '--'}°
-                   <span className="text-xs font-normal opacity-70">
+                   <span className="text-[10px] font-normal opacity-70 hidden sm:inline">
                      {weather ? getWeatherDescription(weather.weatherCode) : ''}
                    </span>
                  </div>
-                 <div className="text-[10px] text-slate-500 flex items-center gap-0.5">
-                   <MapPin className="w-2.5 h-2.5" />
+                 <div className="text-[10px] text-slate-500 flex items-center gap-0.5 max-w-[80px] truncate">
+                   <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
                    {location?.city}
                  </div>
               </div>

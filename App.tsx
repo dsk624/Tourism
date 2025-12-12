@@ -4,6 +4,7 @@ import { DetailModal } from './components/DetailModal';
 import { FeedbackWidget } from './components/FeedbackWidget';
 import { AdminModal } from './components/AdminModal';
 import { ContactModal } from './components/ContactModal';
+import { LoginPromptModal } from './components/LoginPromptModal';
 import { Navbar } from './components/Navbar';
 import { HomeContent } from './components/HomeContent';
 import { AttractionCard } from './components/AttractionCard';
@@ -57,6 +58,7 @@ const App: React.FC = () => {
   // Modals State
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const [editingAttraction, setEditingAttraction] = useState<Attraction | null>(null);
 
   // Fetch Attractions from D1 via API
@@ -137,9 +139,7 @@ const App: React.FC = () => {
     }
     
     if (!isAuthenticated) {
-      if (confirm('请先登录以收藏景点。是否前往登录？')) {
-        window.location.href = '/login';
-      }
+      setIsLoginPromptOpen(true);
       return;
     }
 
@@ -425,6 +425,10 @@ const App: React.FC = () => {
           onSubmit={handleAdminSave}
           onDelete={handleAdminDelete}
           initialData={editingAttraction}
+        />
+        <LoginPromptModal
+          isOpen={isLoginPromptOpen}
+          onClose={() => setIsLoginPromptOpen(false)}
         />
       </div>
     </Router>

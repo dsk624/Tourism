@@ -76,23 +76,23 @@ export const HomeContent: React.FC<HomeContentProps> = ({
               <div className="absolute inset-0 bg-teal-500/30 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full"></div>
               
               {/* Search Bar - Updated UI */}
-              <div className="relative flex items-center bg-white shadow-2xl shadow-teal-900/20 rounded-full p-2 transition-all transform group-hover:scale-[1.02] border-2 border-transparent focus-within:border-teal-400">
-                <div className="pl-4 pr-2">
-                  <Search className="w-6 h-6 text-teal-500" />
+              <div className="relative flex items-center bg-white/80 backdrop-blur-md shadow-2xl shadow-teal-900/20 rounded-full p-1.5 transition-all transform group-hover:scale-[1.02] border border-white/20 focus-within:border-teal-400 focus-within:bg-white/95">
+                <div className="pl-3 pr-2">
+                  <Search className="w-5 h-5 text-teal-600" />
                 </div>
                 <input 
                   type="text"
                   placeholder="搜索景点、历史或文化..."
-                  className="w-full bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-400 px-2 py-3 text-lg font-medium outline-none"
+                  className="w-full bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-600 px-2 py-2 text-base font-medium outline-none"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
                   <button 
                     onClick={() => setSearchTerm('')}
-                    className="p-2 text-slate-300 hover:text-slate-500 transition-colors"
+                    className="p-1.5 text-slate-500 hover:text-slate-700 transition-colors mr-1"
                   >
-                    <Plus className="w-5 h-5 rotate-45" />
+                    <Plus className="w-4 h-4 rotate-45" />
                   </button>
                 )}
               </div>
