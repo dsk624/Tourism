@@ -1,3 +1,4 @@
+
 export interface Attraction {
   id: string;
   name: string;
@@ -38,6 +39,12 @@ export interface WeatherData {
   precipitation: number;
   sunrise: string;
   sunset: string;
+  // 新增详细数据
+  apparentTemperature: number; // 体感温度
+  humidity: number;            // 湿度
+  windSpeed: number;           // 风速
+  uvIndex: number;             // 紫外线指数 (日最大)
+  pressure: number;            // 气压
 }
 
 export interface LocationData {

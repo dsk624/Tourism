@@ -6,6 +6,7 @@ import { FeedbackWidget } from './components/FeedbackWidget';
 import { AdminModal } from './components/AdminModal';
 import { ContactModal } from './components/ContactModal';
 import { LoginPromptModal } from './components/LoginPromptModal';
+import { AIPlannerModal } from './components/AIPlannerModal';
 import { Navbar } from './components/Navbar';
 import { HomeContent } from './components/HomeContent';
 import { AttractionCard } from './components/AttractionCard';
@@ -61,6 +62,7 @@ const App: React.FC = () => {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [editingAttraction, setEditingAttraction] = useState<Attraction | null>(null);
 
   // Fetch Attractions from D1 via API
@@ -299,6 +301,7 @@ const App: React.FC = () => {
           currentUser={currentUser}
           handleLogout={handleLogout}
           setIsContactModalOpen={setIsContactModalOpen}
+          setIsAIModalOpen={setIsAIModalOpen}
           mobileMenuOpen={mobileMenuOpen}
           setMobileMenuOpen={setMobileMenuOpen}
         />
@@ -453,6 +456,10 @@ const App: React.FC = () => {
         <FeedbackWidget />
         
         {/* Global Modals */}
+        <AIPlannerModal 
+          isOpen={isAIModalOpen}
+          onClose={() => setIsAIModalOpen(false)}
+        />
         <ContactModal 
           isOpen={isContactModalOpen}
           onClose={() => setIsContactModalOpen(false)}
