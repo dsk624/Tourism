@@ -1,3 +1,4 @@
+
 # Cloudflare D1 数据库设计
 
 ## 1. 数据库表结构
@@ -34,7 +35,7 @@
 | device_name | TEXT | NOT NULL | 设备名称（如：Chrome on Windows） |
 | device_fingerprint | TEXT | NOT NULL | 设备指纹（关联browser_fingerprints表） |
 | is_trusted | INTEGER | NOT NULL DEFAULT 1 | 是否为可信设备（0：不可信，1：可信） |
-| last_login_at | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP | 最后登录时间 |
+| last_login | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP | 最后登录时间 |
 | created_at | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP | 设备记录创建时间 |
 | updated_at | DATETIME | NOT NULL DEFAULT CURRENT_TIMESTAMP | 设备记录更新时间 |
 
@@ -127,7 +128,7 @@ CREATE TABLE IF NOT EXISTS user_devices (
     device_name TEXT NOT NULL,
     device_fingerprint TEXT NOT NULL,
     is_trusted INTEGER NOT NULL DEFAULT 1,
-    last_login_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_login DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -177,75 +178,3 @@ CREATE TABLE IF NOT EXISTS login_history (
 
 3. 点击「Run」按钮执行SQL语句
 4. 验证表创建成功：在「Tables」标签页中可以看到login_history表
-
-## 3. 索引优化
-
-为了提高查询性能，建议创建以下索引：
-
-### 3.1 users表索引
-
-```sql
-CREATE INDEX idx_users_username ON users(username);
-```
-
-### 3.2 sessions表索引
-
-```sql
-CREATE INDEX idx_sessions_session_id ON sessions(session_id);
-CREATE INDEX idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
-```
-
-### 3.3 user_devices表索引
-
-```sql
-CREATE INDEX idx_user_devices_user_id ON user_devices(user_id);
-CREATE INDEX idx_user_devices_fingerprint ON user_devices(device_fingerprint);
-CREATE INDEX idx_user_devices_trusted ON user_devices(is_trusted);
-```
-
-### 3.4 browser_fingerprints表索引
-
-```sql
-CREATE INDEX idx_browser_fingerprints_hash ON browser_fingerprints(fingerprint_hash);
-CREATE INDEX idx_browser_fingerprints_created ON browser_fingerprints(created_at);
-```
-
-### 3.5 login_history表索引
-
-```sql
-CREATE INDEX idx_login_history_user_id ON login_history(user_id);
-CREATE INDEX idx_login_history_fingerprint ON login_history(browser_fingerprint);
-CREATE INDEX idx_login_history_time ON login_history(login_time);
-CREATE INDEX idx_login_history_status ON login_history(login_status);
-```
-
-## 4. 数据类型说明
-
-- `INTEGER`：整数类型，用于自增主键和计数器
-- `TEXT`：文本类型，用于存储字符串数据
-- `DATETIME`：日期时间类型，用于存储时间戳
-- `PRIMARY KEY`：主键约束，确保记录唯一性
-- `UNIQUE`：唯一约束，确保字段值不重复
-- `NOT NULL`：非空约束，确保字段值不为空
-- `DEFAULT`：默认值，当插入记录时未提供该字段值时使用
-- `REFERENCES`：外键约束，建立表间关联
-
-## 5. 安全考虑
-
-1. 密码不存储明文，使用SHA-256算法加盐哈希存储
-2. 浏览器指纹信息使用SHA-256不可逆加密存储，确保设备信息安全
-3. 登录失败次数限制防止暴力破解
-4. 会话过期机制确保用户登录状态安全
-5. 外键约束确保数据完整性
-6. 三重身份验证（用户名、密码、浏览器指纹）提高账户安全性
-7. 新设备登录检测机制，增强账户保护
-8. TLS加密传输确保敏感数据在传输过程中的安全
-
-## 6. 数据库维护
-
-定期清理过期会话：
-
-```sql
-DELETE FROM sessions WHERE expires_at < CURRENT_TIMESTAMP;
-```

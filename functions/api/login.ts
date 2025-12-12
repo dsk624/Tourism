@@ -1,3 +1,4 @@
+
 // 移除 uuid 库依赖，使用原生 crypto
 async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
   const [salt, originalHash] = storedHash.split(':');
@@ -50,18 +51,24 @@ export const onRequestPost = async (context: any) => {
       'INSERT INTO sessions (session_id, user_id, expires_at) VALUES (?, ?, ?)'
     ).bind(sessionId, user.id, expiresAt).run();
 
-    // 5. 记录/更新设备指纹
+    // 5. 记录/更新设备指纹 (包裹在 try-catch 中，避免因设备表问题影响登录)
     if (fingerprint) {
+      try {
         const device = await db.prepare('SELECT id FROM user_devices WHERE user_id = ? AND device_fingerprint = ?')
             .bind(user.id, fingerprint).first();
         
         if (device) {
-            await db.prepare('UPDATE user_devices SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').bind(device.id).run();
+            // 使用 last_login 替代 last_login_at
+            await db.prepare('UPDATE user_devices SET last_login = CURRENT_TIMESTAMP WHERE id = ?').bind(device.id).run();
         } else {
             // device_name is optional or needs to be passed, here we default if missing
             await db.prepare('INSERT INTO user_devices (user_id, device_fingerprint, device_name) VALUES (?, ?, ?)')
               .bind(user.id, fingerprint, 'Unknown Browser').run();
         }
+      } catch (devError) {
+        console.error('Device info update failed:', devError);
+        // 不阻断主登录流程
+      }
     }
 
     // 6. 设置 HttpOnly Cookie

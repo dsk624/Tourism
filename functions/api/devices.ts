@@ -1,3 +1,4 @@
+
 import type { Env } from '../../types';
 
 export const onRequest = async (context: any) => {
@@ -27,14 +28,14 @@ export const onRequest = async (context: any) => {
   try {
     switch (request.method) {
       case 'GET':
-        // 获取用户设备列表
+        // 获取用户设备列表 (使用 last_login)
         const devices = await db.prepare(`
-          SELECT ud.id, ud.device_name, ud.device_fingerprint, ud.is_trusted, ud.last_login_at, ud.created_at,
+          SELECT ud.id, ud.device_name, ud.device_fingerprint, ud.is_trusted, ud.last_login, ud.created_at,
                  bf.user_agent, bf.screen_info, bf.browser_info
           FROM user_devices ud
           LEFT JOIN browser_fingerprints bf ON ud.device_fingerprint = bf.fingerprint_hash
           WHERE ud.user_id = ?
-          ORDER BY ud.last_login_at DESC
+          ORDER BY ud.last_login DESC
         `).bind(userId).all();
 
         return new Response(JSON.stringify({ devices }), {
