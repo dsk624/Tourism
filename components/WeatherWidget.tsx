@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getUserLocation, getWeather, getWeatherIcon, getWeatherDescription } from '../services/weatherService';
 import { LocationData, WeatherData } from '../types';
@@ -14,6 +14,7 @@ export const WeatherWidget: React.FC = () => {
   const [date, setDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+  const widgetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setDate(new Date()), 60000);
@@ -34,6 +35,20 @@ export const WeatherWidget: React.FC = () => {
     initData();
     return () => clearInterval(timer);
   }, []);
+
+  // Handle click outside to collapse
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isExpanded && widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isExpanded]);
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('zh-CN', {
@@ -56,6 +71,7 @@ export const WeatherWidget: React.FC = () => {
   return (
     <div className="fixed top-20 right-4 md:top-24 z-30 animate__animated animate__fadeInRight animate__fast">
       <motion.div 
+        ref={widgetRef}
         layout
         onClick={() => setIsExpanded(!isExpanded)}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
