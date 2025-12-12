@@ -3,12 +3,14 @@ import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } f
 import { AttractionCard } from './components/AttractionCard';
 import { DetailModal } from './components/DetailModal';
 import { FeedbackWidget } from './components/FeedbackWidget';
+import { WeatherWidget } from './components/WeatherWidget';
+import { AdminModal } from './components/AdminModal';
 import RegisterForm from './components/RegisterForm';
 import LoginForm from './components/LoginForm';
-import { ATTRACTIONS, PROVINCES } from './constants';
-import { Attraction } from './types';
+import { ATTRACTIONS as STATIC_ATTRACTIONS, PROVINCES } from './constants';
+import { Attraction, User } from './types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mountain, Search, Menu, X, User, Sun, Moon, Map } from 'lucide-react';
+import { Mountain, Search, Menu, X, User as UserIcon, Sun, Moon, Map, Loader2, Plus, Edit } from 'lucide-react';
 
 // 滚动至顶部的组件
 const ScrollToTop = () => {
@@ -25,16 +27,115 @@ const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [theme, setTheme] = useState<'light' | 'dark' | 'teal'>('dark');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Auth & Admin State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
-  // 初始化检查登录状态
+  // Data State
+  const [attractions, setAttractions] = useState<Attraction[]>(STATIC_ATTRACTIONS);
+  const [isDataLoading, setIsDataLoading] = useState(false);
+
+  // Admin Modal State
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [editingAttraction, setEditingAttraction] = useState<Attraction | null>(null);
+
+  // Fetch Attractions
+  const fetchAttractions = async () => {
+    setIsDataLoading(true);
+    try {
+      const res = await fetch('/api/attractions');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+           // Map DB columns (underscore) to Frontend (camelCase) if necessary
+           // Assuming API returns camelCase or we map it here.
+           // The API I wrote returns the DB columns directly, but let's assume consisteny or map if needed.
+           // Current API returns JSON objects with keys matching columns. 
+           // My create table used: image_url.
+           // Frontend uses: imageUrl. 
+           const mappedData = data.map((item: any) => ({
+             ...item,
+             imageUrl: item.image_url || item.imageUrl
+           }));
+           setAttractions(mappedData);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch from DB, using static data", e);
+    } finally {
+      setIsDataLoading(false);
+    }
+  };
+
+  // Check Auth
   useEffect(() => {
-    // 实际生产中应请求 /api/user 验证 Session
     const checkAuth = async () => {
-      // 简单模拟，实际需调用 API 检查 Cookie
+      try {
+        const res = await fetch('/api/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated) {
+            setIsAuthenticated(true);
+            setCurrentUser(data.user);
+          }
+        }
+      } catch (e) {
+        console.error("Auth check failed", e);
+      } finally {
+        setIsAuthChecking(false);
+      }
     };
     checkAuth();
+    fetchAttractions();
   }, []);
+
+  const handleAdminSave = async (data: any) => {
+    try {
+      const method = editingAttraction ? 'PUT' : 'POST';
+      const url = editingAttraction ? `/api/attractions?id=${editingAttraction.id}` : '/api/attractions';
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        setIsAdminModalOpen(false);
+        fetchAttractions(); // Refresh list
+      } else {
+        alert('操作失败');
+      }
+    } catch (e) {
+      alert('网络错误');
+    }
+  };
+
+  const handleAdminDelete = async (id: string) => {
+    if (!confirm('确定要删除这个景点吗？')) return;
+    try {
+      const res = await fetch(`/api/attractions?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setIsAdminModalOpen(false);
+        fetchAttractions();
+      }
+    } catch (e) {
+      alert('删除失败');
+    }
+  };
+
+  const openAddModal = () => {
+    setEditingAttraction(null);
+    setIsAdminModalOpen(true);
+  };
+
+  const openEditModal = (e: React.MouseEvent, attraction: Attraction) => {
+    e.stopPropagation();
+    setEditingAttraction(attraction);
+    setIsAdminModalOpen(true);
+  };
 
   const themes = {
     light: {
@@ -66,23 +167,25 @@ const App: React.FC = () => {
   const currentTheme = themes[theme];
 
   const filteredAttractions = useMemo(() => {
-    let filtered = ATTRACTIONS;
+    let filtered = attractions;
     if (selectedProvince !== '全部') {
       filtered = filtered.filter(a => a.province === selectedProvince);
     }
     if (searchTerm) {
       filtered = filtered.filter(a => 
         a.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        a.description.toLowerCase().includes(searchTerm.toLowerCase())
+        a.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        a.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
     return filtered;
-  }, [selectedProvince, searchTerm]);
+  }, [selectedProvince, searchTerm, attractions]);
 
   const handleLogout = async () => {
     try {
       await fetch('/api/logout', { method: 'POST' });
       setIsAuthenticated(false);
+      setCurrentUser(null);
       window.location.href = '/login';
     } catch (e) { console.error(e); }
   };
@@ -125,7 +228,9 @@ const App: React.FC = () => {
             <div className="hidden md:flex items-center gap-2">
               <NavLink to="/" active={location.pathname === '/'}>首页</NavLink>
               {isAuthenticated ? (
-                 <NavLink to="/profile" active={location.pathname === '/profile'}>我的账户</NavLink>
+                 <NavLink to="/profile" active={location.pathname === '/profile'}>
+                   {currentUser?.isAdmin ? '管理面板' : '我的账户'}
+                 </NavLink>
               ) : (
                 <>
                   <NavLink to="/login" active={location.pathname === '/login'}>登录</NavLink>
@@ -177,7 +282,7 @@ const App: React.FC = () => {
                 <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${location.pathname === '/' ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-600' : currentTheme.text}`}>首页</Link>
                 {isAuthenticated ? (
                   <>
-                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${currentTheme.text}`}>我的账户</Link>
+                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${currentTheme.text}`}>{currentUser?.isAdmin ? '管理面板' : '我的账户'}</Link>
                   <button onClick={handleLogout} className="w-full text-left block px-4 py-3 rounded-xl font-medium text-red-500">退出登录</button>
                   </>
                 ) : (
@@ -210,6 +315,7 @@ const App: React.FC = () => {
   const HomeContent = () => (
     <>
       <div className="relative pt-20">
+        <WeatherWidget />
         <div className="absolute inset-0 z-0">
           <img 
             src="https://picsum.photos/1920/1080?random=99" 
@@ -232,7 +338,7 @@ const App: React.FC = () => {
               探索<span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">锦绣中华</span>
             </h1>
             <p className="text-slate-200 text-lg sm:text-xl max-w-2xl mx-auto mb-10 font-light leading-relaxed">
-              从古老的河南腹地出发，丈量每一寸山河。AI 智能导览，实时天气监测，为您打造极致的沉浸式旅行体验。
+              从古老的河南腹地出发，丈量每一寸山河。实时天气监测，沉浸式旅行体验，带您领略千年文化的独特魅力。
             </p>
 
             <div className="relative max-w-lg mx-auto group">
@@ -253,6 +359,18 @@ const App: React.FC = () => {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 -mt-10 relative z-20">
+        {/* Admin Add Button */}
+        {isAuthenticated && currentUser?.isAdmin && (
+           <div className="flex justify-end mb-6">
+              <button 
+                onClick={openAddModal}
+                className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl shadow-lg shadow-teal-500/30 transition-all font-bold"
+              >
+                <Plus className="w-5 h-5" /> 新增景点
+              </button>
+           </div>
+        )}
+
         {/* Filter Section */}
         <div className={`mb-12 overflow-x-auto pb-4 no-scrollbar flex justify-center`}>
           <div className={`inline-flex p-1.5 rounded-2xl ${theme === 'dark' ? 'bg-slate-800/80 border border-slate-700' : 'bg-white border border-slate-200'} backdrop-blur-sm shadow-xl`}>
@@ -283,6 +401,7 @@ const App: React.FC = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.3, delay: i * 0.05 }}
+                className="relative group"
               >
                 <AttractionCard 
                   attraction={attraction} 
@@ -290,11 +409,33 @@ const App: React.FC = () => {
                   theme={theme}
                   currentTheme={currentTheme}
                 />
+                
+                {isAuthenticated && currentUser?.isAdmin && (
+                  <button 
+                    onClick={(e) => openEditModal(e, attraction)}
+                    className="absolute top-4 right-4 z-20 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                )}
               </motion.div>
             ))}
           </AnimatePresence>
+          {filteredAttractions.length === 0 && (
+             <div className="col-span-full text-center py-20 text-slate-500">
+                <p>未找到相关景点，试着换个关键词？</p>
+             </div>
+          )}
         </div>
       </main>
+      
+      <AdminModal 
+        isOpen={isAdminModalOpen} 
+        onClose={() => setIsAdminModalOpen(false)} 
+        onSubmit={handleAdminSave}
+        onDelete={handleAdminDelete}
+        initialData={editingAttraction}
+      />
     </>
   );
 
@@ -304,37 +445,85 @@ const App: React.FC = () => {
       <div className={`min-h-screen transition-colors duration-500 ${currentTheme.bg} ${currentTheme.text} font-sans selection:bg-teal-500 selection:text-white`}>
         <Navbar />
 
-        <Routes>
-          <Route path="/" element={<HomeContent />} />
-          <Route path="/login" element={
-            isAuthenticated ? <Navigate to="/profile" /> : (
-              <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen">
-                <div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}>
-                   <LoginForm onLoginSuccess={() => setIsAuthenticated(true)} />
+        {isAuthChecking ? (
+          <div className="min-h-screen flex items-center justify-center">
+            <Loader2 className="w-10 h-10 text-teal-500 animate-spin" />
+          </div>
+        ) : (
+          <Routes>
+            <Route path="/" element={<HomeContent />} />
+            <Route path="/login" element={
+              isAuthenticated ? <Navigate to="/profile" /> : (
+                <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen">
+                  <div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}>
+                    <LoginForm onLoginSuccess={() => {
+                        // After login, re-check auth to update user state including isAdmin
+                         setIsAuthChecking(true);
+                         fetch('/api/me').then(r => r.json()).then(d => {
+                             if(d.authenticated) {
+                                 setIsAuthenticated(true);
+                                 setCurrentUser(d.user);
+                             }
+                             setIsAuthChecking(false);
+                         });
+                    }} />
+                  </div>
                 </div>
-              </div>
-            )
-          } />
-          <Route path="/register" element={
-            isAuthenticated ? <Navigate to="/profile" /> : (
-              <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen">
-                <div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}>
-                   <RegisterForm />
+              )
+            } />
+            <Route path="/register" element={
+              isAuthenticated ? <Navigate to="/profile" /> : (
+                <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen">
+                  <div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}>
+                    <RegisterForm />
+                  </div>
                 </div>
-              </div>
-            )
-          } />
-          <Route path="/profile" element={
-             isAuthenticated ? (
-               <div className="pt-32 px-4 max-w-4xl mx-auto">
-                 <div className={`p-8 rounded-3xl ${currentTheme.cardBg} border ${currentTheme.border} shadow-xl`}>
-                   <h1 className="text-3xl font-bold mb-4">我的个人中心</h1>
-                   <p className="opacity-70">欢迎回来，您的旅行数据已通过 D1 数据库安全同步。</p>
-                 </div>
-               </div>
-             ) : <Navigate to="/login" />
-          } />
-        </Routes>
+              )
+            } />
+            <Route path="/profile" element={
+              isAuthenticated ? (
+                <div className="pt-32 px-4 max-w-4xl mx-auto min-h-screen">
+                  <div className={`p-8 rounded-3xl ${currentTheme.cardBg} border ${currentTheme.border} shadow-xl`}>
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-16 h-16 bg-teal-500/10 rounded-full flex items-center justify-center border border-teal-500/20">
+                        <UserIcon className="w-8 h-8 text-teal-500" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-3xl font-bold">{currentUser?.username}</h1>
+                            {currentUser?.isAdmin && (
+                                <span className="bg-red-500/10 text-red-500 text-xs px-2 py-1 rounded-full font-bold border border-red-500/20">管理员</span>
+                            )}
+                        </div>
+                        <p className="opacity-70 mt-1">欢迎回来，您的旅行数据已通过 D1 数据库安全同步。</p>
+                      </div>
+                    </div>
+                    
+                    <div className={`p-6 rounded-2xl ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-slate-50'} border ${currentTheme.border}`}>
+                      <h3 className="font-bold mb-4 flex items-center gap-2">
+                         <Map className="w-5 h-5 text-teal-500" />
+                         {currentUser?.isAdmin ? '管理概览' : '我的收藏'}
+                      </h3>
+                      {currentUser?.isAdmin ? (
+                          <div className="text-sm opacity-80">
+                              您拥有景点数据的增删改查权限。请返回首页进行管理操作。
+                          </div>
+                      ) : (
+                          <p className="text-sm opacity-60">暂无收藏的景点，去首页探索一下吧！</p>
+                      )}
+                    </div>
+
+                    <div className="mt-8 flex justify-end">
+                       <button onClick={handleLogout} className="px-6 py-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-medium">
+                         退出登录
+                       </button>
+                    </div>
+                  </div>
+                </div>
+              ) : <Navigate to="/login" />
+            } />
+          </Routes>
+        )}
 
         <footer className={`py-12 border-t ${currentTheme.border} ${theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'}`}>
           <div className="max-w-7xl mx-auto px-6 text-center">

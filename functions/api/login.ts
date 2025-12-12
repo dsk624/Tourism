@@ -18,8 +18,8 @@ export const onRequestPost = async (context: any) => {
     const { username, password, fingerprint } = await context.request.json();
     const db = context.env.DB;
 
-    // 1. 查询用户
-    const user = await db.prepare('SELECT * FROM users WHERE username = ?').bind(username).first();
+    // 1. 查询用户 (包含 is_admin)
+    const user = await db.prepare('SELECT id, username, password_hash, account_locked, is_admin FROM users WHERE username = ?').bind(username).first();
     
     if (!user) {
       // 模拟延迟防止爆破
@@ -53,7 +53,6 @@ export const onRequestPost = async (context: any) => {
 
     // 5. 记录/更新设备指纹
     if (fingerprint) {
-        // 简单逻辑：只记录最后登录时间，实际生产可做异地登录风控
         const device = await db.prepare('SELECT id FROM user_devices WHERE user_id = ? AND device_fingerprint = ?')
             .bind(user.id, fingerprint).first();
         
@@ -72,7 +71,7 @@ export const onRequestPost = async (context: any) => {
     return new Response(JSON.stringify({ 
       success: true, 
       message: '登录成功',
-      user: { id: user.id, username: user.username }
+      user: { id: user.id, username: user.username, isAdmin: !!user.is_admin }
     }), { 
       headers 
     });

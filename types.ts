@@ -18,12 +18,29 @@ export enum LoadingState {
 export interface User {
   id: number;
   username: string;
+  isAdmin?: boolean;
 }
 
 export interface AuthResponse {
   success: boolean;
   message: string;
   user?: User;
+}
+
+export interface WeatherData {
+  temperature: number;
+  weatherCode: number;
+  isDay: boolean;
+  precipitation: number;
+  sunrise: string;
+  sunset: string;
+}
+
+export interface LocationData {
+  city: string;
+  province: string; // mapped from region_name
+  latitude: number;
+  longitude: number;
 }
 
 // Cloudflare D1 types
