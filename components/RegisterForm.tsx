@@ -1,9 +1,9 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { UserPlus, ShieldCheck, Cpu } from 'lucide-react';
+import { UserPlus, ShieldCheck, Cpu, Loader2 } from 'lucide-react';
 import { api } from '../services/api';
 
-// 简易浏览器指纹生成 (无需第三方库)
 const generateFingerprint = async () => {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -29,7 +29,8 @@ const generateFingerprint = async () => {
 };
 
 const RegisterForm: React.FC = () => {
-  const [formData, setFormData] = useState({ username: '', password: '', confirmPassword: '' });
+  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -38,7 +39,7 @@ const RegisterForm: React.FC = () => {
     e.preventDefault();
     setError('');
     
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.password !== confirmPassword) {
       setError('两次密码输入不一致');
       return;
     }
@@ -72,15 +73,16 @@ const RegisterForm: React.FC = () => {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="w-full"
-    >
+    <div className="w-full animate__animated animate__fadeInUp animate__fast">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-teal-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-teal-500/20">
+        <motion.div 
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 200 }}
+          className="w-16 h-16 bg-teal-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-teal-500/20"
+        >
           <UserPlus className="w-8 h-8 text-teal-500" />
-        </div>
+        </motion.div>
         <h2 className="text-2xl font-bold text-slate-800 dark:text-white">创建新账户</h2>
         <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">无需手机号，开启您的专属旅程</p>
       </div>
@@ -119,20 +121,20 @@ const RegisterForm: React.FC = () => {
             required
             className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all outline-none text-slate-900 dark:text-white placeholder-slate-400"
             placeholder="再次输入密码"
-            value={formData.confirmPassword}
-            onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
           />
         </div>
 
         {error && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4" /> {error}
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-center gap-2 overflow-hidden">
+            <ShieldCheck className="w-4 h-4 flex-shrink-0" /> {error}
           </motion.div>
         )}
         
         {success && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 rounded-lg bg-green-50 text-green-600 text-sm flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4" /> {success}
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-3 rounded-lg bg-green-50 text-green-600 text-sm flex items-center gap-2 overflow-hidden">
+            <ShieldCheck className="w-4 h-4 flex-shrink-0" /> {success}
           </motion.div>
         )}
 
@@ -144,17 +146,14 @@ const RegisterForm: React.FC = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-teal-500/20 transition-all transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+          className="w-full py-3.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-teal-500/20 transition-all transform hover:scale-[1.02] active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
         >
           {loading ? (
-             <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-             </svg>
+             <Loader2 className="animate-spin h-5 w-5 text-white" />
           ) : '立即注册'}
         </button>
       </form>
-    </motion.div>
+    </div>
   );
 };
 

@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Attraction } from '../types';
-import { X, Search, MapPin, ExternalLink, Heart, BookOpen, Map as MapIcon } from 'lucide-react';
+import { X, Search, MapPin, ExternalLink, Heart, BookOpen, Map as MapIcon, Ghost } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LeafletMap } from './LeafletMap';
 
@@ -30,7 +31,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
           />
           
           <div
@@ -57,7 +58,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, 
             </div>
 
             {/* Image Section */}
-            <div className="w-full md:w-1/2 h-48 md:h-auto relative">
+            <div className="w-full md:w-1/2 h-48 md:h-auto relative bg-slate-200">
                <img
                 src={attraction.imageUrl}
                 alt={attraction.name}
@@ -143,14 +144,24 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, 
                       name={attraction.name} 
                     />
                   ) : (
-                    <div className="w-full h-full bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 flex-col">
-                       <MapIcon className="w-12 h-12 mb-2 opacity-50" />
-                       <p>暂无地图坐标数据</p>
+                    <div className="w-full h-full bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 flex-col border border-slate-100 p-8">
+                       <motion.div
+                         animate={{ y: [0, -10, 0] }}
+                         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                       >
+                         <Ghost className="w-16 h-16 mb-4 text-slate-300" />
+                       </motion.div>
+                       <p className="font-medium text-slate-500">暂无地图坐标数据</p>
+                       <p className="text-xs text-slate-400 mt-2 text-center max-w-[200px]">
+                         该景点暂未收录精确坐标，管理员正在努力完善中...
+                       </p>
                     </div>
                   )}
-                  <p className="text-xs text-slate-400 mt-3 text-center">
-                    地图数据来源：腾讯地图 (Tencent Maps)
-                  </p>
+                  {attraction.coordinates && (
+                    <p className="text-xs text-slate-400 mt-3 text-center">
+                      地图数据来源：腾讯地图 (Tencent Maps)
+                    </p>
+                  )}
                 </div>
               )}
             </div>

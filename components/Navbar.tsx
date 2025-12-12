@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map } from 'lucide-react';
@@ -64,7 +65,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b transition-colors duration-300 ${
+      <nav className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b transition-colors duration-300 animate__animated animate__fadeInDown ${
         theme === 'dark' 
           ? 'bg-slate-900/90 border-slate-800' 
           : 'bg-white/90 border-slate-200'
@@ -184,21 +185,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             </motion.div>
           )}
         </AnimatePresence>
-      </nav>
 
-      {/* Mobile Backdrop Overlay - Separate from Nav for better layering */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setMobileMenuOpen(false)}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
-            // Ensure it sits below the navbar (z-50) but above content
-          />
-        )}
-      </AnimatePresence>
+        {/* Mobile Backdrop Overlay */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+            />
+          )}
+        </AnimatePresence>
+      </nav>
     </>
   );
 };
