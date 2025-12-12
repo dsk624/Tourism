@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Attraction } from '../types';
-import { X, Save, Trash2, Image as ImageIcon, LayoutTemplate } from 'lucide-react';
+import { X, Save, Trash2, Image as ImageIcon, LayoutTemplate, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
@@ -18,7 +19,9 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
     description: '',
     imageUrl: '',
     tags: '',
-    rating: 5.0
+    rating: 5.0,
+    lat: '',
+    lng: ''
   });
 
   useEffect(() => {
@@ -29,7 +32,9 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
         description: initialData.description,
         imageUrl: initialData.imageUrl,
         tags: initialData.tags.join(', '),
-        rating: initialData.rating
+        rating: initialData.rating,
+        lat: initialData.coordinates?.lat?.toString() || '',
+        lng: initialData.coordinates?.lng?.toString() || ''
       });
     } else {
       setFormData({
@@ -38,16 +43,22 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
         description: '',
         imageUrl: '',
         tags: '',
-        rating: 5.0
+        rating: 5.0,
+        lat: '',
+        lng: ''
       });
     }
   }, [initialData, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const lat = parseFloat(formData.lat);
+    const lng = parseFloat(formData.lng);
+
     onSubmit({
       ...formData,
-      tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean)
+      tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+      coordinates: (!isNaN(lat) && !isNaN(lng)) ? { lat, lng } : undefined
     });
   };
 
@@ -129,6 +140,36 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all"
                       value={formData.rating}
                       onChange={e => setFormData({...formData, rating: parseFloat(e.target.value)})}
+                    />
+                  </div>
+                </div>
+
+                {/* Coordinates */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> 纬度 (Latitude)
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      placeholder="如: 34.8093"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all"
+                      value={formData.lat}
+                      onChange={e => setFormData({...formData, lat: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> 经度 (Longitude)
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      placeholder="如: 114.3377"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all"
+                      value={formData.lng}
+                      onChange={e => setFormData({...formData, lng: e.target.value})}
                     />
                   </div>
                 </div>

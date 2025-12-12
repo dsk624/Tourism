@@ -1,3 +1,4 @@
+
 import type { Env } from '../../types';
 
 export const onRequest = async (context: any) => {
@@ -53,7 +54,8 @@ export const onRequest = async (context: any) => {
          const formatted = {
            ...attraction,
            imageUrl: attraction.image_url,
-           tags: safeParseTags(attraction.tags as string)
+           tags: safeParseTags(attraction.tags as string),
+           coordinates: (attraction.lat && attraction.lng) ? { lat: attraction.lat, lng: attraction.lng } : undefined
          };
          
          return new Response(JSON.stringify(formatted), { headers: { 'Content-Type': 'application/json' }});
@@ -63,7 +65,8 @@ export const onRequest = async (context: any) => {
       const results = attractions.results?.map((a: any) => ({
         ...a,
         imageUrl: a.image_url,
-        tags: safeParseTags(a.tags)
+        tags: safeParseTags(a.tags),
+        coordinates: (a.lat && a.lng) ? { lat: a.lat, lng: a.lng } : undefined
       })) || [];
       
       return new Response(JSON.stringify(results), { headers: { 'Content-Type': 'application/json' }});
@@ -84,7 +87,7 @@ export const onRequest = async (context: any) => {
     if (request.method === 'POST') {
       const body = await request.json();
       const newId = crypto.randomUUID();
-      const { name, province, description, imageUrl, tags, rating } = body;
+      const { name, province, description, imageUrl, tags, rating, coordinates } = body;
       
       if (!name || !province) {
          return new Response(JSON.stringify({ error: '名称和省份为必填项' }), { status: 400 });
@@ -100,8 +103,11 @@ export const onRequest = async (context: any) => {
           finalRating = r;
       }
 
+      const lat = coordinates?.lat || null;
+      const lng = coordinates?.lng || null;
+
       await db.prepare(
-        'INSERT INTO attractions (id, name, province, description, image_url, tags, rating) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO attractions (id, name, province, description, image_url, tags, rating, lat, lng) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
       ).bind(
         newId, 
         name, 
@@ -109,7 +115,9 @@ export const onRequest = async (context: any) => {
         description || '', 
         imageUrl || '', 
         JSON.stringify(tags || []), 
-        finalRating
+        finalRating,
+        lat,
+        lng
       ).run();
 
       return new Response(JSON.stringify({ success: true, id: newId }), { headers: { 'Content-Type': 'application/json' }});
@@ -120,7 +128,7 @@ export const onRequest = async (context: any) => {
        if (!id) return new Response(JSON.stringify({ error: 'ID 不能为空' }), { status: 400 });
        
        const body = await request.json();
-       const { name, province, description, imageUrl, tags, rating } = body;
+       const { name, province, description, imageUrl, tags, rating, coordinates } = body;
 
        // 评分校验
        let finalRating = rating;
@@ -136,15 +144,20 @@ export const onRequest = async (context: any) => {
           finalRating = 0; 
        }
 
+       const lat = coordinates?.lat || null;
+       const lng = coordinates?.lng || null;
+
        await db.prepare(
-         'UPDATE attractions SET name = ?, province = ?, description = ?, image_url = ?, tags = ?, rating = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+         'UPDATE attractions SET name = ?, province = ?, description = ?, image_url = ?, tags = ?, rating = ?, lat = ?, lng = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
        ).bind(
          name, 
          province, 
          description, 
          imageUrl, 
          JSON.stringify(tags), 
-         finalRating, 
+         finalRating,
+         lat,
+         lng,
          id
        ).run();
 

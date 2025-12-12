@@ -1,3 +1,4 @@
+
 import { Attraction, AuthResponse, User } from '../types';
 import { ATTRACTIONS } from '../constants';
 
@@ -116,14 +117,20 @@ export const api = {
 
   // --- Favorites ---
   favorites: {
-    getAll: () => fetchClient<{ favorites: string[] }>('/api/favorites'),
+    getAll: () => fetchClient<{ favorites: string[], notes?: Record<string, string> }>('/api/favorites'),
     
-    add: (attractionId: string) => 
+    add: (attractionId: string, note?: string) => 
       fetchClient<{ success: boolean }>('/api/favorites', {
         method: 'POST',
-        body: JSON.stringify({ attractionId }),
+        body: JSON.stringify({ attractionId, note }),
       }),
     
+    updateNote: (attractionId: string, note: string) => 
+      fetchClient<{ success: boolean }>('/api/favorites', {
+        method: 'PUT',
+        body: JSON.stringify({ attractionId, note }),
+      }),
+
     remove: (attractionId: string) => 
       fetchClient<{ success: boolean }>('/api/favorites', {
         method: 'DELETE',

@@ -1,7 +1,8 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Attraction } from '../types';
-import { MapPin, Star, Heart } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { MapPin, Star, Heart, FileText, Check, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ThemeConfig {
   primary: string;
@@ -20,6 +21,8 @@ interface Props {
   searchTerm?: string;
   isFavorite?: boolean;
   onToggleFavorite?: (e: React.MouseEvent | null, id: string) => void;
+  note?: string;
+  onUpdateNote?: (id: string, note: string) => void;
 }
 
 // Helper to escape special characters for Regex
@@ -52,7 +55,30 @@ const HighlightText: React.FC<{ text: string; highlight?: string }> = ({ text, h
   }
 };
 
-export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, currentTheme, searchTerm = '', isFavorite, onToggleFavorite }) => {
+export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, currentTheme, searchTerm = '', isFavorite, onToggleFavorite, note, onUpdateNote }) => {
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [tempNote, setTempNote] = useState(note || '');
+
+  const handleNoteSubmit = (e: React.FormEvent | React.MouseEvent) => {
+    e.stopPropagation();
+    if (onUpdateNote) {
+      onUpdateNote(attraction.id, tempNote);
+      setIsEditingNote(false);
+    }
+  };
+
+  const startEditing = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTempNote(note || '');
+    setIsEditingNote(true);
+  };
+
+  const cancelEditing = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditingNote(false);
+    setTempNote(note || '');
+  };
+
   return (
     <motion.div
       layoutId={`card-${attraction.id}`}
@@ -99,13 +125,50 @@ export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, cu
         <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} text-sm sm:text-base line-clamp-3 leading-relaxed mb-4 flex-grow`}>
           <HighlightText text={attraction.description} highlight={searchTerm} />
         </p>
-        <div className="flex flex-wrap gap-2 mt-auto">
+        
+        <div className="flex flex-wrap gap-2 mt-auto mb-3">
           {attraction.tags.map((tag) => (
             <span key={tag} className={`text-[10px] sm:text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-slate-400 bg-slate-800 border-slate-700' : 'text-slate-400 bg-slate-50 border-slate-100'} px-2 py-1 rounded-full border`}>
               <HighlightText text={tag} highlight={searchTerm} />
             </span>
           ))}
         </div>
+
+        {/* Notes Section - Only visible if favorites logic enabled */}
+        {onUpdateNote && isFavorite && (
+          <div className={`mt-3 pt-3 border-t ${theme === 'dark' ? 'border-slate-700' : 'border-slate-100'}`} onClick={e => e.stopPropagation()}>
+            {isEditingNote ? (
+              <div className="flex flex-col gap-2">
+                <input 
+                  autoFocus
+                  type="text" 
+                  value={tempNote}
+                  onChange={(e) => setTempNote(e.target.value)}
+                  placeholder="添加备注..."
+                  className={`w-full text-sm px-2 py-1.5 rounded-md border outline-none ${theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'}`}
+                />
+                <div className="flex justify-end gap-2">
+                  <button onClick={cancelEditing} className="p-1 text-slate-400 hover:text-slate-600">
+                    <X className="w-4 h-4" />
+                  </button>
+                  <button onClick={handleNoteSubmit} className="p-1 text-teal-500 hover:text-teal-600">
+                    <Check className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div 
+                onClick={startEditing}
+                className={`group/note flex items-start gap-2 p-2 rounded-lg cursor-text transition-colors ${theme === 'dark' ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50'}`}
+              >
+                <FileText className={`w-3 h-3 mt-1 flex-shrink-0 ${note ? 'text-teal-500' : 'text-slate-300'}`} />
+                <span className={`text-xs ${note ? (theme === 'dark' ? 'text-slate-300' : 'text-slate-600') : 'text-slate-400 italic'}`}>
+                  {note || '添加备注...'}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </motion.div>
   );

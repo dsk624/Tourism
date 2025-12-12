@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { DetailModal } from './components/DetailModal';
@@ -44,6 +45,7 @@ const App: React.FC = () => {
 
   // Favorites State
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [favoriteNotes, setFavoriteNotes] = useState<Record<string, string>>({});
 
   // Data State - Initialize empty, fetch from DB
   const [attractions, setAttractions] = useState<Attraction[]>([]);
@@ -81,12 +83,15 @@ const App: React.FC = () => {
     }
   };
 
-  // Fetch User Favorites
+  // Fetch User Favorites & Notes
   const fetchFavorites = async () => {
     if (!isAuthenticated) return;
     try {
       const data = await api.favorites.getAll();
       setFavorites(new Set(data.favorites));
+      if (data.notes) {
+        setFavoriteNotes(data.notes);
+      }
     } catch (e) {
       console.error("Failed to fetch favorites", e);
     }
@@ -121,6 +126,7 @@ const App: React.FC = () => {
     setCurrentUser(null);
     localStorage.removeItem('china_travel_user');
     setFavorites(new Set());
+    setFavoriteNotes({});
   };
 
   // Update favorites when auth state changes (e.g. login manually)
@@ -129,6 +135,7 @@ const App: React.FC = () => {
       fetchFavorites();
     } else {
       setFavorites(new Set());
+      setFavoriteNotes({});
     }
   }, [isAuthenticated]);
 
@@ -144,11 +151,26 @@ const App: React.FC = () => {
     }
 
     const isFav = favorites.has(attractionId);
+    
+    // 如果要取消收藏，且有备注，弹出提示
+    if (isFav && favoriteNotes[attractionId]) {
+      const confirmed = window.confirm("取消收藏将同步删除该景点的备注，确定要继续吗？");
+      if (!confirmed) return;
+    }
+
     // Optimistic Update
     const newFavs = new Set(favorites);
-    if (isFav) newFavs.delete(attractionId);
-    else newFavs.add(attractionId);
+    const newNotes = { ...favoriteNotes };
+
+    if (isFav) {
+      newFavs.delete(attractionId);
+      delete newNotes[attractionId];
+    } else {
+      newFavs.add(attractionId);
+    }
+    
     setFavorites(newFavs);
+    setFavoriteNotes(newNotes);
 
     try {
       if (isFav) {
@@ -160,6 +182,20 @@ const App: React.FC = () => {
       // Revert on error
       fetchFavorites();
       alert('操作失败，请重试');
+    }
+  };
+
+  const handleUpdateNote = async (attractionId: string, note: string) => {
+    if (!isAuthenticated) return;
+
+    // Optimistic Update
+    setFavoriteNotes(prev => ({ ...prev, [attractionId]: note }));
+
+    try {
+      await api.favorites.updateNote(attractionId, note);
+    } catch (e) {
+      console.error("Failed to update note", e);
+      // Revert is complex here, generally just re-fetch or alert
     }
   };
 
@@ -374,6 +410,8 @@ const App: React.FC = () => {
                                             currentTheme={currentTheme}
                                             isFavorite={true}
                                             onToggleFavorite={handleToggleFavorite}
+                                            note={favoriteNotes[attraction.id]}
+                                            onUpdateNote={handleUpdateNote}
                                         />
                                     ))}
                                 </div>
