@@ -6,6 +6,10 @@ export interface Attraction {
   imageUrl: string;
   tags: string[];
   rating: number;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export enum LoadingState {

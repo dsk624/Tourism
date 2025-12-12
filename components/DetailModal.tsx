@@ -1,8 +1,8 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Attraction } from '../types';
-import { X, Search, MapPin, ExternalLink, Heart } from 'lucide-react';
+import { X, Search, MapPin, ExternalLink, Heart, BookOpen, Map as MapIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LeafletMap } from './LeafletMap';
 
 interface Props {
   attraction: Attraction | null;
@@ -12,6 +12,8 @@ interface Props {
 }
 
 export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, onToggleFavorite }) => {
+  const [activeTab, setActiveTab] = useState<'info' | 'map'>('info');
+
   if (!attraction) return null;
 
   const handleBaiduSearch = () => {
@@ -56,7 +58,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, 
             </div>
 
             {/* Image Section */}
-            <div className="w-full md:w-1/2 h-64 md:h-auto relative">
+            <div className="w-full md:w-1/2 h-48 md:h-auto relative">
                <img
                 src={attraction.imageUrl}
                 alt={attraction.name}
@@ -73,7 +75,8 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, 
 
             {/* Content Section */}
             <div className="w-full md:w-1/2 p-4 sm:p-6 md:p-8 overflow-y-auto no-scrollbar bg-white flex flex-col">
-              <div className="hidden md:block mb-6">
+              
+              <div className="hidden md:block mb-4">
                  <h2 className="text-3xl font-bold text-slate-800 mb-2">{attraction.name}</h2>
                  <div className="flex items-center gap-2 text-teal-600 font-medium">
                     <MapPin className="w-4 h-4" />
@@ -81,38 +84,76 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, 
                  </div>
               </div>
 
-              <div className="prose prose-slate prose-sm sm:prose-base mb-6 sm:mb-8 flex-grow">
-                <p className="text-base sm:text-lg leading-relaxed text-slate-600">{attraction.description}</p>
-              </div>
-
-              {/* Baidu Search Section */}
-              <div className="bg-blue-50 rounded-2xl p-4 sm:p-6 border border-blue-100 mt-auto">
-                <div className="flex items-center gap-2 mb-3">
-                  <Search className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                  <h3 className="font-bold text-blue-800 text-base sm:text-lg">智能探索</h3>
-                </div>
-                
-                <p className="text-sm sm:text-base text-blue-700/80 mb-3 sm:mb-4">
-                  想了解更多关于 {attraction.name} 的实时攻略、门票价格和游玩路线？
-                </p>
-
-                <button 
-                  onClick={handleBaiduSearch}
-                  className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              {/* Tabs */}
+              <div className="flex p-1 bg-slate-100 rounded-xl mb-6">
+                <button
+                  onClick={() => setActiveTab('info')}
+                  className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'info' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                  <img src="https://www.baidu.com/favicon.ico" alt="Baidu" className="w-4 h-4 bg-white rounded-full p-[1px]" />
-                  在百度搜索更多详情
-                  <ExternalLink className="w-4 h-4 ml-1 opacity-80" />
+                  <BookOpen className="w-4 h-4" /> 介绍
+                </button>
+                <button
+                  onClick={() => setActiveTab('map')}
+                  className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'map' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <MapIcon className="w-4 h-4" /> 地图
                 </button>
               </div>
 
-              <div className="mt-6 sm:mt-8 flex gap-2 sm:gap-3 flex-wrap">
-                 {attraction.tags.map(tag => (
-                   <span key={tag} className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs sm:text-sm font-medium">
-                     #{tag}
-                   </span>
-                 ))}
-              </div>
+              {activeTab === 'info' ? (
+                <>
+                  <div className="prose prose-slate prose-sm sm:prose-base mb-6 sm:mb-8 flex-grow">
+                    <p className="text-base sm:text-lg leading-relaxed text-slate-600">{attraction.description}</p>
+                  </div>
+
+                  {/* Baidu Search Section */}
+                  <div className="bg-blue-50 rounded-2xl p-4 sm:p-6 border border-blue-100 mt-auto">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Search className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                      <h3 className="font-bold text-blue-800 text-base sm:text-lg">智能探索</h3>
+                    </div>
+                    
+                    <p className="text-sm sm:text-base text-blue-700/80 mb-3 sm:mb-4">
+                      想了解更多关于 {attraction.name} 的实时攻略、门票价格和游玩路线？
+                    </p>
+
+                    <button 
+                      onClick={handleBaiduSearch}
+                      className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                    >
+                      <img src="https://www.baidu.com/favicon.ico" alt="Baidu" className="w-4 h-4 bg-white rounded-full p-[1px]" />
+                      在百度搜索更多详情
+                      <ExternalLink className="w-4 h-4 ml-1 opacity-80" />
+                    </button>
+                  </div>
+
+                  <div className="mt-6 sm:mt-8 flex gap-2 sm:gap-3 flex-wrap">
+                     {attraction.tags.map(tag => (
+                       <span key={tag} className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs sm:text-sm font-medium">
+                         #{tag}
+                       </span>
+                     ))}
+                  </div>
+                </>
+              ) : (
+                <div className="flex-grow min-h-[300px] flex flex-col">
+                  {attraction.coordinates ? (
+                    <LeafletMap 
+                      lat={attraction.coordinates.lat} 
+                      lng={attraction.coordinates.lng} 
+                      name={attraction.name} 
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 flex-col">
+                       <MapIcon className="w-12 h-12 mb-2 opacity-50" />
+                       <p>暂无地图坐标数据</p>
+                    </div>
+                  )}
+                  <p className="text-xs text-slate-400 mt-3 text-center">
+                    地图数据来源：腾讯地图 (Tencent Maps)
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>

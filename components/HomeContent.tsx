@@ -72,16 +72,29 @@ export const HomeContent: React.FC<HomeContentProps> = ({
             </p>
 
             <div className="relative max-w-lg mx-auto group">
-              <div className="absolute inset-0 bg-teal-500 blur-xl opacity-20 group-hover:opacity-30 transition-opacity rounded-full"></div>
-              <div className="relative flex items-center bg-white/10 backdrop-blur-md border border-white/20 rounded-full p-2 transition-all group-hover:bg-white/20 group-hover:border-white/30">
-                <Search className="ml-4 w-5 h-5 text-teal-300" />
+              {/* Decorative Glow */}
+              <div className="absolute inset-0 bg-teal-500/30 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full"></div>
+              
+              {/* Search Bar - Updated UI */}
+              <div className="relative flex items-center bg-white shadow-2xl shadow-teal-900/20 rounded-full p-2 transition-all transform group-hover:scale-[1.02] border-2 border-transparent focus-within:border-teal-400">
+                <div className="pl-4 pr-2">
+                  <Search className="w-6 h-6 text-teal-500" />
+                </div>
                 <input 
                   type="text"
                   placeholder="搜索景点、历史或文化..."
-                  className="w-full bg-transparent border-none focus:ring-0 text-white placeholder-slate-300 px-4 py-2"
+                  className="w-full bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-400 px-2 py-3 text-lg font-medium outline-none"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
+                {searchTerm && (
+                  <button 
+                    onClick={() => setSearchTerm('')}
+                    className="p-2 text-slate-300 hover:text-slate-500 transition-colors"
+                  >
+                    <Plus className="w-5 h-5 rotate-45" />
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>

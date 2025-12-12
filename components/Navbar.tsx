@@ -63,100 +63,89 @@ export const Navbar: React.FC<NavbarProps> = ({
   );
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-40 backdrop-blur-xl border-b transition-colors duration-300 ${
-      theme === 'dark' 
-        ? 'bg-slate-900/80 border-slate-800' 
-        : 'bg-white/80 border-slate-200'
-    }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 sm:h-20">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className={`p-2.5 rounded-xl ${currentTheme.primary} shadow-lg shadow-teal-500/20 transform group-hover:rotate-12 transition-all duration-300`}>
-              <Mountain className="text-white w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
-            </div>
-            <div className="flex flex-col">
-              <span className={`text-lg sm:text-xl font-bold tracking-tight ${currentTheme.text}`}>华夏游</span>
-              <span className={`text-[10px] uppercase tracking-widest opacity-60 font-medium ${currentTheme.text}`}>China Travel</span>
-            </div>
-          </Link>
+    <>
+      <nav className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b transition-colors duration-300 ${
+        theme === 'dark' 
+          ? 'bg-slate-900/90 border-slate-800' 
+          : 'bg-white/90 border-slate-200'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 sm:h-20">
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className={`p-2.5 rounded-xl ${currentTheme.primary} shadow-lg shadow-teal-500/20 transform group-hover:rotate-12 transition-all duration-300`}>
+                <Mountain className="text-white w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col">
+                <span className={`text-lg sm:text-xl font-bold tracking-tight ${currentTheme.text}`}>华夏游</span>
+                <span className={`text-[10px] uppercase tracking-widest opacity-60 font-medium ${currentTheme.text}`}>China Travel</span>
+              </div>
+            </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-2">
-            <NavLink to="/" active={location.pathname === '/'}>首页</NavLink>
-            
-            <button 
-              onClick={() => setIsContactModalOpen(true)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
-                theme === 'dark' ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <MessageCircle className="w-4 h-4" />
-              联系我
-            </button>
+            {/* Desktop Nav */}
+            <div className="hidden md:flex items-center gap-2">
+              <NavLink to="/" active={location.pathname === '/'}>首页</NavLink>
+              
+              <button 
+                onClick={() => setIsContactModalOpen(true)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
+                  theme === 'dark' ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <MessageCircle className="w-4 h-4" />
+                联系我
+              </button>
 
-            {isAuthenticated ? (
-               <NavLink to="/profile" active={location.pathname === '/profile'}>
-                 {currentUser?.isAdmin ? '管理面板' : '我的账户'}
-               </NavLink>
-            ) : (
-              <>
-                <NavLink to="/login" active={location.pathname === '/login'}>登录</NavLink>
-                <Link to="/register">
-                  <button className={`ml-2 px-5 py-2 rounded-full text-sm font-bold transition-all transform hover:scale-105 ${currentTheme.primary} text-white shadow-lg shadow-teal-500/30`}>
-                    注册
+              {isAuthenticated ? (
+                 <NavLink to="/profile" active={location.pathname === '/profile'}>
+                   {currentUser?.isAdmin ? '管理面板' : '我的账户'}
+                 </NavLink>
+              ) : (
+                <>
+                  <NavLink to="/login" active={location.pathname === '/login'}>登录</NavLink>
+                  <Link to="/register">
+                    <button className={`ml-2 px-5 py-2 rounded-full text-sm font-bold transition-all transform hover:scale-105 ${currentTheme.primary} text-white shadow-lg shadow-teal-500/30`}>
+                      注册
+                    </button>
+                  </Link>
+                </>
+              )}
+              
+              <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
+
+              <div className="flex bg-slate-100 dark:bg-slate-800 rounded-full p-1">
+                {(['light', 'dark', 'teal'] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTheme(t)}
+                    className={`p-2 rounded-full transition-all ${theme === t ? 'bg-white dark:bg-slate-600 shadow-sm' : 'text-slate-400'}`}
+                  >
+                    {t === 'light' && <Sun className="w-4 h-4" />}
+                    {t === 'dark' && <Moon className="w-4 h-4" />}
+                    {t === 'teal' && <Map className="w-4 h-4" />}
                   </button>
-                </Link>
-              </>
-            )}
-            
-            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
-
-            <div className="flex bg-slate-100 dark:bg-slate-800 rounded-full p-1">
-              {(['light', 'dark', 'teal'] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTheme(t)}
-                  className={`p-2 rounded-full transition-all ${theme === t ? 'bg-white dark:bg-slate-600 shadow-sm' : 'text-slate-400'}`}
-                >
-                  {t === 'light' && <Sun className="w-4 h-4" />}
-                  {t === 'dark' && <Moon className="w-4 h-4" />}
-                  {t === 'teal' && <Map className="w-4 h-4" />}
-                </button>
-              ))}
+                ))}
+              </div>
             </div>
+
+            {/* Mobile Menu Button */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              {mobileMenuOpen ? <X /> : <Menu />}
+            </button>
           </div>
-
-          {/* Mobile Menu Button */}
-          <button 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors z-50"
-          >
-            {mobileMenuOpen ? <X /> : <Menu />}
-          </button>
         </div>
-      </div>
 
-      {/* Mobile Menu Overlay and Dropdown */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <>
-            {/* Backdrop Mask */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 md:hidden"
-              style={{ top: '64px' }}
-            />
-            
-            {/* Menu Content */}
+        {/* Mobile Menu Dropdown */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className={`absolute top-full left-0 right-0 z-40 md:hidden overflow-hidden border-t ${currentTheme.border} ${currentTheme.cardBg} shadow-2xl`}
+              className={`absolute top-full left-0 right-0 z-50 overflow-hidden border-t ${currentTheme.border} ${currentTheme.cardBg} shadow-2xl`}
             >
               <div className="px-4 pt-4 pb-6 space-y-2">
                 <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${location.pathname === '/' ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-600' : currentTheme.text}`}>首页</Link>
@@ -193,9 +182,23 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               </div>
             </motion.div>
-          </>
+          )}
+        </AnimatePresence>
+      </nav>
+
+      {/* Mobile Backdrop Overlay - Separate from Nav for better layering */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setMobileMenuOpen(false)}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+            // Ensure it sits below the navbar (z-50) but above content
+          />
         )}
       </AnimatePresence>
-    </nav>
+    </>
   );
 };

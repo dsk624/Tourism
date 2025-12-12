@@ -1,4 +1,5 @@
 import { Attraction, AuthResponse, User } from '../types';
+import { ATTRACTIONS } from '../constants';
 
 // Generic API Client Wrapper
 const fetchClient = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
@@ -49,7 +50,7 @@ const fetchClient = async <T>(endpoint: string, options: RequestInit = {}): Prom
 
     return data as T;
   } catch (error: any) {
-    console.error(`API Error (${endpoint}):`, error);
+    console.warn(`API Error (${endpoint}):`, error.message);
     throw error;
   }
 };
@@ -57,7 +58,14 @@ const fetchClient = async <T>(endpoint: string, options: RequestInit = {}): Prom
 export const api = {
   // --- Authentication ---
   auth: {
-    me: () => fetchClient<{ authenticated: boolean; user?: User }>('/api/me'),
+    me: async () => {
+      try {
+        return await fetchClient<{ authenticated: boolean; user?: User }>('/api/me');
+      } catch (e) {
+        // Fallback for dev mode without backend
+        return { authenticated: false };
+      }
+    },
     
     login: (credentials: { username?: string; email?: string; password: string; fingerprint?: string; rememberMe?: boolean }) => 
       fetchClient<AuthResponse>('/api/login', {
@@ -76,7 +84,15 @@ export const api = {
 
   // --- Attractions ---
   attractions: {
-    getAll: () => fetchClient<Attraction[]>('/api/attractions'),
+    getAll: async () => {
+      try {
+        return await fetchClient<Attraction[]>('/api/attractions');
+      } catch (e) {
+        console.warn('Backend API unavailable, falling back to local data.');
+        // Fallback to local constants if API fails (e.g., 404 in dev)
+        return ATTRACTIONS;
+      }
+    },
     
     getById: (id: string) => fetchClient<Attraction>(`/api/attractions?id=${id}`),
     
