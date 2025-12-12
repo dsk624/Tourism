@@ -1,14 +1,17 @@
+
 import React from 'react';
 import { Attraction } from '../types';
-import { X, Search, MapPin, ExternalLink } from 'lucide-react';
+import { X, Search, MapPin, ExternalLink, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
   attraction: Attraction | null;
   onClose: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (e: React.MouseEvent | null, id: string) => void;
 }
 
-export const DetailModal: React.FC<Props> = ({ attraction, onClose }) => {
+export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, onToggleFavorite }) => {
   if (!attraction) return null;
 
   const handleBaiduSearch = () => {
@@ -33,13 +36,24 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose }) => {
               className="relative w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
               onClick={(e) => e.stopPropagation()}
             >
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 z-10 bg-black/20 hover:bg-black/40 text-white p-3 rounded-full transition-colors backdrop-blur-sm"
-              style={{ minWidth: '44px', minHeight: '44px' }}
-            >
-              <X className="w-6 h-6" />
-            </button>
+            <div className="absolute top-4 right-4 z-10 flex gap-2">
+                {onToggleFavorite && (
+                    <button
+                    onClick={(e) => onToggleFavorite(e, attraction.id)}
+                    className="bg-black/20 hover:bg-black/40 text-white p-3 rounded-full transition-colors backdrop-blur-sm"
+                    style={{ minWidth: '44px', minHeight: '44px' }}
+                    >
+                    <Heart className={`w-6 h-6 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+                    </button>
+                )}
+                <button
+                onClick={onClose}
+                className="bg-black/20 hover:bg-black/40 text-white p-3 rounded-full transition-colors backdrop-blur-sm"
+                style={{ minWidth: '44px', minHeight: '44px' }}
+                >
+                <X className="w-6 h-6" />
+                </button>
+            </div>
 
             {/* Image Section */}
             <div className="w-full md:w-1/2 h-64 md:h-auto relative">

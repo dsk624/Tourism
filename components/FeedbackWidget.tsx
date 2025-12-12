@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MessageSquarePlus, X, Send, Loader2, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '../services/api';
 
 export const FeedbackWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,27 +15,17 @@ export const FeedbackWidget: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content }),
-      });
+      await api.feedback.submit(content);
 
-      if (response.ok) {
-        setIsSuccess(true);
-        setContent('');
-        setTimeout(() => {
-          setIsSuccess(false);
-          setIsOpen(false);
-        }, 2000);
-      } else {
-        alert('提交失败，请稍后重试');
-      }
+      setIsSuccess(true);
+      setContent('');
+      setTimeout(() => {
+        setIsSuccess(false);
+        setIsOpen(false);
+      }, 2000);
     } catch (error) {
       console.error('Feedback error:', error);
-      alert('网络错误，请稍后重试');
+      alert('提交失败，请稍后重试');
     } finally {
       setIsSubmitting(false);
     }

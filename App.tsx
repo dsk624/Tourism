@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AttractionCard } from './components/AttractionCard';
 import { DetailModal } from './components/DetailModal';
 import { FeedbackWidget } from './components/FeedbackWidget';
@@ -11,6 +11,7 @@ import LoginForm from './components/LoginForm';
 import { Attraction, User } from './types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mountain, Search, Menu, X, User as UserIcon, Sun, Moon, Map, Loader2, Plus, Edit, MessageCircle } from 'lucide-react';
+import { api } from './services/api';
 
 // 滚动至顶部的组件
 const ScrollToTop = () => {
@@ -40,13 +41,16 @@ const App: React.FC = () => {
     return !localStorage.getItem('china_travel_user');
   });
 
+  // Favorites State
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
   // Data State - Initialize empty, fetch from DB
   const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
 
   // Computed Provinces List from actual data
   const dynamicProvinces = useMemo(() => {
-    const allProvinces = attractions.map(a => a.province);
+    const allProvinces = attractions.map(a => a.province).filter(Boolean);
     return ['全部', ...Array.from(new Set(allProvinces))];
   }, [attractions]);
 
@@ -59,19 +63,13 @@ const App: React.FC = () => {
   const fetchAttractions = async () => {
     setIsDataLoading(true);
     try {
-      const res = await fetch('/api/attractions');
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data)) {
-           const mappedData = data.map((item: any) => ({
-             ...item,
-             imageUrl: item.image_url || item.imageUrl
-           }));
-           setAttractions(mappedData);
-        }
-      } else {
-        console.warn("API returned error", res.status);
-        setAttractions([]);
+      const data = await api.attractions.getAll();
+      if (Array.isArray(data)) {
+         const mappedData = data.map((item: any) => ({
+           ...item,
+           imageUrl: item.image_url || item.imageUrl
+         }));
+         setAttractions(mappedData);
       }
     } catch (e) {
       console.error("Failed to fetch from DB", e);
@@ -81,29 +79,33 @@ const App: React.FC = () => {
     }
   };
 
+  // Fetch User Favorites
+  const fetchFavorites = async () => {
+    if (!isAuthenticated) return;
+    try {
+      const data = await api.favorites.getAll();
+      setFavorites(new Set(data.favorites));
+    } catch (e) {
+      console.error("Failed to fetch favorites", e);
+    }
+  };
+
   // Check Auth & Initial Fetch
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/me');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.authenticated) {
-            setIsAuthenticated(true);
-            setCurrentUser(data.user);
-            localStorage.setItem('china_travel_user', JSON.stringify(data.user));
-          } else {
-            setIsAuthenticated(false);
-            setCurrentUser(null);
-            localStorage.removeItem('china_travel_user');
-          }
-        } else if (res.status === 401) {
-             setIsAuthenticated(false);
-             setCurrentUser(null);
-             localStorage.removeItem('china_travel_user');
+        const data = await api.auth.me();
+        if (data.authenticated && data.user) {
+          setIsAuthenticated(true);
+          setCurrentUser(data.user);
+          localStorage.setItem('china_travel_user', JSON.stringify(data.user));
+          fetchFavorites(); // Fetch favorites if auth
+        } else {
+          handleAuthFailure();
         }
       } catch (e) {
         console.error("Auth check failed", e);
+        handleAuthFailure();
       } finally {
         setIsAuthChecking(false);
       }
@@ -112,36 +114,72 @@ const App: React.FC = () => {
     fetchAttractions();
   }, []);
 
-  const handleAdminSave = async (data: any) => {
-    try {
-      const method = editingAttraction ? 'PUT' : 'POST';
-      const url = editingAttraction ? `/api/attractions?id=${editingAttraction.id}` : '/api/attractions';
-      
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
+  const handleAuthFailure = () => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    localStorage.removeItem('china_travel_user');
+    setFavorites(new Set());
+  };
 
-      if (res.ok) {
-        setIsAdminModalOpen(false);
-        fetchAttractions(); // Refresh list
+  // Update favorites when auth state changes (e.g. login manually)
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchFavorites();
+    } else {
+      setFavorites(new Set());
+    }
+  }, [isAuthenticated]);
+
+  const handleToggleFavorite = async (e: React.MouseEvent | null, attractionId: string) => {
+    if (e) e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      if (confirm('请先登录以收藏景点。是否前往登录？')) {
+        window.location.href = '/login';
+      }
+      return;
+    }
+
+    const isFav = favorites.has(attractionId);
+    // Optimistic Update
+    const newFavs = new Set(favorites);
+    if (isFav) newFavs.delete(attractionId);
+    else newFavs.add(attractionId);
+    setFavorites(newFavs);
+
+    try {
+      if (isFav) {
+        await api.favorites.remove(attractionId);
       } else {
-        alert('操作失败');
+        await api.favorites.add(attractionId);
       }
     } catch (e) {
-      alert('网络错误');
+      // Revert on error
+      fetchFavorites();
+      alert('操作失败，请重试');
+    }
+  };
+
+  const handleAdminSave = async (data: any) => {
+    try {
+      if (editingAttraction) {
+        await api.attractions.update(editingAttraction.id, data);
+      } else {
+        await api.attractions.create(data);
+      }
+      setIsAdminModalOpen(false);
+      fetchAttractions(); // Refresh list
+    } catch (e) {
+      alert('操作失败，请重试');
     }
   };
 
   const handleAdminDelete = async (id: string) => {
     if (!confirm('确定要删除这个景点吗？')) return;
     try {
-      const res = await fetch(`/api/attractions?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setIsAdminModalOpen(false);
-        fetchAttractions();
-      }
+      await api.attractions.delete(id);
+      setIsAdminModalOpen(false);
+      fetchAttractions();
     } catch (e) {
       alert('删除失败');
     }
@@ -193,10 +231,11 @@ const App: React.FC = () => {
       filtered = filtered.filter(a => a.province === selectedProvince);
     }
     if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
       filtered = filtered.filter(a => 
-        a.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        a.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        (a.name || '').toLowerCase().includes(lowerTerm) || 
+        (a.description || '').toLowerCase().includes(lowerTerm) ||
+        (a.tags || []).some(tag => (tag || '').toLowerCase().includes(lowerTerm))
       );
     }
     return filtered;
@@ -204,10 +243,8 @@ const App: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/logout', { method: 'POST' });
-      setIsAuthenticated(false);
-      setCurrentUser(null);
-      localStorage.removeItem('china_travel_user');
+      await api.auth.logout();
+      handleAuthFailure();
       window.location.href = '/login';
     } catch (e) { console.error(e); }
   };
@@ -295,57 +332,70 @@ const App: React.FC = () => {
             {/* Mobile Menu Button */}
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors z-50"
             >
               {mobileMenuOpen ? <X /> : <Menu />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu Overlay and Dropdown */}
         <AnimatePresence>
           {mobileMenuOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className={`md:hidden overflow-hidden border-t ${currentTheme.border} ${currentTheme.cardBg}`}
-            >
-              <div className="px-4 pt-4 pb-6 space-y-2">
-                <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${location.pathname === '/' ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-600' : currentTheme.text}`}>首页</Link>
-                <button 
-                  onClick={() => { setIsContactModalOpen(true); setMobileMenuOpen(false); }}
-                  className={`w-full text-left block px-4 py-3 rounded-xl font-medium ${currentTheme.text} flex items-center gap-2`}
-                >
-                  <MessageCircle className="w-4 h-4" /> 联系我
-                </button>
-                
-                {isAuthenticated ? (
-                  <>
-                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${currentTheme.text}`}>{currentUser?.isAdmin ? '管理面板' : '我的账户'}</Link>
-                  <button onClick={handleLogout} className="w-full text-left block px-4 py-3 rounded-xl font-medium text-red-500">退出登录</button>
-                  </>
-                ) : (
-                  <>
-                    <Link to="/login" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${currentTheme.text}`}>登录</Link>
-                    <Link to="/register" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${currentTheme.primary} text-white`}>立即注册</Link>
-                  </>
-                )}
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-center gap-4">
-                  {(['light', 'dark', 'teal'] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTheme(t)}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${theme === t ? 'border-teal-500 text-teal-500' : 'border-slate-200 dark:border-slate-700 text-slate-400'}`}
-                    >
-                       {t === 'light' && <Sun className="w-5 h-5" />}
-                       {t === 'dark' && <Moon className="w-5 h-5" />}
-                       {t === 'teal' && <Map className="w-5 h-5" />}
-                    </button>
-                  ))}
+            <>
+              {/* Backdrop Mask */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 md:hidden"
+                style={{ top: '64px' }} // Start below navbar
+              />
+              
+              {/* Menu Content */}
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className={`absolute top-full left-0 right-0 z-40 md:hidden overflow-hidden border-t ${currentTheme.border} ${currentTheme.cardBg} shadow-2xl`}
+              >
+                <div className="px-4 pt-4 pb-6 space-y-2">
+                  <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${location.pathname === '/' ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-600' : currentTheme.text}`}>首页</Link>
+                  <button 
+                    onClick={() => { setIsContactModalOpen(true); setMobileMenuOpen(false); }}
+                    className={`w-full text-left block px-4 py-3 rounded-xl font-medium ${currentTheme.text} flex items-center gap-2`}
+                  >
+                    <MessageCircle className="w-4 h-4" /> 联系我
+                  </button>
+                  
+                  {isAuthenticated ? (
+                    <>
+                    <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${currentTheme.text}`}>{currentUser?.isAdmin ? '管理面板' : '我的账户'}</Link>
+                    <button onClick={handleLogout} className="w-full text-left block px-4 py-3 rounded-xl font-medium text-red-500">退出登录</button>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/login" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${currentTheme.text}`}>登录</Link>
+                      <Link to="/register" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${currentTheme.primary} text-white`}>立即注册</Link>
+                    </>
+                  )}
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-center gap-4">
+                    {(['light', 'dark', 'teal'] as const).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setTheme(t)}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${theme === t ? 'border-teal-500 text-teal-500' : 'border-slate-200 dark:border-slate-700 text-slate-400'}`}
+                      >
+                         {t === 'light' && <Sun className="w-5 h-5" />}
+                         {t === 'dark' && <Moon className="w-5 h-5" />}
+                         {t === 'teal' && <Map className="w-5 h-5" />}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </nav>
@@ -457,13 +507,15 @@ const App: React.FC = () => {
                     onClick={setSelectedAttraction} 
                     theme={theme}
                     currentTheme={currentTheme}
-                    searchTerm={searchTerm} // Pass search term for highlighting
+                    searchTerm={searchTerm}
+                    isFavorite={favorites.has(attraction.id)}
+                    onToggleFavorite={handleToggleFavorite}
                   />
                   
                   {isAuthenticated && currentUser?.isAdmin && (
                     <button 
                       onClick={(e) => openEditModal(e, attraction)}
-                      className="absolute top-4 right-4 z-20 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute top-4 right-14 z-20 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-all opacity-0 group-hover:opacity-100"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
@@ -479,18 +531,6 @@ const App: React.FC = () => {
           </div>
         )}
       </main>
-      
-      <AdminModal 
-        isOpen={isAdminModalOpen} 
-        onClose={() => setIsAdminModalOpen(false)} 
-        onSubmit={handleAdminSave}
-        onDelete={handleAdminDelete}
-        initialData={editingAttraction}
-      />
-      <ContactModal 
-        isOpen={isContactModalOpen}
-        onClose={() => setIsContactModalOpen(false)}
-      />
     </>
   );
 
@@ -511,16 +551,17 @@ const App: React.FC = () => {
               isAuthenticated ? <Navigate to="/profile" /> : (
                 <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen">
                   <div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}>
-                    <LoginForm onLoginSuccess={() => {
+                    <LoginForm onLoginSuccess={async () => {
                          setIsAuthChecking(true);
-                         fetch('/api/me').then(r => r.json()).then(d => {
-                             if(d.authenticated) {
-                                 setIsAuthenticated(true);
-                                 setCurrentUser(d.user);
-                                 localStorage.setItem('china_travel_user', JSON.stringify(d.user));
-                             }
-                             setIsAuthChecking(false);
-                         });
+                         try {
+                           const data = await api.auth.me();
+                           if(data.authenticated && data.user) {
+                               setIsAuthenticated(true);
+                               setCurrentUser(data.user);
+                               localStorage.setItem('china_travel_user', JSON.stringify(data.user));
+                           }
+                         } catch(e) { console.error(e) }
+                         setIsAuthChecking(false);
                     }} />
                   </div>
                 </div>
@@ -537,8 +578,8 @@ const App: React.FC = () => {
             } />
             <Route path="/profile" element={
               isAuthenticated ? (
-                <div className="pt-32 px-4 max-w-4xl mx-auto min-h-screen">
-                  <div className={`p-8 rounded-3xl ${currentTheme.cardBg} border ${currentTheme.border} shadow-xl`}>
+                <div className="pt-32 px-4 max-w-6xl mx-auto min-h-screen pb-20">
+                  <div className={`p-8 rounded-3xl ${currentTheme.cardBg} border ${currentTheme.border} shadow-xl mb-10`}>
                     <div className="flex items-center gap-4 mb-6">
                       <div className="w-16 h-16 bg-teal-500/10 rounded-full flex items-center justify-center border border-teal-500/20">
                         <UserIcon className="w-8 h-8 text-teal-500" />
@@ -554,25 +595,54 @@ const App: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className={`p-6 rounded-2xl ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-slate-50'} border ${currentTheme.border}`}>
-                      <h3 className="font-bold mb-4 flex items-center gap-2">
-                         <Map className="w-5 h-5 text-teal-500" />
-                         {currentUser?.isAdmin ? '管理概览' : '我的收藏'}
-                      </h3>
-                      {currentUser?.isAdmin ? (
-                          <div className="text-sm opacity-80">
-                              您拥有景点数据的增删改查权限。请返回首页进行管理操作。
-                          </div>
-                      ) : (
-                          <p className="text-sm opacity-60">暂无收藏的景点，去首页探索一下吧！</p>
-                      )}
-                    </div>
-
                     <div className="mt-8 flex justify-end">
                        <button onClick={handleLogout} className="px-6 py-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-medium">
                          退出登录
                        </button>
                     </div>
+                  </div>
+
+                  {/* Favorites Section */}
+                  <div className="mb-10">
+                      <h3 className="text-2xl font-bold mb-6 flex items-center gap-2 px-2">
+                         <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">
+                             {currentUser?.isAdmin ? <Map className="w-5 h-5" /> : <div className="text-red-500">❤</div>}
+                         </div>
+                         {currentUser?.isAdmin ? '管理概览' : '我的旅行收藏'}
+                      </h3>
+                      
+                      {currentUser?.isAdmin ? (
+                          <div className={`p-6 rounded-2xl ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-slate-50'} border ${currentTheme.border}`}>
+                             <p className="opacity-80">您拥有景点数据的增删改查权限。请返回首页进行管理操作。</p>
+                          </div>
+                      ) : (
+                          <>
+                            {favorites.size > 0 ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {attractions.filter(a => favorites.has(a.id)).map(attraction => (
+                                        <AttractionCard 
+                                            key={attraction.id}
+                                            attraction={attraction} 
+                                            onClick={setSelectedAttraction} 
+                                            theme={theme}
+                                            currentTheme={currentTheme}
+                                            isFavorite={true}
+                                            onToggleFavorite={handleToggleFavorite}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className={`p-12 text-center rounded-2xl ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-slate-50'} border ${currentTheme.border} border-dashed`}>
+                                    <p className="text-lg opacity-60 mb-4">暂无收藏的景点</p>
+                                    <Link to="/">
+                                        <button className="px-6 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-full font-medium transition-colors">
+                                            去首页探索
+                                        </button>
+                                    </Link>
+                                </div>
+                            )}
+                          </>
+                      )}
                   </div>
                 </div>
               ) : <Navigate to="/login" />
@@ -590,8 +660,26 @@ const App: React.FC = () => {
           </div>
         </footer>
 
-        <DetailModal attraction={selectedAttraction} onClose={() => setSelectedAttraction(null)} />
+        <DetailModal 
+            attraction={selectedAttraction} 
+            onClose={() => setSelectedAttraction(null)} 
+            isFavorite={selectedAttraction ? favorites.has(selectedAttraction.id) : false}
+            onToggleFavorite={handleToggleFavorite}
+        />
         <FeedbackWidget />
+        
+        {/* Global Modals */}
+        <ContactModal 
+          isOpen={isContactModalOpen}
+          onClose={() => setIsContactModalOpen(false)}
+        />
+        <AdminModal 
+          isOpen={isAdminModalOpen} 
+          onClose={() => setIsAdminModalOpen(false)} 
+          onSubmit={handleAdminSave}
+          onDelete={handleAdminDelete}
+          initialData={editingAttraction}
+        />
       </div>
     </Router>
   );

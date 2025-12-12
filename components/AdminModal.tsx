@@ -95,7 +95,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                   <input
                     required
                     placeholder="例如：清明上河园"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
                   />
@@ -106,7 +106,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">所属省份</label>
                     <div className="relative">
                       <select
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white appearance-none focus:ring-2 focus:ring-teal-500 outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white appearance-none focus:ring-2 focus:ring-teal-500 outline-none transition-all"
                         value={formData.province}
                         onChange={e => setFormData({...formData, province: e.target.value})}
                       >
@@ -126,7 +126,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                       step="0.1"
                       min="0"
                       max="5"
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all"
                       value={formData.rating}
                       onChange={e => setFormData({...formData, rating: parseFloat(e.target.value)})}
                     />
@@ -140,7 +140,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                     <input
                       required
                       placeholder="https://..."
-                      className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all"
+                      className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all"
                       value={formData.imageUrl}
                       onChange={e => setFormData({...formData, imageUrl: e.target.value})}
                     />
@@ -154,7 +154,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                     required
                     rows={5}
                     placeholder="请详细描述该景点的历史文化、特色亮点..."
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all resize-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all resize-none"
                     value={formData.description}
                     onChange={e => setFormData({...formData, description: e.target.value})}
                   />
@@ -163,7 +163,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">标签</label>
                   <input
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all"
                     value={formData.tags}
                     onChange={e => setFormData({...formData, tags: e.target.value})}
                     placeholder="使用逗号分隔，例如：历史, 5A景区, 摄影"

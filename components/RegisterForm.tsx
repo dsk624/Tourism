@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { UserPlus, ShieldCheck, Cpu } from 'lucide-react';
+import { api } from '../services/api';
 
 // 简易浏览器指纹生成 (无需第三方库)
 const generateFingerprint = async () => {
@@ -50,26 +51,21 @@ const RegisterForm: React.FC = () => {
     try {
       const fingerprint = await generateFingerprint();
       
-      const res = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-          fingerprint,
-          deviceName: navigator.platform
-        })
+      const data = await api.auth.register({
+        username: formData.username,
+        password: formData.password,
+        fingerprint,
+        deviceName: navigator.platform
       });
       
-      const data = await res.json();
       if (data.success) {
         setSuccess('注册成功！正在跳转登录...');
         setTimeout(() => window.location.href = '/login', 1500);
       } else {
         setError(data.message || '注册失败');
       }
-    } catch (err) {
-      setError('网络连接错误');
+    } catch (err: any) {
+      setError(err.message || '网络连接错误');
     } finally {
       setLoading(false);
     }

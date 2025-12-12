@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { LogIn, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
 
 const generateFingerprint = async () => {
   const canvas = document.createElement('canvas');
@@ -39,17 +40,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
     try {
       const fingerprint = await generateFingerprint();
       
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-          fingerprint
-        })
+      const data = await api.auth.login({
+        username: formData.username,
+        password: formData.password,
+        fingerprint
       });
 
-      const data = await res.json();
       if (data.success) {
         // Save user data to localStorage for persistence
         if (data.user) {
@@ -60,8 +56,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
       } else {
         setError(data.message || '登录失败');
       }
-    } catch (err) {
-      setError('网络连接错误，请稍后重试');
+    } catch (err: any) {
+      setError(err.message || '网络连接错误，请稍后重试');
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Attraction } from '../types';
-import { MapPin, Star } from 'lucide-react';
+import { MapPin, Star, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ThemeConfig {
@@ -18,6 +19,13 @@ interface Props {
   theme: 'light' | 'dark' | 'teal';
   currentTheme: ThemeConfig;
   searchTerm?: string;
+  isFavorite?: boolean;
+  onToggleFavorite?: (e: React.MouseEvent | null, id: string) => void;
+}
+
+// Helper to escape special characters for Regex
+function escapeRegExp(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 // Helper component for highlighting text
@@ -26,27 +34,32 @@ const HighlightText: React.FC<{ text: string; highlight?: string }> = ({ text, h
     return <>{text}</>;
   }
 
-  const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
-  return (
-    <>
-      {parts.map((part, i) => (
-        part.toLowerCase() === highlight.toLowerCase() ? (
-          <span key={i} className="bg-yellow-300 text-slate-900 px-0.5 rounded-sm font-medium">{part}</span>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      ))}
-    </>
-  );
+  try {
+    const escapedHighlight = escapeRegExp(highlight);
+    const parts = text.split(new RegExp(`(${escapedHighlight})`, 'gi'));
+    return (
+      <>
+        {parts.map((part, i) => (
+          part.toLowerCase() === highlight.toLowerCase() ? (
+            <span key={i} className="bg-yellow-300 text-slate-900 px-0.5 rounded-sm font-medium">{part}</span>
+          ) : (
+            <span key={i}>{part}</span>
+          )
+        ))}
+      </>
+    );
+  } catch (e) {
+    return <>{text}</>;
+  }
 };
 
-export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, currentTheme, searchTerm = '' }) => {
+export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, currentTheme, searchTerm = '', isFavorite, onToggleFavorite }) => {
   return (
     <motion.div
       layoutId={`card-${attraction.id}`}
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
       onClick={() => onClick(attraction)}
-      className={`group cursor-pointer ${currentTheme.cardBg} rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 border ${currentTheme.border} h-full flex flex-col`}
+      className={`group cursor-pointer ${currentTheme.cardBg} rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 border ${currentTheme.border} h-full flex flex-col relative`}
     >
       <div className="relative h-48 overflow-hidden flex-shrink-0">
         <img
@@ -56,7 +69,18 @@ export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, cu
           loading="lazy"
           onLoad={(e) => (e.target as HTMLImageElement).classList.remove('blur-sm')}
         />
-        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg flex items-center gap-1 text-xs font-bold text-amber-500 shadow-sm">
+        
+        {/* Favorite Button */}
+        {onToggleFavorite && (
+          <button
+            onClick={(e) => onToggleFavorite(e, attraction.id)}
+            className="absolute top-3 right-3 z-10 bg-black/20 hover:bg-black/40 backdrop-blur-md p-2 rounded-full text-white transition-all transform hover:scale-110 active:scale-95"
+          >
+            <Heart className={`w-5 h-5 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+          </button>
+        )}
+
+        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg flex items-center gap-1 text-xs font-bold text-amber-500 shadow-sm">
           <Star className="w-3 h-3 fill-amber-500" />
           {attraction.rating}
         </div>
