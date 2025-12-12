@@ -1,259 +1,164 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { UserPlus, ShieldCheck, Cpu } from 'lucide-react';
 
-// 生成浏览器指纹
-const generateBrowserFingerprint = (): string => {
-  const navigatorInfo = navigator as any;
-  const screenInfo = screen;
-  
-  const fingerprintData = {
-    userAgent: navigator.userAgent,
-    language: navigator.language,
-    platform: navigator.platform,
-    hardwareConcurrency: navigator.hardwareConcurrency,
-    screenResolution: `${screenInfo.width}x${screenInfo.height}`,
-    colorDepth: screenInfo.colorDepth,
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    hasTouch: 'ontouchstart' in window,
-    hasGeolocation: 'geolocation' in navigator,
-    hasWebGL: 'WebGLRenderingContext' in window,
-    plugins: Array.from(navigator.plugins).map(p => p.name).join(','),
-    mimeTypes: Array.from(navigator.mimeTypes).map(m => m.type).join(','),
-    canvasFingerprint: generateCanvasFingerprint()
-  };
-  
-  return btoa(JSON.stringify(fingerprintData));
-};
-
-// 生成Canvas指纹
-const generateCanvasFingerprint = (): string => {
+// 简易浏览器指纹生成 (无需第三方库)
+const generateFingerprint = async () => {
   const canvas = document.createElement('canvas');
-  canvas.width = 200;
-  canvas.height = 50;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return '';
+  if (!ctx) return 'unknown';
   
-  ctx.fillStyle = '#f5f5f5';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#000000';
-  ctx.font = '20px Arial';
-  ctx.fillText('Browser Fingerprint', 10, 30);
-  ctx.strokeStyle = '#ff0000';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(5, 5, 190, 40);
+  ctx.textBaseline = 'top';
+  ctx.font = '14px "Arial"';
+  ctx.fillStyle = '#f60';
+  ctx.fillRect(125, 1, 62, 20);
+  ctx.fillStyle = '#069';
+  ctx.fillText('ChinaTravel', 2, 15);
+  ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+  ctx.fillText('Auth', 4, 17);
   
-  return canvas.toDataURL('image/png');
+  const b64 = canvas.toDataURL().replace('data:image/png;base64,', '');
+  const bin = atob(b64);
+  let hash = 0;
+  for (let i = 0; i < bin.length; i++) {
+    hash = ((hash << 5) - hash) + bin.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash.toString(16) + '-' + navigator.userAgent.length;
 };
 
-interface RegisterFormProps {
-  testCaptchaLoaded?: boolean;
-}
+const RegisterForm: React.FC = () => {
+  const [formData, setFormData] = useState({ username: '', password: '', confirmPassword: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-const RegisterForm: React.FC<RegisterFormProps> = ({ testCaptchaLoaded }) => {
-  const [browserFingerprint, setBrowserFingerprint] = useState('');
-  const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-    confirmPassword: ''
-  });
-
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
-  const [captchaToken, setCaptchaToken] = useState('');
-  const [captchaLoaded, setCaptchaLoaded] = useState(!!testCaptchaLoaded);
-
-  // 加载reCAPTCHA脚本
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !captchaLoaded) {
-      const script = document.createElement('script');
-      script.src = 'https://www.google.com/recaptcha/api.js?render=6LdT0-MpAAAAAKyM6QcFZ8Q8VYdQw8Z8Q8VYdQw8';
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        setCaptchaLoaded(true);
-      };
-      document.body.appendChild(script);
-    }
-  }, [captchaLoaded]);
-
-  // 重置reCAPTCHA
-  const resetCaptcha = () => {
-    if (typeof window !== 'undefined' && (window as any).grecaptcha) {
-      (window as any).grecaptcha.reset();
-      setCaptchaToken('');
-    }
-  };
-
-  // 组件加载时生成浏览器指纹
-  useEffect(() => {
-    const fingerprint = generateBrowserFingerprint();
-    setBrowserFingerprint(fingerprint);
-  }, []);
-
-  // 密码强度验证
-  const validatePassword = (password: string): boolean => {
-    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    return regex.test(password);
-  };
-
-  // 表单验证
-  const validateForm = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
-
-    // 验证用户名
-    if (!formData.username.trim()) {
-      newErrors.username = '用户名不能为空';
-    } else if (formData.username.length < 3 || formData.username.length > 20) {
-      newErrors.username = '用户名长度必须在3-20个字符之间';
-    }
-
-    // 验证密码
-    if (!formData.password) {
-      newErrors.password = '密码不能为空';
-    } else if (!validatePassword(formData.password)) {
-      newErrors.password = '密码必须包含大小写字母、数字和特殊符号，至少8位';
-    }
-
-    // 验证确认密码
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = '请确认密码';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = '两次输入的密码不一致';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // 处理输入变化
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // 清除对应字段的错误信息
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  };
-
-  // 处理表单提交
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    setError('');
+    
+    if (formData.password !== formData.confirmPassword) {
+      setError('两次密码输入不一致');
+      return;
+    }
+    if (formData.username.length < 3) {
+      setError('用户名至少3个字符');
+      return;
+    }
 
-    setIsSubmitting(true);
-    setMessage('');
-
+    setLoading(true);
     try {
-      // 生成reCAPTCHA令牌
-      let token = '';
-      if (captchaLoaded && typeof window !== 'undefined' && (window as any).grecaptcha) {
-        token = await (window as any).grecaptcha.execute('6LdT0-MpAAAAAKyM6QcFZ8Q8VYdQw8Z8Q8VYdQw8', {
-          action: 'register'
-        });
-      }
+      const fingerprint = await generateFingerprint();
       
-      if (!token) {
-        setErrors({ submit: '人机验证失败，请重试' });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      setCaptchaToken(token);
-
-      const response = await fetch('/api/register', {
+      const res = await fetch('/api/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: formData.username,
           password: formData.password,
-          browserFingerprint,
-          captchaToken: token
+          fingerprint,
+          deviceName: navigator.platform
         })
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage(data.message);
-        // 重置表单
-        setFormData({ username: '', password: '', confirmPassword: '' });
-        resetCaptcha(); // 重置reCAPTCHA
+      
+      const data = await res.json();
+      if (data.success) {
+        setSuccess('注册成功！正在跳转登录...');
+        setTimeout(() => window.location.href = '/login', 1500);
       } else {
-        setErrors({ submit: data.message || '注册失败' });
-        resetCaptcha(); // 重置reCAPTCHA
+        setError(data.message || '注册失败');
       }
-    } catch (error) {
-      setErrors({ submit: '注册失败，请稍后重试' });
-      resetCaptcha(); // 重置reCAPTCHA
+    } catch (err) {
+      setError('网络连接错误');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">用户注册</h2>
-      {message && <div className="bg-green-100 text-green-700 p-3 rounded-md mb-4 text-center">{message}</div>}
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full"
+    >
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 bg-teal-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-teal-500/20">
+          <UserPlus className="w-8 h-8 text-teal-500" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">创建新账户</h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">无需手机号，开启您的专属旅程</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">用户名</label>
           <input
             type="text"
-            id="username"
-            name="username"
+            required
+            minLength={3}
+            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all outline-none text-slate-900 dark:text-white placeholder-slate-400"
+            placeholder="设置您的个性昵称"
             value={formData.username}
-            onChange={handleChange}
-            placeholder="请输入用户名"
-            className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:outline-none transition-all ${errors.username ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-500'}`}
+            onChange={e => setFormData({...formData, username: e.target.value})}
           />
-          {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">密码</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">密码</label>
           <input
             type="password"
-            id="password"
-            name="password"
+            required
+            minLength={6}
+            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all outline-none text-slate-900 dark:text-white placeholder-slate-400"
+            placeholder="至少6位字符"
             value={formData.password}
-            onChange={handleChange}
-            placeholder="请输入密码"
-            className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:outline-none transition-all ${errors.password ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-500'}`}
+            onChange={e => setFormData({...formData, password: e.target.value})}
           />
-          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">确认密码</label>
           <input
             type="password"
-            id="confirmPassword"
-            name="confirmPassword"
+            required
+            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all outline-none text-slate-900 dark:text-white placeholder-slate-400"
+            placeholder="再次输入密码"
             value={formData.confirmPassword}
-            onChange={handleChange}
-            placeholder="请确认密码"
-            className={`w-full px-4 py-2 border rounded-md focus:ring-2 focus:outline-none transition-all ${errors.confirmPassword ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-500'}`}
+            onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
           />
-          {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
         </div>
 
-        {errors.submit && <div className="bg-red-100 text-red-700 p-3 rounded-md text-center">{errors.submit}</div>}
+        {error && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4" /> {error}
+          </motion.div>
+        )}
+        
+        {success && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 rounded-lg bg-green-50 text-green-600 text-sm flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4" /> {success}
+          </motion.div>
+        )}
 
-        <button 
-          type="submit" 
-          disabled={isSubmitting}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 focus:ring-2 focus:ring-blue-300 focus:outline-none"
+        <div className="flex items-center gap-2 text-xs text-slate-400 mb-2">
+          <Cpu className="w-3 h-3" />
+          <span>安全保障：已启用设备指纹识别技术</span>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-teal-500/20 transition-all transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
         >
-          {isSubmitting ? '注册中...' : '注册'}
+          {loading ? (
+             <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+             </svg>
+          ) : '立即注册'}
         </button>
       </form>
-    </div>
+    </motion.div>
   );
 };
 

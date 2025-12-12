@@ -6,8 +6,6 @@ import { motion } from 'framer-motion';
 interface ThemeConfig {
   primary: string;
   primaryText: string;
-  primaryHover: string;
-  secondary: string;
   text: string;
   bg: string;
   cardBg: string;

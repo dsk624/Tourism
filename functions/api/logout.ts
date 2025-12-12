@@ -1,36 +1,24 @@
-import type { Env } from '../../types';
-
-export const onRequest = async (context: any) => {
-  const { request, env } = context;
+export const onRequestPost = async (context: any) => {
+  const db = context.env.DB;
+  const cookieHeader = context.request.headers.get('Cookie');
   
-  // 只允许POST请求
-  if (request.method !== 'POST') {
-    return new Response(null, { status: 405 });
-  }
-  
-  try {
-    // 获取会话ID
-    const sessionId = request.headers.get('Cookie')?.match(/session_id=([^;]+)/)?.[1];
-    const db = env.DB;
-
+  if (cookieHeader) {
+    const cookies = cookieHeader.split(';').reduce((acc: any, cookie: string) => {
+        const [name, value] = cookie.trim().split('=');
+        acc[name] = value;
+        return acc;
+    }, {});
+    
+    const sessionId = cookies['session_id'];
+    
     if (sessionId) {
-      // 从数据库中删除会话
-      await db.prepare('DELETE FROM sessions WHERE session_id = ?').bind(sessionId).run();
+        await db.prepare('DELETE FROM sessions WHERE session_id = ?').bind(sessionId).run();
     }
-
-    // 清除会话Cookie
-    return new Response(JSON.stringify({ message: '登出成功' }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Set-Cookie': 'session_id=; HttpOnly; Secure; SameSite=Lax; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
-      }
-    });
-  } catch (error) {
-    console.error('登出失败:', error);
-    return new Response(JSON.stringify({ message: '登出失败，请稍后重试' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
   }
+
+  const headers = new Headers();
+  headers.append('Content-Type', 'application/json');
+  headers.append('Set-Cookie', 'session_id=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0');
+
+  return new Response(JSON.stringify({ success: true, message: '已安全退出' }), { headers });
 };

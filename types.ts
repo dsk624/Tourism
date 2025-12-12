@@ -15,12 +15,18 @@ export enum LoadingState {
   ERROR = 'ERROR'
 }
 
-export interface ChatMessage {
-  role: 'user' | 'model';
-  text: string;
+export interface User {
+  id: number;
+  username: string;
 }
 
-// Cloudflare D1 and Pages Functions types
+export interface AuthResponse {
+  success: boolean;
+  message: string;
+  user?: User;
+}
+
+// Cloudflare D1 types
 export interface D1Database {
   prepare(query: string): D1PreparedStatement;
   exec(query: string): Promise<D1Result>;
@@ -38,20 +44,24 @@ export interface D1Result<T = any> {
   success: boolean;
   meta?: any;
   error?: string;
-  changes?: number;
-  lastRowId?: number;
 }
-
-export interface PagesFunctionContext {
-  env: Env;
-  request: Request;
-  params: Record<string, string>;
-  waitUntil(promise: Promise<any>): void;
-  next(): Promise<Response>;
-}
-
-export type PagesFunction<T = Env> = (context: PagesFunctionContext & { env: T }) => Promise<Response> | Response;
 
 export interface Env {
   DB: D1Database;
 }
+
+// Cloudflare Pages Function types
+export interface EventContext<Env, P extends string, Data> {
+  request: Request;
+  functionPath: string;
+  waitUntil: (promise: Promise<any>) => void;
+  passThroughOnException: () => void;
+  next: (input?: Request | string, init?: RequestInit) => Promise<Response>;
+  env: Env;
+  params: Record<P, string | string[]>;
+  data: Data;
+}
+
+export type PagesFunction<Env = unknown, Params extends string = any, Data = unknown> = (
+  context: EventContext<Env, Params, Data>
+) => Response | Promise<Response>;

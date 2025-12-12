@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { AttractionCard } from './components/AttractionCard';
 import { DetailModal } from './components/DetailModal';
 import { FeedbackWidget } from './components/FeedbackWidget';
@@ -7,172 +7,264 @@ import RegisterForm from './components/RegisterForm';
 import LoginForm from './components/LoginForm';
 import { ATTRACTIONS, PROVINCES } from './constants';
 import { Attraction } from './types';
-import { motion } from 'framer-motion';
-import { Mountain, Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mountain, Search, Menu, X, User, Sun, Moon, Map } from 'lucide-react';
+
+// 滚动至顶部的组件
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
 
 const App: React.FC = () => {
-  // Default to '河南' as requested for priority
   const [selectedProvince, setSelectedProvince] = useState<string>('河南');
   const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  // 主题切换状态
-  const [theme, setTheme] = useState<'light' | 'dark' | 'teal'>('teal');
-  // 页面切换状态
-  const [currentPage, setCurrentPage] = useState<'home' | 'profile'>('home');
-  // 移动端下拉菜单状态
+  const [theme, setTheme] = useState<'light' | 'dark' | 'teal'>('dark');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // 用户认证状态
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
-  // 主题配置
+
+  // 初始化检查登录状态
+  useEffect(() => {
+    // 实际生产中应请求 /api/user 验证 Session
+    const checkAuth = async () => {
+      // 简单模拟，实际需调用 API 检查 Cookie
+    };
+    checkAuth();
+  }, []);
+
   const themes = {
     light: {
-      primary: 'bg-[rgb(13,148,136)]',
-      primaryText: 'text-[rgb(13,148,136)]',
-      primaryHover: 'hover:bg-[rgb(10,130,120)]',
-      secondary: 'bg-slate-50',
-      text: 'text-slate-800',
-      bg: 'bg-[#f8fafc]',
+      primary: 'bg-teal-600',
+      primaryText: 'text-teal-600',
+      bg: 'bg-slate-50',
       cardBg: 'bg-white',
+      text: 'text-slate-800',
       border: 'border-slate-200'
     },
     dark: {
-      primary: 'bg-[rgb(13,148,136)]',
-      primaryText: 'text-[rgb(13,148,136)]',
-      primaryHover: 'hover:bg-[rgb(10,130,120)]',
-      secondary: 'bg-slate-800',
-      text: 'text-slate-200',
+      primary: 'bg-teal-500',
+      primaryText: 'text-teal-400',
       bg: 'bg-slate-900',
       cardBg: 'bg-slate-800',
+      text: 'text-slate-100',
       border: 'border-slate-700'
     },
     teal: {
-      primary: 'bg-[rgb(13,148,136)]',
-      primaryText: 'text-[rgb(13,148,136)]',
-      primaryHover: 'hover:bg-[rgb(10,130,120)]',
-      secondary: 'bg-teal-50',
-      text: 'text-slate-800',
-      bg: 'bg-[#f0fdfa]',
+      primary: 'bg-teal-600',
+      primaryText: 'text-teal-700',
+      bg: 'bg-teal-50',
       cardBg: 'bg-white',
+      text: 'text-teal-900',
       border: 'border-teal-100'
     }
   };
-  
-  // 当前主题
+
   const currentTheme = themes[theme];
 
   const filteredAttractions = useMemo(() => {
     let filtered = ATTRACTIONS;
-
     if (selectedProvince !== '全部') {
       filtered = filtered.filter(a => a.province === selectedProvince);
     }
-
     if (searchTerm) {
       filtered = filtered.filter(a => 
         a.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
         a.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
     return filtered;
   }, [selectedProvince, searchTerm]);
 
-  // 登出处理函数
   const handleLogout = async () => {
     try {
-      await fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'include'
-      });
+      await fetch('/api/logout', { method: 'POST' });
       setIsAuthenticated(false);
-      setCurrentPage('home');
-    } catch (error) {
-      console.error('登出失败:', error);
-    }
+      window.location.href = '/login';
+    } catch (e) { console.error(e); }
   };
 
-  // 认证路由组件
-  const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    return isAuthenticated ? children : <Navigate to="/login" />;
-  };
+  const NavLink = ({ to, children, active }: { to: string, children: React.ReactNode, active: boolean }) => (
+    <Link to={to}>
+      <div className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+        active 
+          ? `${currentTheme.primary} text-white shadow-lg shadow-teal-500/30` 
+          : `${theme === 'dark' ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`
+      }`}>
+        {children}
+      </div>
+    </Link>
+  );
 
-  // 登录和注册页面布局
-  const AuthPageLayout = ({ children, title }: { children: React.ReactNode; title: string }) => {
+  const Navbar = () => {
+    const location = useLocation();
+    
     return (
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className={`${currentTheme.cardBg} rounded-2xl shadow-xl p-8 md:p-12 ${currentTheme.border} max-w-md mx-auto`}>
-          <h2 className={`text-2xl font-bold ${currentTheme.text} mb-6 text-center`}>{title}</h2>
-          {children}
+      <nav className={`fixed top-0 left-0 right-0 z-40 backdrop-blur-xl border-b transition-colors duration-300 ${
+        theme === 'dark' 
+          ? 'bg-slate-900/80 border-slate-800' 
+          : 'bg-white/80 border-slate-200'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 sm:h-20">
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className={`p-2.5 rounded-xl ${currentTheme.primary} shadow-lg shadow-teal-500/20 transform group-hover:rotate-12 transition-all duration-300`}>
+                <Mountain className="text-white w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col">
+                <span className={`text-lg sm:text-xl font-bold tracking-tight ${currentTheme.text}`}>华夏游</span>
+                <span className={`text-[10px] uppercase tracking-widest opacity-60 font-medium ${currentTheme.text}`}>China Travel</span>
+              </div>
+            </Link>
+
+            {/* Desktop Nav */}
+            <div className="hidden md:flex items-center gap-2">
+              <NavLink to="/" active={location.pathname === '/'}>首页</NavLink>
+              {isAuthenticated ? (
+                 <NavLink to="/profile" active={location.pathname === '/profile'}>我的账户</NavLink>
+              ) : (
+                <>
+                  <NavLink to="/login" active={location.pathname === '/login'}>登录</NavLink>
+                  <Link to="/register">
+                    <button className={`ml-2 px-5 py-2 rounded-full text-sm font-bold transition-all transform hover:scale-105 ${currentTheme.primary} text-white shadow-lg shadow-teal-500/30`}>
+                      注册
+                    </button>
+                  </Link>
+                </>
+              )}
+              
+              <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
+
+              <div className="flex bg-slate-100 dark:bg-slate-800 rounded-full p-1">
+                {(['light', 'dark', 'teal'] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTheme(t)}
+                    className={`p-2 rounded-full transition-all ${theme === t ? 'bg-white dark:bg-slate-600 shadow-sm' : 'text-slate-400'}`}
+                  >
+                    {t === 'light' && <Sun className="w-4 h-4" />}
+                    {t === 'dark' && <Moon className="w-4 h-4" />}
+                    {t === 'teal' && <Map className="w-4 h-4" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              {mobileMenuOpen ? <X /> : <Menu />}
+            </button>
+          </div>
         </div>
-      </main>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className={`md:hidden overflow-hidden border-t ${currentTheme.border} ${currentTheme.cardBg}`}
+            >
+              <div className="px-4 pt-4 pb-6 space-y-2">
+                <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${location.pathname === '/' ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-600' : currentTheme.text}`}>首页</Link>
+                {isAuthenticated ? (
+                  <>
+                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${currentTheme.text}`}>我的账户</Link>
+                  <button onClick={handleLogout} className="w-full text-left block px-4 py-3 rounded-xl font-medium text-red-500">退出登录</button>
+                  </>
+                ) : (
+                  <>
+                    <Link to="/login" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${currentTheme.text}`}>登录</Link>
+                    <Link to="/register" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${currentTheme.primary} text-white`}>立即注册</Link>
+                  </>
+                )}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-center gap-4">
+                  {(['light', 'dark', 'teal'] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTheme(t)}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${theme === t ? 'border-teal-500 text-teal-500' : 'border-slate-200 dark:border-slate-700 text-slate-400'}`}
+                    >
+                       {t === 'light' && <Sun className="w-5 h-5" />}
+                       {t === 'dark' && <Moon className="w-5 h-5" />}
+                       {t === 'teal' && <Map className="w-5 h-5" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </nav>
     );
   };
 
-  // 首页内容
   const HomeContent = () => (
     <>
-      {/* Hero Section */}
-        <div className="relative h-[300px] sm:h-[400px] md:h-[500px] bg-slate-900 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-[rgb(13,148,136)]/30 via-slate-900/50 to-[rgb(13,148,136)]/30" />
+      <div className="relative pt-20">
+        <div className="absolute inset-0 z-0">
           <img 
-            src="https://picsum.photos/1920/1080?random=100" 
-            className="absolute inset-0 w-full h-full object-cover opacity-60"
-            alt="Hero"
-            loading="lazy"
+            src="https://picsum.photos/1920/1080?random=99" 
+            className="w-full h-[500px] object-cover opacity-90"
+            alt="Hero Background" 
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/20 to-slate-900/90" />
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.8 }}
-            >
-              <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold text-white mb-4 sm:mb-6 tracking-tight drop-shadow-lg">
-                探索<span className="text-[rgb(13,148,136)]">中华</span>之美
-              </h1>
-              <p className="text-slate-200 text-base sm:text-lg md:text-xl max-w-2xl mx-auto mb-6 sm:mb-8 font-light">
-                寻访名山大川，品味千年文化。从河南出发，丈量每一寸锦绣河山。
-              </p>
-              
-              {/* Search Bar */}
-              <div className="relative w-full max-w-md mx-auto">
-                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                   <Search className="h-5 w-5 text-[rgb(13,148,136)]" />
-                 </div>
-                 <input
-                   type="text"
-                   className="block w-full pl-12 pr-4 py-3 border border-transparent rounded-full leading-5 bg-white/10 text-white placeholder-white/70 focus:outline-none focus:bg-white/20 focus:ring-2 focus:ring-[rgb(13,148,136)] backdrop-blur-sm text-sm transition-all shadow-lg hover:shadow-[rgb(13,148,136)]/20"
-                   placeholder="搜索景点..."
-                   value={searchTerm}
-                   onChange={(e) => setSearchTerm(e.target.value)}
-                   style={{ minHeight: '48px' }}
-                 />
-              </div>
-            </motion.div>
-          </div>
+          <div className={`absolute inset-0 bg-gradient-to-b ${theme === 'dark' ? 'from-slate-900/30 via-slate-900/80 to-slate-900' : 'from-slate-900/10 via-slate-900/40 to-slate-50'}`} />
         </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 sm:-mt-20 relative z-10 pb-20">
-        
-        {/* Province Filter */}
-        <div className={`${currentTheme.cardBg} rounded-2xl shadow-xl p-6 mb-12 ${currentTheme.border}`}>
-          <div className="flex items-center gap-4 mb-4">
-            <h3 className={`font-bold text-lg ${currentTheme.text} shrink-0`}>热门省份</h3>
-            <div className={`h-px ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'} w-full`}></div>
-          </div>
-          
-          <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-            {['全部', ...PROVINCES].map((province, index) => (
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 text-center">
+          <motion.div
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8 }}
+          >
+            <span className="inline-block px-4 py-1.5 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-xs font-bold tracking-widest uppercase mb-6 backdrop-blur-sm">
+              Discover The Oriental Beauty
+            </span>
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight leading-tight">
+              探索<span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">锦绣中华</span>
+            </h1>
+            <p className="text-slate-200 text-lg sm:text-xl max-w-2xl mx-auto mb-10 font-light leading-relaxed">
+              从古老的河南腹地出发，丈量每一寸山河。AI 智能导览，实时天气监测，为您打造极致的沉浸式旅行体验。
+            </p>
+
+            <div className="relative max-w-lg mx-auto group">
+              <div className="absolute inset-0 bg-teal-500 blur-xl opacity-20 group-hover:opacity-30 transition-opacity rounded-full"></div>
+              <div className="relative flex items-center bg-white/10 backdrop-blur-md border border-white/20 rounded-full p-2 transition-all group-hover:bg-white/20 group-hover:border-white/30">
+                <Search className="ml-4 w-5 h-5 text-teal-300" />
+                <input 
+                  type="text"
+                  placeholder="搜索景点、历史或文化..."
+                  className="w-full bg-transparent border-none focus:ring-0 text-white placeholder-slate-300 px-4 py-2"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 -mt-10 relative z-20">
+        {/* Filter Section */}
+        <div className={`mb-12 overflow-x-auto pb-4 no-scrollbar flex justify-center`}>
+          <div className={`inline-flex p-1.5 rounded-2xl ${theme === 'dark' ? 'bg-slate-800/80 border border-slate-700' : 'bg-white border border-slate-200'} backdrop-blur-sm shadow-xl`}>
+            {['全部', ...PROVINCES].map((province) => (
               <button
                 key={province}
                 onClick={() => setSelectedProvince(province)}
-                className={`
-                  px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 whitespace-nowrap transform hover:rotate-1 hover:scale-105
-                  ${selectedProvince === province 
-                    ? `${currentTheme.primary} text-white shadow-lg shadow-[rgb(13,148,136)]/30 scale-105` 
-                    : `${currentTheme.secondary} ${currentTheme.text} hover:${currentTheme.primary} hover:text-white`}
-                `}
+                className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap ${
+                  selectedProvince === province
+                    ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-lg shadow-teal-500/25'
+                    : `${theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`
+                }`}
               >
                 {province}
               </button>
@@ -180,26 +272,18 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Content Grid */}
-        <div className="mb-8 flex items-center justify-between">
-           <h2 className={`text-2xl font-bold ${currentTheme.text}`}>
-             {selectedProvince === '全部' ? '精选景点' : `${selectedProvince} · 必游之地`}
-           </h2>
-           <span className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>共 {filteredAttractions.length} 个景点</span>
-        </div>
-        
-        {filteredAttractions.length > 0 ? (
-          <motion.div 
-            layout
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {filteredAttractions.map((attraction, index) => (
+        {/* Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <AnimatePresence>
+            {filteredAttractions.map((attraction, i) => (
               <motion.div
-              key={attraction.id}
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: index * 0.05, duration: 0.5 }}
-            >
+                key={attraction.id}
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+              >
                 <AttractionCard 
                   attraction={attraction} 
                   onClick={setSelectedAttraction} 
@@ -208,355 +292,63 @@ const App: React.FC = () => {
                 />
               </motion.div>
             ))}
-          </motion.div>
-        ) : (
-          <div className="text-center py-20">
-            <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} text-lg`}>暂无相关景点信息</p>
-          </div>
-        )}
+          </AnimatePresence>
+        </div>
       </main>
     </>
   );
 
-  // 个人资料页内容
-  const ProfileContent = () => (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className={`${currentTheme.cardBg} rounded-2xl shadow-xl p-8 ${currentTheme.border}`}>
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className={`w-24 h-24 rounded-full ${currentTheme.primary} flex items-center justify-center text-white text-4xl mb-4 shadow-lg shadow-[rgb(13,148,136)]/30`}>
-            👤
-          </div>
-          <h2 className={`text-2xl font-bold ${currentTheme.text} mb-2`}>我的账户</h2>
-          <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>欢迎使用华夏游</p>
-        </div>
-        
-        <div className="space-y-4">
-          <div className={`p-4 rounded-xl ${currentTheme.secondary} ${currentTheme.border} hover:shadow-lg transition-all duration-300`}>
-            <h3 className={`font-medium ${currentTheme.text} mb-2`}>个人信息</h3>
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-              {[
-                { label: '姓名', value: '游客' },
-                { label: '邮箱', value: 'guest@example.com' },
-                { label: '注册时间', value: '2024-01-01' },
-                { label: '上次登录', value: '刚刚' }
-              ].map((item, index) => (
-                <div key={index}>
-                  {item.label}：{item.value}
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          <div className={`p-4 rounded-xl ${currentTheme.secondary} ${currentTheme.border} hover:shadow-lg transition-all duration-300`}>
-            <h3 className={`font-medium ${currentTheme.text} mb-2`}>我的收藏</h3>
-            <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} text-center py-8`}>您还没有收藏任何景点</p>
-          </div>
-          
-          <div className={`p-4 rounded-xl ${currentTheme.secondary} ${currentTheme.border} hover:shadow-lg transition-all duration-300`}>
-            <h3 className={`font-medium ${currentTheme.text} mb-2`}>浏览历史</h3>
-            <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} text-center py-8`}>暂无浏览历史</p>
-          </div>
-          
-          <div className={`p-4 rounded-xl ${currentTheme.secondary} ${currentTheme.border} hover:shadow-lg transition-all duration-300`}>
-            <h3 className={`font-medium ${currentTheme.text} mb-2`}>设置</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className={`${currentTheme.text}`}>深色模式</span>
-                <button className={`w-16 h-10 rounded-full ${theme === 'dark' ? currentTheme.primary : 'bg-slate-300'} transition-all duration-300 shadow-md hover:shadow-lg`} onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={{ minWidth: '44px', minHeight: '44px' }}>
-                  <div className={`w-8 h-8 rounded-full bg-white transition-transform duration-300 ${theme === 'dark' ? 'transform translate-x-6' : ''}`}></div>
-                </button>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className={`${currentTheme.text}`}>推送通知</span>
-                <button className={`w-16 h-10 rounded-full bg-slate-300 transition-all duration-300 shadow-md hover:shadow-lg`} style={{ minWidth: '44px', minHeight: '44px' }}>
-                  <div className={`w-8 h-8 rounded-full bg-white transition-transform duration-300`}></div>
-                </button>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className={`${currentTheme.text}`}>退出登录</span>
-                <button 
-                  className={`${currentTheme.primary} hover:${currentTheme.primaryHover} text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg`} 
-                  onClick={handleLogout}
-                  style={{ minWidth: '44px', minHeight: '44px' }}
-                >
-                  退出
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-
   return (
     <Router>
-      <div className={`min-h-screen ${currentTheme.bg} ${currentTheme.text}`}>
-        {/* Navbar */}
-        <nav className={`sticky top-0 z-40 ${currentTheme.cardBg}/80 backdrop-blur-md border-b ${currentTheme.border}/60`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-20">
-              <button
-                onClick={() => setCurrentPage('home')}
-                className="flex items-center gap-2 transition-transform hover:scale-105"
-                aria-label="返回首页"
-              >
-                 <div className={`${currentTheme.primary} p-2 rounded-lg`}>
-                   <Mountain className="text-white w-6 h-6" />
-                 </div>
-                 <span className={`text-xl font-bold ${currentTheme.text}`}>
-                   华夏游
-                 </span>
-              </button>
-              
-              {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center gap-4">
-                {/* 页面切换按钮 */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setCurrentPage('home')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all ${currentPage === 'home' ? `${currentTheme.primary} text-white` : `${currentTheme.secondary} ${currentTheme.text}`}`}
-                    style={{ minWidth: '44px', minHeight: '44px' }}
-                  >
-                    首页
-                  </button>
-                  {isAuthenticated ? (
-                    <button
-                      onClick={() => setCurrentPage('profile')}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all ${currentPage === 'profile' ? `${currentTheme.primary} text-white` : `${currentTheme.secondary} ${currentTheme.text}`}`}
-                      style={{ minWidth: '44px', minHeight: '44px' }}
-                    >
-                      我的
-                    </button>
-                  ) : (
-                    <>
-                      <Link to="/login">
-                        <button
-                          className={`px-4 py-2 rounded-lg font-medium transition-all ${currentTheme.secondary} ${currentTheme.text} hover:${currentTheme.primary} hover:text-white`}
-                          style={{ minWidth: '44px', minHeight: '44px' }}
-                        >
-                          登录
-                        </button>
-                      </Link>
-                      <Link to="/register">
-                        <button
-                          className={`px-4 py-2 rounded-lg font-medium transition-all ${currentTheme.primary} text-white hover:${currentTheme.primaryHover}`}
-                          style={{ minWidth: '44px', minHeight: '44px' }}
-                        >
-                          注册
-                        </button>
-                      </Link>
-                    </>
-                  )}
-                </div>
-                
-                {/* 主题切换器 */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setTheme('light')}
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${theme === 'light' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
-                    aria-label="浅色主题"
-                    style={{ minWidth: '44px', minHeight: '44px' }}
-                  >
-                    ☀️
-                  </button>
-                  <button
-                    onClick={() => setTheme('dark')}
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${theme === 'dark' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
-                    aria-label="深色主题"
-                    style={{ minWidth: '44px', minHeight: '44px' }}
-                  >
-                    🌙
-                  </button>
-                  <button
-                    onClick={() => setTheme('teal')}
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${theme === 'teal' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
-                    aria-label="青色主题"
-                    style={{ minWidth: '44px', minHeight: '44px' }}
-                  >
-                    🏞️
-                  </button>
-                </div>
-              </div>
-              
-              {/* Mobile Navigation */}
-              <div className="flex items-center gap-3 md:hidden">
-                {/* 移动端下拉菜单 */}
-                <div className="relative">
-                  <button
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    className={`${currentTheme.primary} p-3 rounded-lg flex items-center justify-center`}
-                    aria-label="菜单"
-                    style={{ minWidth: '44px', minHeight: '44px' }}
-                  >
-                    <span className="text-white">☰</span>
-                  </button>
-                  
-                  {/* 下拉菜单 */}
-                  {mobileMenuOpen && (
-                    <div className={`absolute right-0 mt-2 w-48 ${currentTheme.cardBg} rounded-xl shadow-2xl ${currentTheme.border} z-50`}>
-                      <div className="py-2">
-                        {/* 页面切换 */}
-                        <div className="px-4 py-2 text-sm font-medium ${currentTheme.text} border-b ${currentTheme.border}">页面导航</div>
-                        <button
-                          onClick={() => {
-                            setCurrentPage('home');
-                            setMobileMenuOpen(false);
-                          }}
-                          className={`w-full text-left px-4 py-3 text-sm transition-all ${currentPage === 'home' ? `${currentTheme.primary} text-white` : `${currentTheme.text} hover:${currentTheme.primary} hover:text-white`}`}
-                        >
-                          首页
-                        </button>
-                        {isAuthenticated ? (
-                          <button
-                            onClick={() => {
-                              setCurrentPage('profile');
-                              setMobileMenuOpen(false);
-                            }}
-                            className={`w-full text-left px-4 py-3 text-sm transition-all ${currentPage === 'profile' ? `${currentTheme.primary} text-white` : `${currentTheme.text} hover:${currentTheme.primary} hover:text-white`}`}
-                          >
-                            我的
-                          </button>
-                        ) : (
-                          <>
-                            <Link to="/login">
-                              <button
-                                onClick={() => setMobileMenuOpen(false)}
-                                className={`w-full text-left px-4 py-3 text-sm transition-all ${currentTheme.text} hover:${currentTheme.primary} hover:text-white`}
-                              >
-                                登录
-                              </button>
-                            </Link>
-                            <Link to="/register">
-                              <button
-                                onClick={() => setMobileMenuOpen(false)}
-                                className={`w-full text-left px-4 py-3 text-sm transition-all ${currentTheme.text} hover:${currentTheme.primary} hover:text-white`}
-                              >
-                                注册
-                              </button>
-                            </Link>
-                          </>
-                        )}
-                        
-                        {/* 主题切换 */}
-                        <div className="px-4 py-2 text-sm font-medium ${currentTheme.text} border-b ${currentTheme.border} mt-2">主题设置</div>
-                        <div className="flex justify-around px-4 py-3 gap-2">
-                          <button
-                            onClick={() => {
-                              setTheme('light');
-                              setMobileMenuOpen(false);
-                            }}
-                            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${theme === 'light' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
-                            aria-label="浅色主题"
-                          >
-                            ☀️
-                          </button>
-                          <button
-                            onClick={() => {
-                              setTheme('dark');
-                              setMobileMenuOpen(false);
-                            }}
-                            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${theme === 'dark' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
-                            aria-label="深色主题"
-                          >
-                            🌙
-                          </button>
-                          <button
-                            onClick={() => {
-                              setTheme('teal');
-                              setMobileMenuOpen(false);
-                            }}
-                            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${theme === 'teal' ? currentTheme.primary + ' text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}
-                            aria-label="青色主题"
-                          >
-                            🏞️
-                          </button>
-                        </div>
-                        
-                        {/* 登出按钮 */}
-                        {isAuthenticated && (
-                          <>
-                            <div className="px-4 py-2 text-sm font-medium ${currentTheme.text} border-b ${currentTheme.border} mt-2">账户管理</div>
-                            <button
-                              onClick={() => {
-                                handleLogout();
-                                setMobileMenuOpen(false);
-                              }}
-                              className={`w-full text-left px-4 py-3 text-sm transition-all ${currentTheme.primary} text-white hover:${currentTheme.primaryHover}`}
-                            >
-                              退出登录
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </nav>
+      <ScrollToTop />
+      <div className={`min-h-screen transition-colors duration-500 ${currentTheme.bg} ${currentTheme.text} font-sans selection:bg-teal-500 selection:text-white`}>
+        <Navbar />
 
-        {/* Routes */}
         <Routes>
-          {/* 首页路由 */}
           <Route path="/" element={<HomeContent />} />
-          
-          {/* 登录路由 */}
-          <Route 
-            path="/login" 
-            element={
-              isAuthenticated ? (
-                <Navigate to="/profile" />
-              ) : (
-                <AuthPageLayout title="用户登录">
-                  <LoginForm onLoginSuccess={() => setIsAuthenticated(true)} />
-                </AuthPageLayout>
-              )
-            } 
-          />
-          
-          {/* 注册路由 */}
-          <Route 
-            path="/register" 
-            element={
-              isAuthenticated ? (
-                <Navigate to="/profile" />
-              ) : (
-                <AuthPageLayout title="用户注册">
-                  <RegisterForm />
-                </AuthPageLayout>
-              )
-            } 
-          />
-          
-          {/* 个人资料路由 */}
-          <Route 
-            path="/profile" 
-            element={
-              <ProtectedRoute>
-                <ProfileContent />
-              </ProtectedRoute>
-            } 
-          />
+          <Route path="/login" element={
+            isAuthenticated ? <Navigate to="/profile" /> : (
+              <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen">
+                <div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}>
+                   <LoginForm onLoginSuccess={() => setIsAuthenticated(true)} />
+                </div>
+              </div>
+            )
+          } />
+          <Route path="/register" element={
+            isAuthenticated ? <Navigate to="/profile" /> : (
+              <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen">
+                <div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}>
+                   <RegisterForm />
+                </div>
+              </div>
+            )
+          } />
+          <Route path="/profile" element={
+             isAuthenticated ? (
+               <div className="pt-32 px-4 max-w-4xl mx-auto">
+                 <div className={`p-8 rounded-3xl ${currentTheme.cardBg} border ${currentTheme.border} shadow-xl`}>
+                   <h1 className="text-3xl font-bold mb-4">我的个人中心</h1>
+                   <p className="opacity-70">欢迎回来，您的旅行数据已通过 D1 数据库安全同步。</p>
+                 </div>
+               </div>
+             ) : <Navigate to="/login" />
+          } />
         </Routes>
 
-        <footer className={`${currentTheme.cardBg} border-t ${currentTheme.border} py-12`}>
-           <div className="max-w-7xl mx-auto px-4 text-center">
-              <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} mb-2`}>© 2024 华夏游 China Travel Guide</p>
-            <p className={`${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'} text-sm`}>Powered by React & Cloudflare</p>
-         </div>
-      </footer>
+        <footer className={`py-12 border-t ${currentTheme.border} ${theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'}`}>
+          <div className="max-w-7xl mx-auto px-6 text-center">
+            <div className="flex justify-center items-center gap-2 mb-4 opacity-50">
+               <Mountain className="w-5 h-5" />
+               <span className="font-bold">华夏游</span>
+            </div>
+            <p className="text-sm opacity-40">© 2025 China Travel Guide. Powered by Cloudflare Pages & D1.</p>
+          </div>
+        </footer>
 
-      {/* Modal */}
-      <DetailModal 
-        attraction={selectedAttraction} 
-        onClose={() => setSelectedAttraction(null)} 
-      />
-
-      {/* Floating Feedback Widget */}
-      <FeedbackWidget />
-    </div>
+        <DetailModal attraction={selectedAttraction} onClose={() => setSelectedAttraction(null)} />
+        <FeedbackWidget />
+      </div>
     </Router>
   );
 };
