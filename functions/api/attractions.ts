@@ -32,6 +32,17 @@ export const onRequest = async (context: any) => {
     return user && user.is_admin ? user : null;
   };
 
+  // Safe JSON parse helper
+  const safeParseTags = (tags: string | null) => {
+    if (!tags) return [];
+    try {
+      return JSON.parse(tags);
+    } catch (e) {
+      console.error("Failed to parse tags:", tags);
+      return [];
+    }
+  };
+
   try {
     // === Public Route: GET ===
     if (request.method === 'GET') {
@@ -42,7 +53,7 @@ export const onRequest = async (context: any) => {
          const formatted = {
            ...attraction,
            imageUrl: attraction.image_url,
-           tags: JSON.parse(attraction.tags as string || '[]')
+           tags: safeParseTags(attraction.tags as string)
          };
          
          return new Response(JSON.stringify(formatted), { headers: { 'Content-Type': 'application/json' }});
@@ -52,7 +63,7 @@ export const onRequest = async (context: any) => {
       const results = attractions.results?.map((a: any) => ({
         ...a,
         imageUrl: a.image_url,
-        tags: JSON.parse(a.tags || '[]')
+        tags: safeParseTags(a.tags)
       })) || [];
       
       return new Response(JSON.stringify(results), { headers: { 'Content-Type': 'application/json' }});
@@ -81,7 +92,6 @@ export const onRequest = async (context: any) => {
 
       // 严格的评分校验 (0-5)
       let finalRating = 5.0;
-      // 检查 rating 是否存在且不为空字符串 (允许数字 0)
       if (rating !== undefined && rating !== null && String(rating).trim() !== '') {
           const r = Number(rating);
           if (isNaN(r) || r < 0 || r > 5) {
@@ -121,13 +131,8 @@ export const onRequest = async (context: any) => {
           }
           finalRating = r;
        }
-       // 如果 finalRating 仍为 undefined (未传递), 且是 PUT 全量更新，可能导致 NULL 错误。
-       // 假设前端在编辑模式下总是传递所有字段，如果 rating 为空，我们使用现有值或默认值。
-       // 为了健壮性，如果 finalRating 无效（未传），我们可以选择不更新该字段（需要动态 SQL）或者设定一个默认值。
-       // 根据 AdminModal 逻辑，提交时会带上所有字段。如果用户清空评分，finalRating 将在这里报错或被设为 default。
-       // 此处我们假设如果前端传了 rating 字段，就必须是合法的。如果没有传，使用原值(这里全量更新会覆盖，所以必须传)。
+       
        if (finalRating === undefined || finalRating === null) {
-          // 如果没有传递评分，给一个默认值 0 或者保持原有逻辑(可能会报错如果数据库 NOT NULL)
           finalRating = 0; 
        }
 

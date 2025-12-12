@@ -14,21 +14,40 @@ const fetchClient = async <T>(endpoint: string, options: RequestInit = {}): Prom
     },
   };
 
+  let response: Response | undefined;
+  let text = '';
+
   try {
-    const response = await fetch(endpoint, config);
+    response = await fetch(endpoint, config);
     
     // Handle 204 No Content
     if (response.status === 204) {
       return {} as T;
     }
 
-    const data = await response.json();
+    // Read text first to avoid "Unexpected token..." errors on non-JSON responses
+    text = await response.text();
 
-    if (!response.ok) {
-      throw new Error(data.message || data.error || `Request failed with status ${response.status}`);
+    // Try to parse JSON if text exists
+    let data: any = {};
+    if (text && text.trim().length > 0) {
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        // If parsing fails but response was not OK, we use the text as error message below
+        // If response was OK but parsing failed, that's a real issue
+        if (response.ok) {
+           console.error(`JSON Parse Error for ${endpoint}. Raw response:`, text);
+           throw new Error('Received invalid JSON from server');
+        }
+      }
     }
 
-    return data;
+    if (!response.ok) {
+      throw new Error(data.message || data.error || `Request failed with status ${response.status}: ${text.substring(0, 100)}`);
+    }
+
+    return data as T;
   } catch (error: any) {
     console.error(`API Error (${endpoint}):`, error);
     throw error;

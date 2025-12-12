@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Attraction } from '../types';
 import { MapPin, Star, Heart } from 'lucide-react';
@@ -73,6 +72,7 @@ export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, cu
         {/* Favorite Button */}
         {onToggleFavorite && (
           <button
+            type="button"
             onClick={(e) => onToggleFavorite(e, attraction.id)}
             className="absolute top-3 right-3 z-10 bg-black/20 hover:bg-black/40 backdrop-blur-md p-2 rounded-full text-white transition-all transform hover:scale-110 active:scale-95"
           >
