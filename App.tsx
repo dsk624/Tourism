@@ -5,12 +5,12 @@ import { DetailModal } from './components/DetailModal';
 import { FeedbackWidget } from './components/FeedbackWidget';
 import { WeatherWidget } from './components/WeatherWidget';
 import { AdminModal } from './components/AdminModal';
+import { ContactModal } from './components/ContactModal';
 import RegisterForm from './components/RegisterForm';
 import LoginForm from './components/LoginForm';
-import { ATTRACTIONS as STATIC_ATTRACTIONS, PROVINCES } from './constants';
 import { Attraction, User } from './types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mountain, Search, Menu, X, User as UserIcon, Sun, Moon, Map, Loader2, Plus, Edit } from 'lucide-react';
+import { Mountain, Search, Menu, X, User as UserIcon, Sun, Moon, Map, Loader2, Plus, Edit, MessageCircle } from 'lucide-react';
 
 // 滚动至顶部的组件
 const ScrollToTop = () => {
@@ -22,14 +22,13 @@ const ScrollToTop = () => {
 };
 
 const App: React.FC = () => {
-  const [selectedProvince, setSelectedProvince] = useState<string>('河南');
+  const [selectedProvince, setSelectedProvince] = useState<string>('全部');
   const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [theme, setTheme] = useState<'light' | 'dark' | 'teal'>('dark');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Auth & Admin State
-  // Initialize from localStorage for persistence (Remember Me)
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return !!localStorage.getItem('china_travel_user');
   });
@@ -37,43 +36,52 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('china_travel_user');
     return saved ? JSON.parse(saved) : null;
   });
-  // If we have local data, don't show loading spinner, assume logged in (optimistic)
-  // Otherwise, wait for server check.
   const [isAuthChecking, setIsAuthChecking] = useState(() => {
     return !localStorage.getItem('china_travel_user');
   });
 
-  // Data State
-  const [attractions, setAttractions] = useState<Attraction[]>(STATIC_ATTRACTIONS);
-  const [isDataLoading, setIsDataLoading] = useState(false);
+  // Data State - Initialize empty, fetch from DB
+  const [attractions, setAttractions] = useState<Attraction[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
-  // Admin Modal State
+  // Computed Provinces List from actual data
+  const dynamicProvinces = useMemo(() => {
+    const allProvinces = attractions.map(a => a.province);
+    return ['全部', ...Array.from(new Set(allProvinces))];
+  }, [attractions]);
+
+  // Modals State
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [editingAttraction, setEditingAttraction] = useState<Attraction | null>(null);
 
-  // Fetch Attractions
+  // Fetch Attractions from D1 via API
   const fetchAttractions = async () => {
     setIsDataLoading(true);
     try {
       const res = await fetch('/api/attractions');
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
            const mappedData = data.map((item: any) => ({
              ...item,
              imageUrl: item.image_url || item.imageUrl
            }));
            setAttractions(mappedData);
         }
+      } else {
+        console.warn("API returned error", res.status);
+        setAttractions([]);
       }
     } catch (e) {
-      console.warn("Failed to fetch from DB, using static data", e);
+      console.error("Failed to fetch from DB", e);
+      setAttractions([]);
     } finally {
       setIsDataLoading(false);
     }
   };
 
-  // Check Auth
+  // Check Auth & Initial Fetch
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -83,22 +91,16 @@ const App: React.FC = () => {
           if (data.authenticated) {
             setIsAuthenticated(true);
             setCurrentUser(data.user);
-            // Sync localStorage
             localStorage.setItem('china_travel_user', JSON.stringify(data.user));
           } else {
-            // Session invalid/expired
             setIsAuthenticated(false);
             setCurrentUser(null);
             localStorage.removeItem('china_travel_user');
           }
-        } else {
-           // Request failed, assume logout if not network error? 
-           // Better to do nothing or fallback to unauth if 401.
-           if (res.status === 401) {
+        } else if (res.status === 401) {
              setIsAuthenticated(false);
              setCurrentUser(null);
              localStorage.removeItem('china_travel_user');
-           }
         }
       } catch (e) {
         console.error("Auth check failed", e);
@@ -247,6 +249,17 @@ const App: React.FC = () => {
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-2">
               <NavLink to="/" active={location.pathname === '/'}>首页</NavLink>
+              
+              <button 
+                onClick={() => setIsContactModalOpen(true)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
+                  theme === 'dark' ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                <MessageCircle className="w-4 h-4" />
+                联系我
+              </button>
+
               {isAuthenticated ? (
                  <NavLink to="/profile" active={location.pathname === '/profile'}>
                    {currentUser?.isAdmin ? '管理面板' : '我的账户'}
@@ -300,6 +313,13 @@ const App: React.FC = () => {
             >
               <div className="px-4 pt-4 pb-6 space-y-2">
                 <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${location.pathname === '/' ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-600' : currentTheme.text}`}>首页</Link>
+                <button 
+                  onClick={() => { setIsContactModalOpen(true); setMobileMenuOpen(false); }}
+                  className={`w-full text-left block px-4 py-3 rounded-xl font-medium ${currentTheme.text} flex items-center gap-2`}
+                >
+                  <MessageCircle className="w-4 h-4" /> 联系我
+                </button>
+                
                 {isAuthenticated ? (
                   <>
                   <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${currentTheme.text}`}>{currentUser?.isAdmin ? '管理面板' : '我的账户'}</Link>
@@ -394,59 +414,70 @@ const App: React.FC = () => {
         {/* Filter Section */}
         <div className={`mb-12 overflow-x-auto pb-4 no-scrollbar flex justify-center`}>
           <div className={`inline-flex p-1.5 rounded-2xl ${theme === 'dark' ? 'bg-slate-800/80 border border-slate-700' : 'bg-white border border-slate-200'} backdrop-blur-sm shadow-xl`}>
-            {['全部', ...PROVINCES].map((province) => (
-              <button
-                key={province}
-                onClick={() => setSelectedProvince(province)}
-                className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap ${
-                  selectedProvince === province
-                    ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-lg shadow-teal-500/25'
-                    : `${theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`
-                }`}
-              >
-                {province}
-              </button>
-            ))}
+            {isDataLoading ? (
+               <div className="px-5 py-2.5 text-slate-400">加载地区...</div>
+            ) : (
+              dynamicProvinces.map((province) => (
+                <button
+                  key={province}
+                  onClick={() => setSelectedProvince(province)}
+                  className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap ${
+                    selectedProvince === province
+                      ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-lg shadow-teal-500/25'
+                      : `${theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`
+                  }`}
+                >
+                  {province}
+                </button>
+              ))
+            )}
           </div>
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          <AnimatePresence>
-            {filteredAttractions.map((attraction, i) => (
-              <motion.div
-                key={attraction.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3, delay: i * 0.05 }}
-                className="relative group"
-              >
-                <AttractionCard 
-                  attraction={attraction} 
-                  onClick={setSelectedAttraction} 
-                  theme={theme}
-                  currentTheme={currentTheme}
-                />
-                
-                {isAuthenticated && currentUser?.isAdmin && (
-                  <button 
-                    onClick={(e) => openEditModal(e, attraction)}
-                    className="absolute top-4 right-4 z-20 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          {filteredAttractions.length === 0 && (
-             <div className="col-span-full text-center py-20 text-slate-500">
-                <p>未找到相关景点，试着换个关键词？</p>
-             </div>
-          )}
-        </div>
+        {isDataLoading ? (
+          <div className="flex justify-center items-center py-20">
+             <Loader2 className="w-10 h-10 text-teal-500 animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <AnimatePresence>
+              {filteredAttractions.map((attraction, i) => (
+                <motion.div
+                  key={attraction.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.3, delay: i * 0.05 }}
+                  className="relative group"
+                >
+                  <AttractionCard 
+                    attraction={attraction} 
+                    onClick={setSelectedAttraction} 
+                    theme={theme}
+                    currentTheme={currentTheme}
+                    searchTerm={searchTerm} // Pass search term for highlighting
+                  />
+                  
+                  {isAuthenticated && currentUser?.isAdmin && (
+                    <button 
+                      onClick={(e) => openEditModal(e, attraction)}
+                      className="absolute top-4 right-4 z-20 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            {filteredAttractions.length === 0 && (
+               <div className="col-span-full text-center py-20 text-slate-500">
+                  <p>未找到相关景点，试着换个关键词？</p>
+               </div>
+            )}
+          </div>
+        )}
       </main>
       
       <AdminModal 
@@ -455,6 +486,10 @@ const App: React.FC = () => {
         onSubmit={handleAdminSave}
         onDelete={handleAdminDelete}
         initialData={editingAttraction}
+      />
+      <ContactModal 
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
       />
     </>
   );
@@ -477,7 +512,6 @@ const App: React.FC = () => {
                 <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen">
                   <div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}>
                     <LoginForm onLoginSuccess={() => {
-                        // After login, re-check auth or sync state
                          setIsAuthChecking(true);
                          fetch('/api/me').then(r => r.json()).then(d => {
                              if(d.authenticated) {

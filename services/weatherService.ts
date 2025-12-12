@@ -10,22 +10,22 @@ const DEFAULT_KAIFENG = {
 
 export const getUserLocation = async (): Promise<LocationData> => {
   try {
-    // 优先尝试 ipapi.co
-    const response = await fetch('https://ipapi.co/json/');
+    // 使用 get.geojs.io，它更稳定且不易触发 429 限制
+    const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
     if (!response.ok) throw new Error('Location API failed');
     
     const data = await response.json();
     
-    // 如果返回数据有问题，抛出错误以触发 Fallback
-    if (data.error || !data.latitude || !data.longitude) {
+    // 数据校验
+    if (!data.latitude || !data.longitude) {
         throw new Error('Invalid location data');
     }
 
     return {
       city: data.city || DEFAULT_KAIFENG.city,
       province: data.region || DEFAULT_KAIFENG.province,
-      latitude: data.latitude,
-      longitude: data.longitude
+      latitude: parseFloat(data.latitude),
+      longitude: parseFloat(data.longitude)
     };
   } catch (error) {
     console.warn('Location detection failed, defaulting to Kaifeng:', error);

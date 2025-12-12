@@ -17,17 +17,38 @@ interface Props {
   onClick: (attraction: Attraction) => void;
   theme: 'light' | 'dark' | 'teal';
   currentTheme: ThemeConfig;
+  searchTerm?: string;
 }
 
-export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, currentTheme }) => {
+// Helper component for highlighting text
+const HighlightText: React.FC<{ text: string; highlight?: string }> = ({ text, highlight }) => {
+  if (!highlight || !highlight.trim()) {
+    return <>{text}</>;
+  }
+
+  const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+  return (
+    <>
+      {parts.map((part, i) => (
+        part.toLowerCase() === highlight.toLowerCase() ? (
+          <span key={i} className="bg-yellow-300 text-slate-900 px-0.5 rounded-sm font-medium">{part}</span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      ))}
+    </>
+  );
+};
+
+export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, currentTheme, searchTerm = '' }) => {
   return (
     <motion.div
       layoutId={`card-${attraction.id}`}
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
       onClick={() => onClick(attraction)}
-      className={`group cursor-pointer ${currentTheme.cardBg} rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 border ${currentTheme.border}`}
+      className={`group cursor-pointer ${currentTheme.cardBg} rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 border ${currentTheme.border} h-full flex flex-col`}
     >
-      <div className="relative h-48 overflow-hidden">
+      <div className="relative h-48 overflow-hidden flex-shrink-0">
         <img
           src={attraction.imageUrl}
           alt={attraction.name}
@@ -39,23 +60,25 @@ export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, cu
           <Star className="w-3 h-3 fill-amber-500" />
           {attraction.rating}
         </div>
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12">
-          <h3 className="text-white font-bold text-base sm:text-lg truncate">{attraction.name}</h3>
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pt-12">
+          <h3 className="text-white font-bold text-base sm:text-lg truncate">
+            <HighlightText text={attraction.name} highlight={searchTerm} />
+          </h3>
         </div>
       </div>
       
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-grow">
         <div className={`flex items-center gap-1 ${currentTheme.primaryText} text-xs sm:text-sm mb-2 font-medium`}>
           <MapPin className="w-3 h-3" />
-          {attraction.province}
+          <HighlightText text={attraction.province} highlight={searchTerm} />
         </div>
-        <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} text-sm sm:text-base line-clamp-2 leading-relaxed mb-3`}>
-          {attraction.description}
+        <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} text-sm sm:text-base line-clamp-3 leading-relaxed mb-4 flex-grow`}>
+          <HighlightText text={attraction.description} highlight={searchTerm} />
         </p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 mt-auto">
           {attraction.tags.map((tag) => (
             <span key={tag} className={`text-[10px] sm:text-xs uppercase tracking-wider ${theme === 'dark' ? 'text-slate-400 bg-slate-800 border-slate-700' : 'text-slate-400 bg-slate-50 border-slate-100'} px-2 py-1 rounded-full border`}>
-              {tag}
+              <HighlightText text={tag} highlight={searchTerm} />
             </span>
           ))}
         </div>
