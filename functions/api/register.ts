@@ -1,6 +1,5 @@
-import { v4 as uuidv4 } from 'uuid';
-
 // 使用 Web Crypto API 进行加盐哈希
+// 移除 uuid 库依赖，改用 crypto.randomUUID()
 async function hashPassword(password: string, salt: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(password + salt);
@@ -25,24 +24,28 @@ export const onRequestPost = async (context: any) => {
       return new Response(JSON.stringify({ success: false, message: '该用户名已被占用' }), { status: 409 });
     }
 
-    // 3. 密码哈希
+    // 3. 密码哈希 (使用原生 crypto)
     const salt = crypto.randomUUID().replace(/-/g, '');
     const hashedPassword = await hashPassword(password, salt);
     const finalHash = `${salt}:${hashedPassword}`; // 存储格式: salt:hash
 
-    // 4. 插入用户
+    // 4. 判断是否为特定管理员账号
+    // 如果注册用户名为 adminPro，自动设为管理员
+    const isAdmin = username === 'adminPro' ? 1 : 0;
+
+    // 5. 插入用户
     const result = await db.prepare(
-      'INSERT INTO users (username, password_hash) VALUES (?, ?)'
-    ).bind(username, finalHash).run();
+      'INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)'
+    ).bind(username, finalHash, isAdmin).run();
 
     if (!result.success) {
       throw new Error('Database insert failed');
     }
     
-    // 获取新用户ID (D1的meta.last_row_id可能不稳定，这里为了保险再查一次，或者信任result.meta.last_row_id)
+    // 获取新用户ID
     const newUser = await db.prepare('SELECT id FROM users WHERE username = ?').bind(username).first();
 
-    // 5. 记录设备指纹 (可选，用于安全风控)
+    // 6. 记录设备指纹
     if (fingerprint && newUser) {
        await db.prepare(
         'INSERT INTO user_devices (user_id, device_fingerprint, device_name) VALUES (?, ?, ?)'
@@ -53,8 +56,11 @@ export const onRequestPost = async (context: any) => {
       headers: { 'Content-Type': 'application/json' }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Register error:', error);
-    return new Response(JSON.stringify({ success: false, message: '服务器内部错误' }), { status: 500 });
+    return new Response(JSON.stringify({ 
+      success: false, 
+      message: '注册失败: ' + (error.message || 'Unknown error') 
+    }), { status: 500 });
   }
 };

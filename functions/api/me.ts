@@ -9,7 +9,7 @@ export const onRequest = async (context: any) => {
     const cookieHeader = request.headers.get('Cookie');
     if (!cookieHeader) {
       return new Response(JSON.stringify({ authenticated: false }), {
-        status: 401,
+        status: 200, // Return 200 with auth: false usually cleaner for frontend checks
         headers: { 'Content-Type': 'application/json' }
       });
     }
@@ -23,7 +23,7 @@ export const onRequest = async (context: any) => {
     const sessionId = cookies['session_id'];
     if (!sessionId) {
       return new Response(JSON.stringify({ authenticated: false }), {
-        status: 401,
+        status: 200,
         headers: { 'Content-Type': 'application/json' }
       });
     }
@@ -33,7 +33,7 @@ export const onRequest = async (context: any) => {
 
     if (!session) {
       return new Response(JSON.stringify({ authenticated: false, message: 'Invalid session' }), {
-        status: 401,
+        status: 200,
         headers: { 'Content-Type': 'application/json' }
       });
     }
@@ -42,7 +42,7 @@ export const onRequest = async (context: any) => {
     if (new Date(session.expires_at) < new Date()) {
       await db.prepare('DELETE FROM sessions WHERE session_id = ?').bind(sessionId).run();
       return new Response(JSON.stringify({ authenticated: false, message: 'Session expired' }), {
-        status: 401,
+        status: 200,
         headers: { 'Content-Type': 'application/json' }
       });
     }
@@ -51,7 +51,7 @@ export const onRequest = async (context: any) => {
     const user = await db.prepare('SELECT id, username, is_admin FROM users WHERE id = ?').bind(session.user_id).first();
     
     if (!user) {
-        return new Response(JSON.stringify({ authenticated: false }), { status: 401 });
+        return new Response(JSON.stringify({ authenticated: false }), { status: 200 });
     }
 
     return new Response(JSON.stringify({ 
@@ -62,9 +62,9 @@ export const onRequest = async (context: any) => {
       headers: { 'Content-Type': 'application/json' }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Auth check error:', error);
-    return new Response(JSON.stringify({ authenticated: false, message: 'Server error' }), {
+    return new Response(JSON.stringify({ authenticated: false, message: 'Server error: ' + error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

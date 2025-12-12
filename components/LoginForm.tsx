@@ -51,6 +51,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
 
       const data = await res.json();
       if (data.success) {
+        // Save user data to localStorage for persistence
+        if (data.user) {
+          localStorage.setItem('china_travel_user', JSON.stringify(data.user));
+        }
         onLoginSuccess();
         navigate('/profile');
       } else {

@@ -1,25 +1,36 @@
 import { LocationData, WeatherData } from '../types';
 
+// 开封坐标
+const DEFAULT_KAIFENG = {
+    city: '开封',
+    province: '河南',
+    latitude: 34.7973,
+    longitude: 114.3076
+};
+
 export const getUserLocation = async (): Promise<LocationData> => {
   try {
-    const response = await fetch('https://reallyfreegeoip.org/json');
-    if (!response.ok) throw new Error('Failed to fetch location');
+    // 优先尝试 ipapi.co
+    const response = await fetch('https://ipapi.co/json/');
+    if (!response.ok) throw new Error('Location API failed');
+    
     const data = await response.json();
+    
+    // 如果返回数据有问题，抛出错误以触发 Fallback
+    if (data.error || !data.latitude || !data.longitude) {
+        throw new Error('Invalid location data');
+    }
+
     return {
-      city: data.city,
-      province: data.region_name,
+      city: data.city || DEFAULT_KAIFENG.city,
+      province: data.region || DEFAULT_KAIFENG.province,
       latitude: data.latitude,
       longitude: data.longitude
     };
   } catch (error) {
-    console.error('Location error:', error);
-    // Fallback to Zhengzhou, Henan
-    return {
-      city: '郑州',
-      province: '河南',
-      latitude: 34.7466,
-      longitude: 113.6253
-    };
+    console.warn('Location detection failed, defaulting to Kaifeng:', error);
+    // Fallback to Kaifeng
+    return DEFAULT_KAIFENG;
   }
 };
 
@@ -34,9 +45,9 @@ export const getWeather = async (lat: number, lon: number): Promise<WeatherData 
       temperature: data.current_weather.temperature,
       weatherCode: data.current_weather.weathercode,
       isDay: data.current_weather.is_day === 1,
-      precipitation: data.hourly.precipitation[0] || 0, // Current hour roughly
-      sunrise: data.daily.sunrise[0],
-      sunset: data.daily.sunset[0]
+      precipitation: data.hourly?.precipitation?.[0] || 0,
+      sunrise: data.daily?.sunrise?.[0],
+      sunset: data.daily?.sunset?.[0]
     };
   } catch (error) {
     console.error('Weather error:', error);

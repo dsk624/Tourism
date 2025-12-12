@@ -1,5 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
-
+// 移除 uuid 库依赖
 export const onRequest = async (context: any) => {
   const { request, env } = context;
   const db = env.DB;
@@ -50,7 +49,8 @@ export const onRequest = async (context: any) => {
 
     if (request.method === 'POST') {
       const body = await request.json();
-      const newId = uuidv4();
+      // 使用原生 crypto 生成 UUID
+      const newId = crypto.randomUUID();
       const { name, province, description, imageUrl, tags, rating } = body;
       
       await db.prepare(
@@ -80,9 +80,8 @@ export const onRequest = async (context: any) => {
 
     return new Response(null, { status: 405 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Attraction API error:', error);
-    // If table doesn't exist yet, standard users might just see empty list, checking for that error might be good but simplistic for now
-    return new Response(JSON.stringify({ error: 'Server Error' }), { status: 500, headers: { 'Content-Type': 'application/json' }});
+    return new Response(JSON.stringify({ error: 'Server Error: ' + error.message }), { status: 500, headers: { 'Content-Type': 'application/json' }});
   }
 };

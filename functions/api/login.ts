@@ -1,5 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
-
+// 移除 uuid 库依赖，使用原生 crypto
 async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
   const [salt, originalHash] = storedHash.split(':');
   if (!salt || !originalHash) return false;
@@ -43,7 +42,7 @@ export const onRequestPost = async (context: any) => {
     // 3. 登录成功：重置尝试次数
     await db.prepare('UPDATE users SET login_attempts = 0 WHERE id = ?').bind(user.id).run();
 
-    // 4. 创建 Session
+    // 4. 创建 Session (使用原生 crypto)
     const sessionId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7天过期
 
@@ -57,9 +56,11 @@ export const onRequestPost = async (context: any) => {
             .bind(user.id, fingerprint).first();
         
         if (device) {
-            await db.prepare('UPDATE user_devices SET last_login = CURRENT_TIMESTAMP WHERE id = ?').bind(device.id).run();
+            await db.prepare('UPDATE user_devices SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?').bind(device.id).run();
         } else {
-            await db.prepare('INSERT INTO user_devices (user_id, device_fingerprint) VALUES (?, ?)').bind(user.id, fingerprint).run();
+            // device_name is optional or needs to be passed, here we default if missing
+            await db.prepare('INSERT INTO user_devices (user_id, device_fingerprint, device_name) VALUES (?, ?, ?)')
+              .bind(user.id, fingerprint, 'Unknown Browser').run();
         }
     }
 
@@ -76,8 +77,11 @@ export const onRequestPost = async (context: any) => {
       headers 
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
-    return new Response(JSON.stringify({ success: false, message: '系统错误' }), { status: 500 });
+    return new Response(JSON.stringify({ 
+      success: false, 
+      message: '系统错误: ' + (error.message || 'Unknown error') 
+    }), { status: 500 });
   }
 };

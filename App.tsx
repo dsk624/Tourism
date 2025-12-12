@@ -29,9 +29,19 @@ const App: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Auth & Admin State
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  // Initialize from localStorage for persistence (Remember Me)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return !!localStorage.getItem('china_travel_user');
+  });
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('china_travel_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  // If we have local data, don't show loading spinner, assume logged in (optimistic)
+  // Otherwise, wait for server check.
+  const [isAuthChecking, setIsAuthChecking] = useState(() => {
+    return !localStorage.getItem('china_travel_user');
+  });
 
   // Data State
   const [attractions, setAttractions] = useState<Attraction[]>(STATIC_ATTRACTIONS);
@@ -49,12 +59,6 @@ const App: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-           // Map DB columns (underscore) to Frontend (camelCase) if necessary
-           // Assuming API returns camelCase or we map it here.
-           // The API I wrote returns the DB columns directly, but let's assume consisteny or map if needed.
-           // Current API returns JSON objects with keys matching columns. 
-           // My create table used: image_url.
-           // Frontend uses: imageUrl. 
            const mappedData = data.map((item: any) => ({
              ...item,
              imageUrl: item.image_url || item.imageUrl
@@ -79,7 +83,22 @@ const App: React.FC = () => {
           if (data.authenticated) {
             setIsAuthenticated(true);
             setCurrentUser(data.user);
+            // Sync localStorage
+            localStorage.setItem('china_travel_user', JSON.stringify(data.user));
+          } else {
+            // Session invalid/expired
+            setIsAuthenticated(false);
+            setCurrentUser(null);
+            localStorage.removeItem('china_travel_user');
           }
+        } else {
+           // Request failed, assume logout if not network error? 
+           // Better to do nothing or fallback to unauth if 401.
+           if (res.status === 401) {
+             setIsAuthenticated(false);
+             setCurrentUser(null);
+             localStorage.removeItem('china_travel_user');
+           }
         }
       } catch (e) {
         console.error("Auth check failed", e);
@@ -186,6 +205,7 @@ const App: React.FC = () => {
       await fetch('/api/logout', { method: 'POST' });
       setIsAuthenticated(false);
       setCurrentUser(null);
+      localStorage.removeItem('china_travel_user');
       window.location.href = '/login';
     } catch (e) { console.error(e); }
   };
@@ -338,7 +358,7 @@ const App: React.FC = () => {
               探索<span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">锦绣中华</span>
             </h1>
             <p className="text-slate-200 text-lg sm:text-xl max-w-2xl mx-auto mb-10 font-light leading-relaxed">
-              从古老的河南腹地出发，丈量每一寸山河。实时天气监测，沉浸式旅行体验，带您领略千年文化的独特魅力。
+              从古老的河南腹地出发，丈量每一寸山河。沉浸式旅行体验，带您领略千年文化的独特魅力。
             </p>
 
             <div className="relative max-w-lg mx-auto group">
@@ -457,12 +477,13 @@ const App: React.FC = () => {
                 <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen">
                   <div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}>
                     <LoginForm onLoginSuccess={() => {
-                        // After login, re-check auth to update user state including isAdmin
+                        // After login, re-check auth or sync state
                          setIsAuthChecking(true);
                          fetch('/api/me').then(r => r.json()).then(d => {
                              if(d.authenticated) {
                                  setIsAuthenticated(true);
                                  setCurrentUser(d.user);
+                                 localStorage.setItem('china_travel_user', JSON.stringify(d.user));
                              }
                              setIsAuthChecking(false);
                          });
