@@ -1,12 +1,12 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { DetailModal } from './components/DetailModal';
 import { FeedbackWidget } from './components/FeedbackWidget';
 import { AdminModal } from './components/AdminModal';
 import { ContactModal } from './components/ContactModal';
 import { LoginPromptModal } from './components/LoginPromptModal';
-import { AIPlannerModal } from './components/AIPlannerModal';
 import { Navbar } from './components/Navbar';
 import { HomeContent } from './components/HomeContent';
 import { AttractionCard } from './components/AttractionCard';
@@ -62,7 +62,6 @@ const App: React.FC = () => {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [editingAttraction, setEditingAttraction] = useState<Attraction | null>(null);
 
   // Fetch Attractions from D1 via API
@@ -301,10 +300,22 @@ const App: React.FC = () => {
           currentUser={currentUser}
           handleLogout={handleLogout}
           setIsContactModalOpen={setIsContactModalOpen}
-          setIsAIModalOpen={setIsAIModalOpen}
           mobileMenuOpen={mobileMenuOpen}
           setMobileMenuOpen={setMobileMenuOpen}
         />
+
+        {/* Global Mobile Menu Overlay */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+            />
+          )}
+        </AnimatePresence>
 
         {isAuthChecking ? (
           <div className="min-h-screen flex items-center justify-center">
@@ -456,10 +467,6 @@ const App: React.FC = () => {
         <FeedbackWidget />
         
         {/* Global Modals */}
-        <AIPlannerModal 
-          isOpen={isAIModalOpen}
-          onClose={() => setIsAIModalOpen(false)}
-        />
         <ContactModal 
           isOpen={isContactModalOpen}
           onClose={() => setIsContactModalOpen(false)}

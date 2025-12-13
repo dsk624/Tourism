@@ -1,6 +1,7 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { Navigation, Loader2 } from 'lucide-react';
+import { Navigation, Loader2, MapPin } from 'lucide-react';
 
 interface LeafletMapProps {
   lat: number;
@@ -12,119 +13,139 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({ lat, lng, name }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const routingControlRef = useRef<any>(null);
+  const userMarkerRef = useRef<L.Marker | null>(null);
+
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [loadingLocation, setLoadingLocation] = useState(true);
+
+  // Helper to create user icon with pulsing effect
+  const createUserIcon = () => L.divIcon({
+     className: 'bg-transparent', // Handled by inner HTML
+     html: `<div class="relative flex h-4 w-4">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-4 w-4 bg-teal-500 border-2 border-white shadow-sm"></span>
+            </div>`,
+     iconSize: [16, 16],
+     iconAnchor: [8, 8], // Center the icon
+     popupAnchor: [0, -10]
+  });
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Fix marker icon issue
-    const DefaultIcon = L.icon({
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-    });
-    L.Marker.prototype.options.icon = DefaultIcon;
-
-    // Initialize Map if not exists
+    // --- 1. Map Initialization (Run only once) ---
     if (!mapInstanceRef.current) {
-      const map = L.map(mapContainerRef.current).setView([lat, lng], 13);
-      mapInstanceRef.current = map;
+        // Fix Leaflet Default Icons
+        const DefaultIcon = L.icon({
+            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+        L.Marker.prototype.options.icon = DefaultIcon;
 
-      // Tencent Map Tile Layer
-      L.tileLayer('https://rt{s}.map.gtimg.com/tile?z={z}&x={x}&y={y}&styleid=1&version=298', {
-        subdomains: '0123',
-        tms: true, 
-        attribution: '&copy; Tencent Maps'
-      }).addTo(map);
+        const map = L.map(mapContainerRef.current).setView([lat, lng], 13);
+        mapInstanceRef.current = map;
 
-      // Destination Marker
-      L.marker([lat, lng])
-        .addTo(map)
-        .bindPopup(`<b>${name}</b>`)
-        .openPopup();
-    } else {
-      // Update destination if props change
-      mapInstanceRef.current.setView([lat, lng], 13);
-      
-      // Basic cleanup of markers (simple approach)
-      mapInstanceRef.current.eachLayer((layer) => {
-        if (layer instanceof L.Marker) {
-           // Don't remove user marker if we add it later, but here we rebuild roughly
-           // Ideally we manage markers better, but for this demo:
-           if (layer.getLatLng().lat !== userLocation?.lat) {
-               // mapInstanceRef.current?.removeLayer(layer); 
-           }
-        }
-      });
+        L.tileLayer('https://rt{s}.map.gtimg.com/tile?z={z}&x={x}&y={y}&styleid=1&version=298', {
+            subdomains: '0123',
+            tms: true, 
+            attribution: '&copy; Tencent Maps'
+        }).addTo(map);
+
+        // Destination Marker
+        L.marker([lat, lng])
+            .addTo(map)
+            .bindPopup(`<b>${name}</b>`)
+            .openPopup();
+
+        // --- Click Event for Custom Route Start ---
+        map.on('click', (e) => {
+            const { lat: clickLat, lng: clickLng } = e.latlng;
+            updateRouteStart(clickLat, clickLng, '已选起点');
+        });
     }
 
-    // Get User Location for Routing
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userLat = position.coords.latitude;
-          const userLng = position.coords.longitude;
-          setUserLocation({ lat: userLat, lng: userLng });
-          setLoadingLocation(false);
+    // --- 2. Route Update Helper ---
+    const updateRouteStart = (startLat: number, startLng: number, popupText: string) => {
+        if (!mapInstanceRef.current) return;
 
-          if (mapInstanceRef.current) {
-             // Add User Marker
-             const userIcon = L.divIcon({
-                 className: 'bg-teal-500 rounded-full border-2 border-white shadow-lg',
-                 iconSize: [16, 16],
-             });
-             L.marker([userLat, userLng], { icon: userIcon })
-                .addTo(mapInstanceRef.current)
-                .bindPopup('您的位置');
-
-             // Add Routing
-             const Leaflet = L as any;
-             if (Leaflet.Routing) {
-                 if (routingControlRef.current) {
-                     mapInstanceRef.current.removeControl(routingControlRef.current);
-                 }
-
-                 routingControlRef.current = Leaflet.Routing.control({
-                     waypoints: [
-                         L.latLng(userLat, userLng),
-                         L.latLng(lat, lng)
-                     ],
-                     router: new Leaflet.Routing.OSRMv1({
-                        serviceUrl: 'https://router.project-osrm.org/route/v1'
-                     }),
-                     lineOptions: {
-                         styles: [{ color: '#0d9488', opacity: 0.8, weight: 6 }]
-                     },
-                     createMarker: function() { return null; }, // We already added custom markers
-                     show: false, // Hide the instruction panel (we handle via CSS too)
-                     addWaypoints: false,
-                     routeWhileDragging: false,
-                     fitSelectedRoutes: true,
-                     showAlternatives: false
-                 }).addTo(mapInstanceRef.current);
-             }
-          }
-        },
-        (error) => {
-          console.error("Geolocation error:", error);
-          setLoadingLocation(false);
-        }
-      );
-    } else {
+        // Update State
+        setUserLocation({ lat: startLat, lng: startLng });
         setLoadingLocation(false);
+
+        // Update User Marker
+        if (userMarkerRef.current) {
+            userMarkerRef.current.setLatLng([startLat, startLng]);
+            userMarkerRef.current.setPopupContent(popupText).openPopup();
+        } else {
+            userMarkerRef.current = L.marker([startLat, startLng], { icon: createUserIcon() })
+                .addTo(mapInstanceRef.current)
+                .bindPopup(popupText)
+                .openPopup();
+        }
+
+        // Update Routing Machine
+        const Leaflet = L as any;
+        if (Leaflet.Routing) {
+            if (routingControlRef.current) {
+                routingControlRef.current.setWaypoints([
+                    L.latLng(startLat, startLng),
+                    L.latLng(lat, lng)
+                ]);
+            } else {
+                routingControlRef.current = Leaflet.Routing.control({
+                    waypoints: [
+                        L.latLng(startLat, startLng),
+                        L.latLng(lat, lng)
+                    ],
+                    router: new Leaflet.Routing.OSRMv1({
+                       serviceUrl: 'https://router.project-osrm.org/route/v1'
+                    }),
+                    lineOptions: {
+                        styles: [{ color: '#0d9488', opacity: 0.8, weight: 6 }]
+                    },
+                    createMarker: function() { return null; }, // Hide default markers created by routing machine
+                    show: false, // Hide instruction panel
+                    addWaypoints: false,
+                    routeWhileDragging: false,
+                    fitSelectedRoutes: true,
+                    showAlternatives: false
+                }).addTo(mapInstanceRef.current);
+            }
+        }
+    };
+
+    // --- 3. Geolocation (Run if no user location set yet) ---
+    // We check !userMarkerRef.current to prevent overwriting if user already clicked quickly
+    if (navigator.geolocation && !userMarkerRef.current) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                // Double check inside callback to avoid race condition overwrite
+                if (!userMarkerRef.current) {
+                    updateRouteStart(position.coords.latitude, position.coords.longitude, '您的位置');
+                }
+            },
+            (err) => {
+                console.warn('Geolocation failed', err);
+                setLoadingLocation(false);
+            }
+        );
+    } else {
+        if (loadingLocation && !navigator.geolocation) setLoadingLocation(false);
     }
 
+    // Cleanup
     return () => {
-      // Cleanup map on unmount
-      if (mapInstanceRef.current) {
-         mapInstanceRef.current.remove();
-         mapInstanceRef.current = null;
-      }
+        if (mapInstanceRef.current) {
+            mapInstanceRef.current.remove();
+            mapInstanceRef.current = null;
+            routingControlRef.current = null;
+            userMarkerRef.current = null;
+        }
     };
   }, [lat, lng, name]);
 
@@ -135,7 +156,7 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({ lat, lng, name }) => {
       {/* Overlay Status */}
       <div className="absolute top-2 right-2 z-[400] flex flex-col gap-2 pointer-events-none">
         {loadingLocation && (
-            <div className="bg-white/90 backdrop-blur text-xs px-3 py-1.5 rounded-full shadow-sm text-slate-600 flex items-center gap-2">
+            <div className="bg-white/90 backdrop-blur text-xs px-3 py-1.5 rounded-full shadow-sm text-slate-600 flex items-center gap-2 animate-pulse">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 正在定位...
             </div>
@@ -146,6 +167,10 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({ lat, lng, name }) => {
                 已规划路线
             </div>
         )}
+        <div className="bg-white/90 backdrop-blur text-[10px] px-3 py-1.5 rounded-full shadow-sm text-slate-500 flex items-center gap-1.5 border border-slate-100">
+             <MapPin className="w-3 h-3 text-teal-500" />
+             <span>点击地图更改起点</span>
+        </div>
       </div>
       
       {/* External Map Link */}

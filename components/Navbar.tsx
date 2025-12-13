@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, Sparkles } from 'lucide-react';
+import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '../types';
 
@@ -12,7 +12,6 @@ interface NavbarProps {
   currentUser: User | null;
   handleLogout: () => void;
   setIsContactModalOpen: (isOpen: boolean) => void;
-  setIsAIModalOpen: (isOpen: boolean) => void;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
 }
@@ -24,7 +23,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   handleLogout,
   setIsContactModalOpen,
-  setIsAIModalOpen,
   mobileMenuOpen,
   setMobileMenuOpen
 }) => {
@@ -88,19 +86,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-2">
               <NavLink to="/" active={location.pathname === '/'}>首页</NavLink>
-              
-              {/* AI Planner Button */}
-              <button
-                onClick={() => setIsAIModalOpen(true)}
-                className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-1.5 ${
-                  theme === 'dark' 
-                    ? 'bg-gradient-to-r from-teal-500/20 to-emerald-500/20 text-teal-400 hover:bg-slate-800 border border-teal-500/30' 
-                    : 'bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-700 hover:bg-white border border-teal-100 shadow-sm'
-                }`}
-              >
-                <Sparkles className="w-4 h-4" />
-                AI 行程助手
-              </button>
 
               <button 
                 onClick={() => setIsContactModalOpen(true)}
@@ -165,13 +150,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <div className="px-4 pt-4 pb-6 space-y-2">
                 <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${location.pathname === '/' ? 'bg-teal-50 dark:bg-teal-900/20 text-teal-600' : currentTheme.text}`}>首页</Link>
-                
-                <button 
-                  onClick={() => { setIsAIModalOpen(true); setMobileMenuOpen(false); }}
-                  className={`w-full text-left block px-4 py-3 rounded-xl font-bold bg-gradient-to-r from-teal-500/10 to-emerald-500/10 text-teal-600 flex items-center gap-2`}
-                >
-                  <Sparkles className="w-4 h-4" /> AI 行程助手
-                </button>
 
                 <button 
                   onClick={() => { setIsContactModalOpen(true); setMobileMenuOpen(false); }}
@@ -206,19 +184,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Mobile Backdrop Overlay */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
-            />
           )}
         </AnimatePresence>
       </nav>
