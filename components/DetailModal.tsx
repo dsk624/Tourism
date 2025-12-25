@@ -7,12 +7,13 @@ import { LeafletMap } from './LeafletMap';
 
 interface Props {
   attraction: Attraction | null;
+  allAttractions: Attraction[];
   onClose: () => void;
   isFavorite?: boolean;
   onToggleFavorite?: (e: React.MouseEvent | null, id: string) => void;
 }
 
-export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, onToggleFavorite }) => {
+export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClose, isFavorite, onToggleFavorite }) => {
   const [activeTab, setActiveTab] = useState<'info' | 'map'>('info');
 
   if (!attraction) return null;
@@ -142,6 +143,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, onClose, isFavorite, 
                       lat={attraction.coordinates.lat} 
                       lng={attraction.coordinates.lng} 
                       name={attraction.name} 
+                      allAttractions={allAttractions}
                     />
                   ) : (
                     <div className="w-full h-full bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 flex-col border border-slate-100 p-8">

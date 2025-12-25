@@ -460,6 +460,7 @@ const App: React.FC = () => {
 
         <DetailModal 
             attraction={selectedAttraction} 
+            allAttractions={attractions}
             onClose={() => setSelectedAttraction(null)} 
             isFavorite={selectedAttraction ? favorites.has(selectedAttraction.id) : false}
             onToggleFavorite={handleToggleFavorite}
