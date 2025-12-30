@@ -35,18 +35,20 @@
       :root { --animate-duration: 0.8s; }
     </style>
     
+    <!-- Tailwind CDN for development, Vite will handle production bundling -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Music Player jQuery Dependency -->
     <script src="https://myhkw.cn/player/js/jquery.min.js" type="text/javascript"></script>
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "framer-motion": "https://esm.sh/framer-motion@^12.23.26",
-    "path": "https://esm.sh/path@^0.12.7",
+    "react/": "https://esm.sh/react@^19.2.3/",
     "react-router-dom": "https://esm.sh/react-router-dom@^7.11.0",
+    "framer-motion": "https://esm.sh/framer-motion@^12.23.26",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "path": "https://esm.sh/path@^0.12.7",
     "vite": "https://esm.sh/vite@^7.3.0",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "vitest/": "https://esm.sh/vitest@^4.0.16/",
@@ -57,7 +59,7 @@
 </head>
   <body>
     <div id="root"></div>
-    <!-- 主脚本入口 -->
+    <!-- 主脚本入口，Vite 将以此为起点进行构建 -->
     <script type="module" src="/index.tsx"></script>
     <!-- Leaflet Routing Machine JS -->
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
