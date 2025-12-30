@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
-import { Attraction } from '../types';
-import { X, Search, MapPin, ExternalLink, Heart, BookOpen, Map as MapIcon, Ghost } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Attraction, User } from '../types';
+import { X, Search, MapPin, ExternalLink, Heart, BookOpen, Map as MapIcon, Ghost, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LeafletMap } from './LeafletMap';
 
@@ -11,16 +11,52 @@ interface Props {
   onClose: () => void;
   isFavorite?: boolean;
   onToggleFavorite?: (e: React.MouseEvent | null, id: string) => void;
+  currentUser?: User | null;
 }
 
-export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClose, isFavorite, onToggleFavorite }) => {
-  const [activeTab, setActiveTab] = useState<'info' | 'map'>('info');
+export const DetailModal: React.FC<Props> = ({ 
+  attraction, 
+  allAttractions, 
+  onClose, 
+  isFavorite, 
+  onToggleFavorite,
+  currentUser
+}) => {
+  const [activeTab, setActiveTab] = useState<'info' | 'map' | 'album'>('info');
+
+  // 生成模拟相册数据
+  const albumImages = useMemo(() => {
+    if (!attraction) return [];
+    return [
+      attraction.imageUrl,
+      `https://picsum.photos/seed/${attraction.id}-1/800/1000`,
+      `https://picsum.photos/seed/${attraction.id}-2/800/600`,
+      `https://picsum.photos/seed/${attraction.id}-3/1000/800`,
+      `https://picsum.photos/seed/${attraction.id}-4/800/1200`,
+      `https://picsum.photos/seed/${attraction.id}-5/1200/800`,
+    ];
+  }, [attraction]);
 
   if (!attraction) return null;
 
   const handleBaiduSearch = () => {
     const query = `${attraction.province} ${attraction.name} 旅游攻略 必玩景点 美食`;
     window.open(`https://www.baidu.com/s?wd=${encodeURIComponent(query)}`, '_blank');
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20, rotate: -2 },
+    show: { opacity: 1, y: 0, rotate: 0 }
   };
 
   return (
@@ -99,25 +135,31 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
                 >
                   <MapIcon className="w-4 h-4" /> 地图
                 </button>
+                {/* 管理员专属相册标签 */}
+                {currentUser?.isAdmin && (
+                  <button
+                    onClick={() => setActiveTab('album')}
+                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'album' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    <ImageIcon className="w-4 h-4" /> 相册
+                  </button>
+                )}
               </div>
 
-              {activeTab === 'info' ? (
+              {activeTab === 'info' && (
                 <div className="animate__animated animate__fadeIn flex flex-col flex-grow">
                   <div className="prose prose-slate prose-sm sm:prose-base mb-6 sm:mb-8 flex-grow">
                     <p className="text-base sm:text-lg leading-relaxed text-slate-600">{attraction.description}</p>
                   </div>
 
-                  {/* Baidu Search Section */}
                   <div className="bg-blue-50 rounded-2xl p-4 sm:p-6 border border-blue-100 mt-auto">
                     <div className="flex items-center gap-2 mb-3">
                       <Search className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                       <h3 className="font-bold text-blue-800 text-base sm:text-lg">智能探索</h3>
                     </div>
-                    
                     <p className="text-sm sm:text-base text-blue-700/80 mb-3 sm:mb-4">
-                      想了解更多关于 {attraction.name} 的实时攻略、门票价格和游玩路线？
+                      想了解更多关于 {attraction.name} 的实时攻略和路线？
                     </p>
-
                     <button 
                       onClick={handleBaiduSearch}
                       className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
@@ -136,7 +178,9 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
                      ))}
                   </div>
                 </div>
-              ) : (
+              )}
+
+              {activeTab === 'map' && (
                 <div className="flex-grow min-h-[300px] flex flex-col animate__animated animate__fadeIn">
                   {attraction.coordinates ? (
                     <LeafletMap 
@@ -154,17 +198,59 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
                          <Ghost className="w-16 h-16 mb-4 text-slate-300" />
                        </motion.div>
                        <p className="font-medium text-slate-500">暂无地图坐标数据</p>
-                       <p className="text-xs text-slate-400 mt-2 text-center max-w-[200px]">
-                         该景点暂未收录精确坐标，管理员正在努力完善中...
-                       </p>
                     </div>
                   )}
-                  {attraction.coordinates && (
-                    <p className="text-xs text-slate-400 mt-3 text-center">
-                      地图数据来源：腾讯地图 (Tencent Maps)
-                    </p>
-                  )}
                 </div>
+              )}
+
+              {activeTab === 'album' && (
+                <motion.div 
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="flex-grow flex flex-col"
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                      <div className="w-1 h-4 bg-teal-500 rounded-full"></div>
+                      管理员电子相册
+                    </h3>
+                    <span className="text-xs text-slate-400">滑动探索精彩瞬间</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pb-4">
+                    {albumImages.map((src, idx) => (
+                      <motion.div 
+                        key={idx}
+                        variants={itemVariants}
+                        whileHover={{ scale: 1.05, rotate: 1, zIndex: 10 }}
+                        className="relative aspect-[4/5] bg-white p-2 rounded-lg shadow-md border border-slate-100 overflow-hidden group"
+                      >
+                        <div className="w-full h-full overflow-hidden rounded shadow-inner">
+                          <img 
+                            src={src} 
+                            alt={`Album ${idx}`} 
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            loading="lazy"
+                          />
+                        </div>
+                        {/* 模拟纸质相册底部文案 */}
+                        <div className="absolute bottom-3 left-3 text-[10px] font-mono text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                          IMG_2025_{idx.toString().padStart(2, '0')}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <div className="mt-auto pt-6 border-t border-dashed border-slate-200">
+                    <div className="p-4 bg-teal-50/50 rounded-xl border border-teal-100">
+                      <p className="text-xs text-teal-700 leading-relaxed font-medium">
+                        <span className="font-bold">💡 管理提示：</span> 
+                        此相册仅作为数据存档展示。如需更新景点主图，请前往“管理面板”或首页使用编辑功能。
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
               )}
             </div>
           </div>
