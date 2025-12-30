@@ -11,12 +11,12 @@
     
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230d9488' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m8 3 4 8 5-5 5 15H2L8 3z'/%3E%3C/svg%3E" type="image/svg+xml" sizes="any" />
     
-    <!-- 引入稳定动画和地图库 -->
+    <!-- 基础样式库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     
-    <!-- 核心依赖：使用 esm.sh 锁定稳定版本，移除冗余映射以防止多版本 React 冲突 -->
+    <!-- 极简模块映射：解决加载冲突导致的白屏 -->
     <script type="importmap">
 {
   "imports": {
@@ -40,26 +40,27 @@
     <!-- 基础依赖 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <style>
-      /* 注入华夏特色手写感字体 */
       @import url('https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&display=swap');
       
-      /* 修复 CDN 加载时的 FOUC */
-      .animate__animated {
-        --animate-duration: 0.6s;
-      }
-
-      /* 基础重置 */
       body {
         margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background-color: #0f172a; /* 默认深色背景防止白屏瞬间刺眼 */
       }
+
+      #root {
+        min-height: 100vh;
+      }
+
+      /* 隐藏 Leaflet 默认的水印和控制台 */
+      .leaflet-control-attribution { display: none !important; }
     </style>
   </head>
   <body>
     <div id="root"></div>
+    <!-- 必须确保 index.tsx 路径正确且模块映射已就绪 -->
     <script type="module" src="/index.tsx"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-    <!-- 背景音乐：古风轻音乐 -->
+    <!-- 背景音乐 -->
     <script src="https://myhkw.cn/api/player/demo" id="myhk" key="demo" m="1" skin="yellowcat" au="0" lr="l"></script>
   </body>
 </html>
