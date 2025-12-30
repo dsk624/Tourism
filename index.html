@@ -11,12 +11,12 @@
     
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230d9488' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m8 3 4 8 5-5 5 15H2L8 3z'/%3E%3C/svg%3E" type="image/svg+xml" sizes="any" />
     
-    <!-- 基础样式库 -->
+    <!-- 替换为更稳定的加速节点 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     
-    <!-- 极简模块映射：解决加载冲突导致的白屏 -->
+    <!-- 使用 esm.sh 代替 jsdelivr，解决国内访问慢的问题 -->
     <script type="importmap">
 {
   "imports": {
@@ -24,7 +24,7 @@
     "react-dom": "https://esm.sh/react-dom@19.0.0",
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
     "react-router-dom": "https://esm.sh/react-router-dom@7.1.0",
-    "framer-motion": "https://esm.sh/framer-motion@11.11.17",
+    "framer-motion": "https://esm.sh/framer-motion@12.0.0",
     "lucide-react": "https://esm.sh/lucide-react@0.469.0",
     "leaflet": "https://esm.sh/leaflet@1.9.4",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
@@ -40,27 +40,15 @@
     <!-- 基础依赖 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <style>
+      /* 注入手写感字体 */
       @import url('https://fonts.googleapis.com/css2?family=Zhi+Mang+Xing&display=swap');
-      
-      body {
-        margin: 0;
-        background-color: #0f172a; /* 默认深色背景防止白屏瞬间刺眼 */
-      }
-
-      #root {
-        min-height: 100vh;
-      }
-
-      /* 隐藏 Leaflet 默认的水印和控制台 */
-      .leaflet-control-attribution { display: none !important; }
     </style>
   </head>
   <body>
     <div id="root"></div>
-    <!-- 必须确保 index.tsx 路径正确且模块映射已就绪 -->
     <script type="module" src="/index.tsx"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-    <!-- 背景音乐 -->
+    <!-- 音乐播放器 -->
     <script src="https://myhkw.cn/api/player/demo" id="myhk" key="demo" m="1" skin="yellowcat" au="0" lr="l"></script>
   </body>
 </html>

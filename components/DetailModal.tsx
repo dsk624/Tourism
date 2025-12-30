@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Attraction, User } from '../types';
-import { X, Search, MapPin, ExternalLink, Heart, BookOpen, Map as MapIcon, Ghost, Image as ImageIcon, Sparkles, Camera, Lock } from 'lucide-react';
+import { X, Search, MapPin, ExternalLink, Heart, BookOpen, Map as MapIcon, Ghost, Image as ImageIcon, Sparkles, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LeafletMap } from './LeafletMap';
 
@@ -23,8 +23,8 @@ export const DetailModal: React.FC<Props> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'info' | 'map' | 'album'>('info');
 
-  // 严格权限检查：确保 currentUser 存在且 isAdmin 为 true
-  const isAdmin = currentUser && currentUser.isAdmin === true;
+  // 管理员标识
+  const isAdmin = currentUser?.isAdmin === true;
 
   // 生成拍立得相册数据
   const albumData = useMemo(() => {
@@ -67,7 +67,7 @@ export const DetailModal: React.FC<Props> = ({
           {/* 装饰性相册书脊 (仅PC) */}
           <div className="hidden md:block w-3 bg-stone-300 shadow-inner z-20" />
 
-          {/* 顶部控制栏 */}
+          {/* 顶部控制栏 (移动端适配) */}
           <div className="absolute top-4 right-4 z-30 flex gap-2">
             <button onClick={onClose} className="p-2 bg-white/20 hover:bg-white/40 backdrop-blur-xl rounded-full text-slate-800 transition-all">
               <X className="w-5 h-5" />
@@ -91,7 +91,7 @@ export const DetailModal: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* 右侧：内容区 */}
+          {/* 右侧：电子相册本内容 */}
           <div className="flex-1 flex flex-col bg-white overflow-hidden">
             {/* 标签栏 - 模仿纸质书签 */}
             <div className="flex px-6 pt-6 gap-2">
@@ -107,8 +107,7 @@ export const DetailModal: React.FC<Props> = ({
                 icon={<MapIcon className="w-4 h-4" />} 
                 label="舆图" 
               />
-              {/* 如果你是管理员，这里会显示相册入口 */}
-              {isAdmin ? (
+              {isAdmin && (
                 <TabButton 
                   active={activeTab === 'album'} 
                   onClick={() => setActiveTab('album')} 
@@ -116,10 +115,6 @@ export const DetailModal: React.FC<Props> = ({
                   label="管理员影像" 
                   isSpecial
                 />
-              ) : (
-                <div className="hidden md:flex items-center px-4 py-2 text-stone-300 cursor-not-allowed text-xs gap-1">
-                  <Lock className="w-3 h-3" /> 影像库锁定
-                </div>
               )}
             </div>
 
@@ -180,29 +175,25 @@ export const DetailModal: React.FC<Props> = ({
                     animate={{ opacity: 1 }}
                     className="grid grid-cols-2 gap-6"
                   >
-                    <div className="col-span-2 mb-4 bg-amber-50 border border-amber-100 p-4 rounded-xl flex items-center gap-3">
-                      <Sparkles className="w-6 h-6 text-amber-500" />
-                      <p className="text-sm text-amber-800 font-medium">您正在查看管理员专属影像存档。此页面采用 3D 物理效果模拟真实相册翻阅体验。</p>
-                    </div>
                     {albumData.map((item, idx) => (
                       <motion.div
                         key={item.id}
                         initial={{ opacity: 0, y: 30, rotate: item.rotate * 2 }}
                         animate={{ opacity: 1, y: 0, rotate: item.rotate }}
-                        transition={{ delay: idx * 0.1, type: 'spring', stiffness: 200 }}
-                        whileHover={{ rotate: 0, scale: 1.08, zIndex: 10, transition: { duration: 0.2 } }}
+                        transition={{ delay: idx * 0.1 }}
+                        whileHover={{ rotate: 0, scale: 1.05, zIndex: 10, transition: { duration: 0.2 } }}
                         className="bg-white p-3 pb-10 shadow-xl border border-stone-200 relative group cursor-pointer"
                       >
                         {/* 拍立得照片本体 */}
-                        <div className="aspect-[4/5] overflow-hidden bg-stone-100 shadow-inner">
+                        <div className="aspect-[4/5] overflow-hidden bg-stone-100">
                           <img src={item.src} className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500" alt="" />
                         </div>
                         {/* 模拟手写字 */}
                         <div className="absolute bottom-2 left-4 right-4 text-center">
-                          <p className="font-['Zhi_Mang_Xing'] text-stone-600 text-xl">{item.title}</p>
+                          <p className="font-['Zhi_Mang_Xing'] text-stone-500 text-lg">{item.title}</p>
                           <p className="text-[10px] text-stone-300 font-mono mt-1">{item.date}</p>
                         </div>
-                        {/* 模拟透明胶带 */}
+                        {/* 模拟胶带 */}
                         <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-16 h-6 bg-teal-500/10 rotate-3 border-x border-teal-500/20 backdrop-blur-[2px]" />
                       </motion.div>
                     ))}
@@ -211,7 +202,7 @@ export const DetailModal: React.FC<Props> = ({
               </AnimatePresence>
             </div>
             
-            {/* 底部页码 */}
+            {/* 底部页码感装饰 */}
             <div className="px-10 py-4 flex justify-between items-center border-t border-stone-100 text-[10px] text-stone-300 font-mono tracking-widest">
               <span>CHINA TRAVEL ARCHIVE // {attraction.id}</span>
               <span>PAGE {activeTab === 'info' ? '01' : activeTab === 'map' ? '02' : '03'}</span>
