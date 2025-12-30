@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自定义全局样式 */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.leaflet-routing-container {
+  display: none !important;
+}
+
+:root {
+  --animate-duration: 0.8s;
+}
