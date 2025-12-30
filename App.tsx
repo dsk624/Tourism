@@ -464,7 +464,6 @@ const App: React.FC = () => {
             onClose={() => setSelectedAttraction(null)} 
             isFavorite={selectedAttraction ? favorites.has(selectedAttraction.id) : false}
             onToggleFavorite={handleToggleFavorite}
-            currentUser={currentUser}
         />
         <FeedbackWidget />
         
