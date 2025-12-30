@@ -13,7 +13,7 @@
     <meta property="og:title" content="华夏游 | China Travel" />
     <meta property="og:description" content="探索中华之美，寻访名山大川，品味千年文化。" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://aiblogai.de5.net" />
+    <meta property="og:url" content="https://china-travel.pages.dev" />
     
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230d9488' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m8 3 4 8 5-5 5 15H2L8 3z'/%3E%3C/svg%3E" type="image/svg+xml" sizes="any" />
     
@@ -35,7 +35,7 @@
       :root { --animate-duration: 0.8s; }
     </style>
     
-    <!-- Tailwind CDN for development, Vite will handle production bundling -->
+    <!-- Tailwind CDN 用于本地快速渲染，构建时 Vite 会处理 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Music Player jQuery Dependency -->
     <script src="https://myhkw.cn/player/js/jquery.min.js" type="text/javascript"></script>
@@ -59,11 +59,8 @@
 </head>
   <body>
     <div id="root"></div>
-    <!-- 主脚本入口，Vite 将以此为起点进行构建 -->
     <script type="module" src="/index.tsx"></script>
-    <!-- Leaflet Routing Machine JS -->
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-    <!-- Music Player Script -->
     <script src="https://myhkw.cn/api/player/demo" id="myhk" key="demo" m="1" skin="player" au="0" lr="r"></script>
   </body>
 </html>
