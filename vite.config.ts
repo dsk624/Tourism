@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './'),
+      // Fix: __dirname is not available in ES modules. Using path.resolve('.') as a replacement.
+      '@': path.resolve('.'),
     },
   },
   build: {
