@@ -1,45 +1,70 @@
 
 import { LocationData, WeatherData } from '../types';
 
-// 开封坐标
-const DEFAULT_KAIFENG = {
+// 默认兜底：开封
+const DEFAULT_KAIFENG: LocationData = {
     city: '开封',
     province: '河南',
     latitude: 34.7973,
     longitude: 114.3076
 };
 
+/**
+ * 获取用户高精度位置
+ */
 export const getUserLocation = async (): Promise<LocationData> => {
+  return new Promise((resolve) => {
+    // 1. 尝试使用浏览器原生 Geolocation (最高精度)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            // 通过坐标反查城市 (使用 Open-Meteo 的 geocoding 接口或简单 IP 接口补充城市名)
+            const cityRes = await fetch(`https://get.geojs.io/v1/ip/geo.json`);
+            const cityData = await cityRes.json();
+            
+            resolve({
+              city: cityData.city || '当前位置',
+              province: cityData.region || '',
+              latitude,
+              longitude
+            });
+          } catch (e) {
+            resolve(fetchIPLocation());
+          }
+        },
+        () => resolve(fetchIPLocation()), // 权限拒绝或超时，回退到 IP 定位
+        { timeout: 5000, enableHighAccuracy: true }
+      );
+    } else {
+      resolve(fetchIPLocation());
+    }
+  });
+};
+
+/**
+ * IP 定位作为备选
+ */
+const fetchIPLocation = async (): Promise<LocationData> => {
   try {
-    // 使用 get.geojs.io，它更稳定且不易触发 429 限制
     const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
     if (!response.ok) throw new Error('Location API failed');
-    
     const data = await response.json();
     
-    // 数据校验
-    if (!data.latitude || !data.longitude) {
-        throw new Error('Invalid location data');
-    }
-
     return {
       city: data.city || DEFAULT_KAIFENG.city,
       province: data.region || DEFAULT_KAIFENG.province,
-      latitude: parseFloat(data.latitude),
-      longitude: parseFloat(data.longitude)
+      latitude: parseFloat(data.latitude) || DEFAULT_KAIFENG.latitude,
+      longitude: parseFloat(data.longitude) || DEFAULT_KAIFENG.longitude
     };
   } catch (error) {
-    console.warn('Location detection failed, defaulting to Kaifeng:', error);
-    // Fallback to Kaifeng
     return DEFAULT_KAIFENG;
   }
 };
 
 export const getWeather = async (lat: number, lon: number): Promise<WeatherData | null> => {
   try {
-    // 使用新的 API 参数格式获取更多数据
-    // current: 实时数据
-    // daily: 日数据（日出日落、UV最大值）
     const params = new URLSearchParams({
       latitude: lat.toString(),
       longitude: lon.toString(),
@@ -63,7 +88,6 @@ export const getWeather = async (lat: number, lon: number): Promise<WeatherData 
       precipitation: current.precipitation,
       sunrise: daily.sunrise?.[0],
       sunset: daily.sunset?.[0],
-      // 新增字段
       apparentTemperature: current.apparent_temperature,
       humidity: current.relative_humidity_2m,
       windSpeed: current.wind_speed_10m,
@@ -77,7 +101,6 @@ export const getWeather = async (lat: number, lon: number): Promise<WeatherData 
 };
 
 export const getWeatherIcon = (code: number, isDay: boolean) => {
-  // WMO Weather interpretation codes (WW)
   if (code === 0) return isDay ? '☀️' : '🌙';
   if (code === 1 || code === 2 || code === 3) return isDay ? '⛅' : '☁️';
   if (code === 45 || code === 48) return '🌫️';
