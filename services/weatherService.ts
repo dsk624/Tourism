@@ -4,22 +4,25 @@ import { LocationData, WeatherData } from '../types';
 /**
  * 获取用户位置（无感模式）
  * 依次尝试 Cloudflare 边缘定位和 GeoJS IP 定位
- * 如果全部失败，返回 null，不再使用默认城市兜底
+ * 如果全部失败，返回 null，从而让组件不渲染
  */
 export const getUserLocation = async (): Promise<LocationData | null> => {
   try {
     // 1. 优先尝试 Cloudflare 边缘节点定位
     const response = await fetch('/api/location');
-    if (!response.ok) throw new Error('Edge location failed');
+    if (!response.ok) {
+        throw new Error('Edge location unavailable');
+    }
+    
     const data = await response.json();
     
-    // 简单校验坐标有效性
-    if (isNaN(data.latitude) || isNaN(data.longitude)) {
-      throw new Error('Invalid coordinates from edge');
+    // 严格校验坐标
+    if (!data.latitude || !data.longitude || isNaN(data.latitude) || isNaN(data.longitude)) {
+      throw new Error('Invalid coordinates');
     }
     return data;
   } catch (error) {
-    console.warn('Seamless edge location failed, trying backup IP API...');
+    console.warn('Seamless edge location unavailable, trying fallback...');
     return fetchIPLocation();
   }
 };
@@ -33,18 +36,19 @@ const fetchIPLocation = async (): Promise<LocationData | null> => {
     if (!response.ok) throw new Error('IP Location API failed');
     const data = await response.json();
     
-    if (!data.latitude || !data.longitude) {
+    // 必须有经纬度才视为成功
+    if (!data.latitude || !data.longitude || isNaN(parseFloat(data.latitude))) {
       return null;
     }
     
     return {
-      city: data.city || '未知城市',
+      city: data.city || '您的位置',
       province: data.region || '',
       latitude: parseFloat(data.latitude),
       longitude: parseFloat(data.longitude)
     };
   } catch (error) {
-    console.error('All location attempts failed.');
+    console.error('All location methods failed. Weather widget will be hidden.');
     return null;
   }
 };
@@ -81,7 +85,7 @@ export const getWeather = async (lat: number, lon: number): Promise<WeatherData 
       pressure: current.pressure_msl
     };
   } catch (error) {
-    console.error('Weather error:', error);
+    console.error('Weather data fetch error:', error);
     return null;
   }
 };

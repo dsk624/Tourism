@@ -2,23 +2,33 @@
 export const onRequest = async (context: any) => {
   const { request } = context;
   
-  // Cloudflare 会在请求头中自动注入地理位置信息（基于 IP）
-  // 这些信息对于天气预报来说精度已经足够，且无需用户授权
-  const city = decodeURIComponent(request.headers.get('cf-ipcity') || '开封');
-  const province = decodeURIComponent(request.headers.get('cf-region') || '河南');
-  const lat = request.headers.get('cf-iplatitude') || '34.7973';
-  const lng = request.headers.get('cf-iplongitude') || '114.3076';
+  // 从 Cloudflare 边缘节点获取地理位置请求头
+  const city = request.headers.get('cf-ipcity');
+  const province = request.headers.get('cf-region');
+  const lat = request.headers.get('cf-iplatitude');
+  const lng = request.headers.get('cf-iplongitude');
+
+  // 如果关键的经纬度信息缺失，直接返回 404，告知前端定位不可用
+  if (!lat || !lng) {
+    return new Response(JSON.stringify({
+      error: 'Location headers not found',
+      message: 'Cloudflare edge headers missing or location unavailable'
+    }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 
   return new Response(JSON.stringify({
-    city: city,
-    province: province,
+    city: city ? decodeURIComponent(city) : '未知城市',
+    province: province ? decodeURIComponent(province) : '',
     latitude: parseFloat(lat),
     longitude: parseFloat(lng),
     source: 'cloudflare-edge'
   }), {
     headers: { 
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=3600' // 缓存 1 小时
+      'Cache-Control': 'public, max-age=3600'
     }
   });
 };

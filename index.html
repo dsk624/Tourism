@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
   <head>
@@ -10,15 +11,17 @@
     <meta name="author" content="华夏游" />
     <meta name="robots" content="index, follow" />
     
+    <!-- RSS & Sitemap 发现链接 -->
+    <link rel="alternate" type="application/rss+xml" title="华夏游景点更新 RSS" href="/rss.xml" />
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
+    
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230d9488' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m8 3 4 8 5-5 5 15H2L8 3z'/%3E%3C/svg%3E" type="image/svg+xml" sizes="any" />
     
-    <!-- 使用 jsDelivr 加速 CSS 资源 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/noto-sans-sc@latest/css/noto-sans-sc.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     
-    <!-- 使用 jsDelivr ESM 加速核心 JS 库 -->
     <script type="importmap">
 {
   "imports": {
@@ -39,14 +42,12 @@
 }
 </script>
 
-    <!-- 基础依赖加速 -->
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-    <!-- 音乐播放器：更新为 yellowcat 皮肤，歌词居左 -->
     <script src="https://myhkw.cn/api/player/demo" id="myhk" key="demo" m="1" skin="yellowcat" au="0" lr="l"></script>
   </body>
 </html>
