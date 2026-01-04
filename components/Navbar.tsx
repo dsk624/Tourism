@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map } from 'lucide-react';
+import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '../types';
 
@@ -98,9 +98,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               {isAuthenticated ? (
-                 <NavLink to="/profile" active={location.pathname === '/profile'}>
-                   {currentUser?.isAdmin ? '管理面板' : '我的账户'}
-                 </NavLink>
+                <div className="flex items-center gap-1">
+                  <NavLink to="/profile" active={location.pathname === '/profile'}>
+                    {currentUser?.isAdmin ? '管理面板' : '我的账户'}
+                  </NavLink>
+                  <button 
+                    onClick={handleLogout}
+                    title="退出登录"
+                    className={`p-2 rounded-full transition-all ${
+                      theme === 'dark' ? 'text-slate-500 hover:text-red-400 hover:bg-slate-800' : 'text-slate-400 hover:text-red-500 hover:bg-slate-100'
+                    }`}
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
               ) : (
                 <>
                   <NavLink to="/login" active={location.pathname === '/login'}>登录</NavLink>
@@ -161,7 +172,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {isAuthenticated ? (
                   <>
                   <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className={`block px-4 py-3 rounded-xl font-medium ${currentTheme.text}`}>{currentUser?.isAdmin ? '管理面板' : '我的账户'}</Link>
-                  <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="w-full text-left block px-4 py-3 rounded-xl font-medium text-red-500">退出登录</button>
+                  <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="w-full text-left block px-4 py-3 rounded-xl font-medium text-red-500 flex items-center gap-2">
+                    <LogOut className="w-4 h-4" /> 退出登录
+                  </button>
                   </>
                 ) : (
                   <>

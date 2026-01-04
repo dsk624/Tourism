@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Attraction } from '../types';
-import { X, Save, Trash2, Image as ImageIcon, LayoutTemplate, MapPin } from 'lucide-react';
+import { X, Save, Trash2, Image as ImageIcon, LayoutTemplate, MapPin, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
@@ -23,6 +23,9 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
     lat: '',
     lng: ''
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -50,19 +53,36 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
     }
   }, [initialData, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const lat = parseFloat(formData.lat);
-    const lng = parseFloat(formData.lng);
+    setIsSubmitting(true);
+    try {
+      const lat = parseFloat(formData.lat);
+      const lng = parseFloat(formData.lng);
 
-    onSubmit({
-      ...formData,
-      tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
-      coordinates: (!isNaN(lat) && !isNaN(lng)) ? { lat, lng } : undefined
-    });
+      await onSubmit({
+        ...formData,
+        tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+        coordinates: (!isNaN(lat) && !isNaN(lng)) ? { lat, lng } : undefined
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!initialData || !onDelete) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(initialData.id);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (!isOpen) return null;
+
+  const isDisabled = isSubmitting || isDeleting;
 
   return (
     <AnimatePresence>
@@ -71,7 +91,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={isDisabled ? undefined : onClose}
           className="absolute inset-0 bg-black/60 backdrop-blur-md"
         />
         <motion.div
@@ -91,7 +111,8 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
             </div>
             <button 
               onClick={onClose} 
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-slate-400"
+              disabled={isDisabled}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-slate-400 disabled:opacity-30"
             >
               <X className="w-6 h-6" />
             </button>
@@ -100,11 +121,12 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
           <div className="flex flex-col md:flex-row flex-grow overflow-hidden">
             {/* Left Column: Form */}
             <div className="w-full md:w-1/2 p-8 overflow-y-auto border-r dark:border-slate-800">
-              <form id="attractionForm" onSubmit={handleSubmit} className="space-y-6">
+              <form id="attractionForm" onSubmit={handleSubmit} className={`space-y-6 ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">景点名称</label>
                   <input
                     required
+                    disabled={isDisabled}
                     placeholder="例如：清明上河园"
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
                     value={formData.name}
@@ -117,6 +139,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">所属省份</label>
                     <div className="relative">
                       <select
+                        disabled={isDisabled}
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white appearance-none focus:ring-2 focus:ring-teal-500 outline-none transition-all"
                         value={formData.province}
                         onChange={e => setFormData({...formData, province: e.target.value})}
@@ -134,6 +157,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">评分 (0-5)</label>
                     <input
                       type="number"
+                      disabled={isDisabled}
                       step="0.1"
                       min="0"
                       max="5"
@@ -144,14 +168,14 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                   </div>
                 </div>
 
-                {/* Coordinates */}
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> 纬度 (Latitude)
+                      <MapPin className="w-3 h-3" /> 纬度
                     </label>
                     <input
                       type="number"
+                      disabled={isDisabled}
                       step="any"
                       placeholder="如: 34.8093"
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all"
@@ -161,10 +185,11 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> 经度 (Longitude)
+                      <MapPin className="w-3 h-3" /> 经度
                     </label>
                     <input
                       type="number"
+                      disabled={isDisabled}
                       step="any"
                       placeholder="如: 114.3377"
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all"
@@ -180,21 +205,22 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                     <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                       required
+                      disabled={isDisabled}
                       placeholder="https://..."
                       className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all"
                       value={formData.imageUrl}
                       onChange={e => setFormData({...formData, imageUrl: e.target.value})}
                     />
                   </div>
-                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">支持 JPG, PNG, WebP 格式链接</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">景点描述</label>
                   <textarea
                     required
+                    disabled={isDisabled}
                     rows={5}
-                    placeholder="请详细描述该景点的历史文化、特色亮点..."
+                    placeholder="详细描述..."
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all resize-none"
                     value={formData.description}
                     onChange={e => setFormData({...formData, description: e.target.value})}
@@ -204,10 +230,11 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">标签</label>
                   <input
+                    disabled={isDisabled}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all"
                     value={formData.tags}
                     onChange={e => setFormData({...formData, tags: e.target.value})}
-                    placeholder="使用逗号分隔，例如：历史, 5A景区, 摄影"
+                    placeholder="使用逗号分隔"
                   />
                 </div>
               </form>
@@ -216,7 +243,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
             {/* Right Column: Preview */}
             <div className="hidden md:flex w-1/2 bg-slate-50 dark:bg-slate-800/50 p-8 flex-col items-center justify-center relative">
               <div className="absolute top-8 left-8 text-xs font-bold text-slate-400 uppercase tracking-widest">
-                Real-time Preview
+                实时预览
               </div>
               
               <div className="w-full max-w-sm">
@@ -234,36 +261,17 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                            <ImageIcon className="w-12 h-12 opacity-50" />
                          </div>
                        )}
-                       <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-amber-500 shadow-sm flex items-center gap-1">
-                          <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-                          {formData.rating}
-                       </div>
                     </div>
                     <div className="p-4">
-                       <div className="text-xs font-medium text-teal-600 mb-2 flex items-center gap-1">
-                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                          {formData.province}
-                       </div>
                        <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-2 line-clamp-1">
                          {formData.name || '景点名称'}
                        </h3>
-                       <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">
-                         {formData.description || '景点描述内容将显示在这里...'}
+                       <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
+                         {formData.description || '描述内容...'}
                        </p>
-                       <div className="flex flex-wrap gap-2">
-                          {formData.tags.split(',').filter(Boolean).map((t, i) => (
-                             <span key={i} className="text-[10px] uppercase px-2 py-1 rounded-full border border-slate-100 dark:border-slate-700 text-slate-400">
-                               {t}
-                             </span>
-                          ))}
-                          {!formData.tags && <span className="text-[10px] text-slate-300">#TAGS</span>}
-                       </div>
                     </div>
                  </div>
               </div>
-              <p className="mt-8 text-sm text-slate-400 text-center max-w-xs">
-                预览效果仅供参考，实际显示可能因屏幕尺寸而异。
-              </p>
             </div>
           </div>
 
@@ -272,10 +280,12 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
             {initialData && onDelete ? (
               <button
                 type="button"
-                onClick={() => onDelete(initialData.id)}
-                className="px-5 py-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl flex items-center gap-2 transition-colors font-medium text-sm"
+                disabled={isDisabled}
+                onClick={handleDelete}
+                className="px-5 py-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl flex items-center gap-2 transition-all font-medium text-sm disabled:opacity-50"
               >
-                <Trash2 className="w-4 h-4" /> 删除此景点
+                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} 
+                删除此景点
               </button>
             ) : <div></div>}
             
@@ -283,16 +293,19 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl dark:text-slate-300 dark:hover:bg-slate-800 font-medium text-sm transition-colors"
+                disabled={isDisabled}
+                className="px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-xl dark:text-slate-300 dark:hover:bg-slate-800 font-medium text-sm transition-colors disabled:opacity-50"
               >
                 取消
               </button>
               <button
                 type="submit"
                 form="attractionForm"
-                className="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-xl hover:shadow-lg hover:shadow-teal-500/30 flex items-center gap-2 font-bold text-sm transition-all transform hover:-translate-y-0.5"
+                disabled={isDisabled}
+                className="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-xl hover:shadow-lg hover:shadow-teal-500/30 flex items-center gap-2 font-bold text-sm transition-all transform hover:-translate-y-0.5 disabled:opacity-70 disabled:scale-100"
               >
-                <Save className="w-4 h-4" /> {initialData ? '保存更改' : '确认发布'}
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {initialData ? '保存更改' : '确认发布'}
               </button>
             </div>
           </div>

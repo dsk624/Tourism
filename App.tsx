@@ -13,7 +13,7 @@ import { AttractionCard } from './components/AttractionCard';
 import RegisterForm from './components/RegisterForm';
 import LoginForm from './components/LoginForm';
 import { Attraction, User } from './types';
-import { User as UserIcon, Map, Loader2, Eye } from 'lucide-react';
+import { User as UserIcon, Map, Loader2, Eye, LogOut } from 'lucide-react';
 import { api } from './services/api';
 
 const ScrollToTop = () => {
@@ -78,11 +78,21 @@ const App: React.FC = () => {
       const data = await api.stats.incrementViews();
       setViewCount(data.views);
     } catch (e) {
-      // If increment fails, try just getting the current count
       try {
         const data = await api.stats.getViews();
         setViewCount(data.views);
       } catch (err) {}
+    }
+  };
+
+  const handleLogoutAction = async () => {
+    try {
+      await api.auth.logout();
+      handleAuthFailure();
+      window.location.href = '/login';
+    } catch (e) {
+      handleAuthFailure();
+      window.location.href = '/login';
     }
   };
 
@@ -154,7 +164,7 @@ const App: React.FC = () => {
         <Navbar 
           theme={theme} setTheme={setTheme}
           isAuthenticated={isAuthenticated} currentUser={currentUser}
-          handleLogout={async () => { try { await api.auth.logout(); handleAuthFailure(); window.location.href = '/login'; } catch(e){} }}
+          handleLogout={handleLogoutAction}
           setIsContactModalOpen={setIsContactModalOpen}
           mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
         />
@@ -182,18 +192,64 @@ const App: React.FC = () => {
             <Route path="/register" element={isAuthenticated ? <Navigate to="/profile" /> : <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen"><div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}><RegisterForm /></div></div>} />
             <Route path="/profile" element={isAuthenticated ? (
               <div className="pt-32 px-4 max-w-6xl mx-auto min-h-screen pb-20">
-                <div className={`p-8 rounded-3xl ${currentTheme.cardBg} border ${currentTheme.border} shadow-xl mb-10`}>
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-16 h-16 bg-teal-500/10 rounded-full flex items-center justify-center border border-teal-500/20"><UserIcon className="w-8 h-8 text-teal-500" /></div>
-                    <div>
-                      <div className="flex items-center gap-2"><h1 className="text-3xl font-bold">{currentUser?.username}</h1>{currentUser?.isAdmin && <span className="bg-red-500/10 text-red-500 text-xs px-2 py-1 rounded-full font-bold border border-red-500/20">管理员</span>}</div>
-                      <p className="opacity-70 mt-1">欢迎回来，您的旅行数据已通过 D1 数据库同步。</p>
+                <div className={`p-8 rounded-3xl ${currentTheme.cardBg} border ${currentTheme.border} shadow-xl mb-10 relative overflow-hidden`}>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-teal-500/10 rounded-full flex items-center justify-center border border-teal-500/20">
+                        <UserIcon className="w-8 h-8 text-teal-500" />
+                      </div>
+                      <div className="text-center sm:text-left">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                          <h1 className="text-3xl font-bold">{currentUser?.username}</h1>
+                          {currentUser?.isAdmin && (
+                            <span className="bg-red-500/10 text-red-500 text-[10px] px-2 py-0.5 rounded-full font-bold border border-red-500/20 inline-block w-fit mx-auto sm:mx-0">管理员</span>
+                          )}
+                        </div>
+                        <p className="opacity-70 mt-1 text-sm">欢迎回来，您的旅行数据已通过 D1 数据库同步。</p>
+                      </div>
                     </div>
+                    <button 
+                      onClick={handleLogoutAction}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border border-red-500/20 rounded-xl transition-all font-bold text-sm"
+                    >
+                      <LogOut className="w-4 h-4" /> 退出登录
+                    </button>
                   </div>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 blur-3xl rounded-full -mr-16 -mt-16"></div>
                 </div>
                 <div className="mb-10">
-                  <h3 className="text-2xl font-bold mb-6 flex items-center gap-2 px-2"><div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">{currentUser?.isAdmin ? <Map className="w-5 h-5" /> : <div className="text-red-500">❤</div>}</div>{currentUser?.isAdmin ? '管理概览' : '我的旅行收藏'}</h3>
-                  {!currentUser?.isAdmin && (favorites.size > 0 ? <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">{attractions.filter(a => favorites.has(a.id)).map(a => <AttractionCard key={a.id} attraction={a} onClick={setSelectedAttraction} theme={theme} currentTheme={currentTheme} isFavorite={true} onToggleFavorite={() => {}} note={favoriteNotes[a.id]} onUpdateNote={async (id, note) => { if (!isAuthenticated) return; setFavoriteNotes(prev => ({ ...prev, [id]: note })); try { await api.favorites.updateNote(id, note); } catch(e){} }} />)}</div> : <div className={`p-12 text-center rounded-2xl ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-slate-50'} border ${currentTheme.border} border-dashed`}><p className="text-lg opacity-60 mb-4">暂无收藏</p><Link to="/"><button className="px-6 py-2 bg-teal-500 text-white rounded-full font-medium">去探索</button></Link></div>)}
+                  <h3 className="text-2xl font-bold mb-6 flex items-center gap-2 px-2">
+                    <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">
+                      {currentUser?.isAdmin ? <Map className="w-5 h-5" /> : <div className="text-red-500">❤</div>}
+                    </div>
+                    {currentUser?.isAdmin ? '管理概览' : '我的旅行收藏'}
+                  </h3>
+                  {!currentUser?.isAdmin && (favorites.size > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {attractions.filter(a => favorites.has(a.id)).map(a => (
+                        <AttractionCard 
+                          key={a.id} 
+                          attraction={a} 
+                          onClick={setSelectedAttraction} 
+                          theme={theme} 
+                          currentTheme={currentTheme} 
+                          isFavorite={true} 
+                          onToggleFavorite={() => {}} 
+                          note={favoriteNotes[a.id]} 
+                          onUpdateNote={async (id, note) => { 
+                            if (!isAuthenticated) return; 
+                            setFavoriteNotes(prev => ({ ...prev, [id]: note })); 
+                            try { await api.favorites.updateNote(id, note); } catch(e){} 
+                          }} 
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={`p-12 text-center rounded-2xl ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-slate-50'} border ${currentTheme.border} border-dashed`}>
+                      <p className="text-lg opacity-60 mb-4">暂无收藏</p>
+                      <Link to="/"><button className="px-6 py-2 bg-teal-500 text-white rounded-full font-medium">去探索</button></Link>
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : <Navigate to="/login" />} />
@@ -204,7 +260,6 @@ const App: React.FC = () => {
           <div className="max-w-7xl mx-auto px-6 text-center">
             <div className="flex justify-center items-center gap-2 mb-4 opacity-50"><div className="w-5 h-5 bg-teal-500/50 rounded-full"></div><span className="font-bold">华夏游</span></div>
             
-            {/* 浏览量统计展示 */}
             <div className="flex flex-col items-center gap-2 mb-6">
                <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-200/50 dark:bg-slate-800/50 text-xs font-medium border border-slate-300/30 dark:border-slate-700/30">
                   <Eye className="w-3.5 h-3.5 text-teal-500" />
