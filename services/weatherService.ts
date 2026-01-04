@@ -1,65 +1,51 @@
 
 import { LocationData, WeatherData } from '../types';
 
-// 默认兜底：开封
-const DEFAULT_KAIFENG: LocationData = {
-    city: '开封',
-    province: '河南',
-    latitude: 34.7973,
-    longitude: 114.3076
-};
-
 /**
- * 获取用户高精度位置
+ * 获取用户位置（无感模式）
+ * 依次尝试 Cloudflare 边缘定位和 GeoJS IP 定位
+ * 如果全部失败，返回 null，不再使用默认城市兜底
  */
-export const getUserLocation = async (): Promise<LocationData> => {
-  return new Promise((resolve) => {
-    // 1. 尝试使用浏览器原生 Geolocation (最高精度)
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const { latitude, longitude } = position.coords;
-            // 通过坐标反查城市 (使用 Open-Meteo 的 geocoding 接口或简单 IP 接口补充城市名)
-            const cityRes = await fetch(`https://get.geojs.io/v1/ip/geo.json`);
-            const cityData = await cityRes.json();
-            
-            resolve({
-              city: cityData.city || '当前位置',
-              province: cityData.region || '',
-              latitude,
-              longitude
-            });
-          } catch (e) {
-            resolve(fetchIPLocation());
-          }
-        },
-        () => resolve(fetchIPLocation()), // 权限拒绝或超时，回退到 IP 定位
-        { timeout: 5000, enableHighAccuracy: true }
-      );
-    } else {
-      resolve(fetchIPLocation());
-    }
-  });
-};
-
-/**
- * IP 定位作为备选
- */
-const fetchIPLocation = async (): Promise<LocationData> => {
+export const getUserLocation = async (): Promise<LocationData | null> => {
   try {
-    const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
-    if (!response.ok) throw new Error('Location API failed');
+    // 1. 优先尝试 Cloudflare 边缘节点定位
+    const response = await fetch('/api/location');
+    if (!response.ok) throw new Error('Edge location failed');
     const data = await response.json();
     
+    // 简单校验坐标有效性
+    if (isNaN(data.latitude) || isNaN(data.longitude)) {
+      throw new Error('Invalid coordinates from edge');
+    }
+    return data;
+  } catch (error) {
+    console.warn('Seamless edge location failed, trying backup IP API...');
+    return fetchIPLocation();
+  }
+};
+
+/**
+ * IP 定位作为二级备选
+ */
+const fetchIPLocation = async (): Promise<LocationData | null> => {
+  try {
+    const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
+    if (!response.ok) throw new Error('IP Location API failed');
+    const data = await response.json();
+    
+    if (!data.latitude || !data.longitude) {
+      return null;
+    }
+    
     return {
-      city: data.city || DEFAULT_KAIFENG.city,
-      province: data.region || DEFAULT_KAIFENG.province,
-      latitude: parseFloat(data.latitude) || DEFAULT_KAIFENG.latitude,
-      longitude: parseFloat(data.longitude) || DEFAULT_KAIFENG.longitude
+      city: data.city || '未知城市',
+      province: data.region || '',
+      latitude: parseFloat(data.latitude),
+      longitude: parseFloat(data.longitude)
     };
   } catch (error) {
-    return DEFAULT_KAIFENG;
+    console.error('All location attempts failed.');
+    return null;
   }
 };
 

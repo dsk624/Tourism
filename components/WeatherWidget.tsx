@@ -5,7 +5,7 @@ import { getUserLocation, getWeather, getWeatherIcon, getWeatherDescription } fr
 import { LocationData, WeatherData } from '../types';
 import { 
   MapPin, Calendar, Clock, Droplets, Sunrise, Sunset, Loader2, 
-  ChevronUp, Wind, ThermometerSun, Gauge, Sun
+  ChevronUp, Wind, Sun, Gauge
 } from 'lucide-react';
 
 export const WeatherWidget: React.FC = () => {
@@ -22,11 +22,13 @@ export const WeatherWidget: React.FC = () => {
     const initData = async () => {
       try {
         const loc = await getUserLocation();
-        setLocation(loc);
-        const w = await getWeather(loc.latitude, loc.longitude);
-        setWeather(w);
+        if (loc) {
+          setLocation(loc);
+          const w = await getWeather(loc.latitude, loc.longitude);
+          setWeather(w);
+        }
       } catch (e) {
-        console.error(e);
+        console.error('Weather data init error:', e);
       } finally {
         setLoading(false);
       }
@@ -62,7 +64,9 @@ export const WeatherWidget: React.FC = () => {
     });
   };
 
+  // 关键改动：如果正在加载，或者最终未能获取到位置/天气数据，则不渲染任何内容
   if (loading) return null;
+  if (!location || !weather) return null;
 
   return (
     <div className={`fixed z-40 transition-all duration-500 ${isExpanded ? 'inset-0 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm md:inset-auto md:top-28 md:right-8 md:bg-transparent md:backdrop-blur-none' : 'top-20 right-4 md:top-24 md:right-8'}`}>
@@ -84,18 +88,18 @@ export const WeatherWidget: React.FC = () => {
                className="flex items-center gap-4 whitespace-nowrap"
              >
                 <div className="text-3xl filter drop-shadow-md">
-                   {weather ? getWeatherIcon(weather.weatherCode, weather.isDay) : <Loader2 className="animate-spin w-5 h-5" />}
+                   {getWeatherIcon(weather.weatherCode, weather.isDay)}
                 </div>
                 <div className="flex flex-col">
                    <div className="text-base font-black text-slate-800 dark:text-white flex items-center gap-2">
-                     {weather ? Math.round(weather.temperature) : '--'}°
+                     {Math.round(weather.temperature)}°
                      <span className="text-[10px] font-bold uppercase tracking-widest text-teal-600 bg-teal-500/10 px-2 py-0.5 rounded-full">
-                       {weather ? getWeatherDescription(weather.weatherCode) : ''}
+                       {getWeatherDescription(weather.weatherCode)}
                      </span>
                    </div>
                    <div className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
                      <MapPin className="w-2.5 h-2.5 text-teal-500" />
-                     {location?.city}
+                     {location.city}
                    </div>
                 </div>
              </motion.div>
@@ -119,7 +123,7 @@ export const WeatherWidget: React.FC = () => {
                     </div>
                     <div>
                       <span className="block text-sm font-black text-slate-800 dark:text-white leading-tight">{formatDate(date)}</span>
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Today's Forecast</span>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">今日天气预报</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl">
@@ -133,75 +137,73 @@ export const WeatherWidget: React.FC = () => {
                    <div className="space-y-1">
                      <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
                        <MapPin className="w-3 h-3 text-teal-500" />
-                       {location?.city} · {location?.province}
+                       {location.city} · {location.province}
                      </div>
                      <div className="flex items-baseline gap-3">
                        <span className="text-6xl font-black text-slate-800 dark:text-white tracking-tighter">
-                         {weather ? Math.round(weather.temperature) : '--'}°
+                         {Math.round(weather.temperature)}°
                        </span>
                        <span className="text-xl font-bold text-teal-500">
-                         {weather ? getWeatherDescription(weather.weatherCode) : ''}
+                         {getWeatherDescription(weather.weatherCode)}
                        </span>
                      </div>
                      <div className="text-xs font-medium text-slate-400">
-                        Feels like {weather ? Math.round(weather.apparentTemperature) : '--'}°
+                        体感温度 {Math.round(weather.apparentTemperature)}°
                      </div>
                    </div>
                    <div className="text-7xl filter drop-shadow-2xl">
-                     {weather ? getWeatherIcon(weather.weatherCode, weather.isDay) : <Loader2 className="animate-spin w-8 h-8 text-slate-300" />}
+                     {getWeatherIcon(weather.weatherCode, weather.isDay)}
                    </div>
                 </div>
 
                 {/* Details Grid */}
-                {weather && (
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                     <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/30 flex flex-col gap-1 group">
-                       <div className="flex items-center gap-2 text-slate-400 font-bold uppercase tracking-wider">
-                          <Droplets className="w-4 h-4 text-blue-500" /> 湿度
-                       </div>
-                       <span className="text-lg font-black text-slate-800 dark:text-slate-200">{weather.humidity}%</span>
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                   <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/30 flex flex-col gap-1 group">
+                     <div className="flex items-center gap-2 text-slate-400 font-bold uppercase tracking-wider">
+                        <Droplets className="w-4 h-4 text-blue-500" /> 湿度
                      </div>
+                     <span className="text-lg font-black text-slate-800 dark:text-slate-200">{weather.humidity}%</span>
+                   </div>
 
-                     <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/30 flex flex-col gap-1">
-                       <div className="flex items-center gap-2 text-slate-400 font-bold uppercase tracking-wider">
-                          <Wind className="w-4 h-4 text-teal-500" /> 风速
-                       </div>
-                       <span className="text-lg font-black text-slate-800 dark:text-slate-200">{weather.windSpeed} <span className="text-[10px] opacity-50">km/h</span></span>
+                   <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/30 flex flex-col gap-1">
+                     <div className="flex items-center gap-2 text-slate-400 font-bold uppercase tracking-wider">
+                        <Wind className="w-4 h-4 text-teal-500" /> 风速
                      </div>
+                     <span className="text-lg font-black text-slate-800 dark:text-slate-200">{weather.windSpeed} <span className="text-[10px] opacity-50">km/h</span></span>
+                   </div>
 
-                     <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/30 flex flex-col gap-1">
-                       <div className="flex items-center gap-2 text-slate-400 font-bold uppercase tracking-wider">
-                          <Sun className="w-4 h-4 text-amber-500" /> 紫外线
-                       </div>
-                       <span className="text-lg font-black text-slate-800 dark:text-slate-200">{weather.uvIndex.toFixed(1)}</span>
+                   <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/30 flex flex-col gap-1">
+                     <div className="flex items-center gap-2 text-slate-400 font-bold uppercase tracking-wider">
+                        <Sun className="w-4 h-4 text-amber-500" /> 紫外线
                      </div>
+                     <span className="text-lg font-black text-slate-800 dark:text-slate-200">{weather.uvIndex.toFixed(1)}</span>
+                   </div>
 
-                     <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/30 flex flex-col gap-1">
-                       <div className="flex items-center gap-2 text-slate-400 font-bold uppercase tracking-wider">
-                          <Gauge className="w-4 h-4 text-indigo-500" /> 气压
-                       </div>
-                       <span className="text-lg font-black text-slate-800 dark:text-slate-200">{Math.round(weather.pressure)} <span className="text-[10px] opacity-50">hPa</span></span>
+                   <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/30 flex flex-col gap-1">
+                     <div className="flex items-center gap-2 text-slate-400 font-bold uppercase tracking-wider">
+                        <Gauge className="w-4 h-4 text-indigo-500" /> 气压
                      </div>
+                     <span className="text-lg font-black text-slate-800 dark:text-slate-200">{Math.round(weather.pressure)} <span className="text-[10px] opacity-50">hPa</span></span>
+                   </div>
 
-                     <div className="col-span-2 bg-gradient-to-br from-teal-500/10 to-emerald-500/10 dark:from-teal-900/20 dark:to-emerald-900/20 p-4 rounded-2xl border border-teal-500/20 flex items-center justify-between px-6">
-                       <div className="flex items-center gap-3">
-                         <Sunrise className="w-5 h-5 text-amber-500" />
-                         <div className="flex flex-col">
-                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Sunrise</span>
-                            <span className="font-black text-slate-700 dark:text-slate-200">{formatTime(weather.sunrise)}</span>
-                         </div>
-                       </div>
-                       <div className="w-px h-8 bg-teal-500/20"></div>
-                       <div className="flex items-center gap-3">
-                         <div className="flex flex-col text-right">
-                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Sunset</span>
-                            <span className="font-black text-slate-700 dark:text-slate-200">{formatTime(weather.sunset)}</span>
-                         </div>
-                         <Sunset className="w-5 h-5 text-rose-500" />
+                   <div className="col-span-2 bg-gradient-to-br from-teal-500/10 to-emerald-500/10 dark:from-teal-900/20 dark:to-emerald-900/20 p-4 rounded-2xl border border-teal-500/20 flex items-center justify-between px-6">
+                     <div className="flex items-center gap-3">
+                       <Sunrise className="w-5 h-5 text-amber-500" />
+                       <div className="flex flex-col">
+                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">日出</span>
+                          <span className="font-black text-slate-700 dark:text-slate-200">{formatTime(weather.sunrise)}</span>
                        </div>
                      </div>
-                  </div>
-                )}
+                     <div className="w-px h-8 bg-teal-500/20"></div>
+                     <div className="flex items-center gap-3">
+                       <div className="flex flex-col text-right">
+                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">日落</span>
+                          <span className="font-black text-slate-700 dark:text-slate-200">{formatTime(weather.sunset)}</span>
+                       </div>
+                       <Sunset className="w-5 h-5 text-rose-500" />
+                     </div>
+                   </div>
+                </div>
 
                 {/* Close Button */}
                 <button 
@@ -212,7 +214,7 @@ export const WeatherWidget: React.FC = () => {
                    className="w-full py-3 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                 >
                    <ChevronUp className="w-4 h-4" />
-                   <span className="text-[10px] font-bold uppercase tracking-widest">Collapse</span>
+                   <span className="text-[10px] font-bold uppercase tracking-widest">折叠</span>
                 </button>
               </motion.div>
             )}
