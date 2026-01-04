@@ -16,6 +16,8 @@ import { Attraction, User } from './types';
 import { User as UserIcon, Map, Loader2, Eye, LogOut } from 'lucide-react';
 import { api } from './services/api';
 
+const ITEMS_PER_PAGE = 9;
+
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -31,6 +33,7 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'teal'>('dark');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [viewCount, setViewCount] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const hasIncrementedView = useRef(false);
 
   // Auth & Admin State
@@ -143,7 +146,8 @@ const App: React.FC = () => {
   };
   const currentTheme = themes[theme];
 
-  const filteredAttractions = useMemo(() => {
+  // Logic to calculate filtered attractions and pagination
+  const { filteredAttractions, paginatedAttractions, totalPages } = useMemo(() => {
     let filtered = attractions;
     if (selectedProvince !== '全部') filtered = filtered.filter(a => a.province === selectedProvince);
     if (searchTerm) {
@@ -154,8 +158,17 @@ const App: React.FC = () => {
         (a.tags || []).some(tag => (tag || '').toLowerCase().includes(lowerTerm))
       );
     }
-    return filtered;
-  }, [selectedProvince, searchTerm, attractions]);
+
+    const total = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+    const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    return { filteredAttractions: filtered, paginatedAttractions: paginated, totalPages: total };
+  }, [selectedProvince, searchTerm, attractions, currentPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedProvince, searchTerm]);
 
   return (
     <Router>
@@ -179,15 +192,37 @@ const App: React.FC = () => {
           <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 text-teal-500 animate-spin" /></div>
         ) : (
           <Routes>
-            <Route path="/" element={<HomeContent theme={theme} currentTheme={currentTheme} searchTerm={searchTerm} setSearchTerm={setSearchTerm} isAuthenticated={isAuthenticated} currentUser={currentUser} openAddModal={() => { setEditingAttraction(null); setIsAdminModalOpen(true); }} selectedProvince={selectedProvince} setSelectedProvince={setSelectedProvince} isDataLoading={isDataLoading} dynamicProvinces={dynamicProvinces} filteredAttractions={filteredAttractions} handleToggleFavorite={async (e, id) => {
-              if (e) { e.stopPropagation(); e.preventDefault(); }
-              if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
-              const isFav = favorites.has(id);
-              if (isFav && favoriteNotes[id] && !window.confirm("取消收藏将同步删除备注，确定？")) return;
-              const newFavs = new Set(favorites); if (isFav) newFavs.delete(id); else newFavs.add(id);
-              setFavorites(newFavs);
-              try { if (isFav) await api.favorites.remove(id); else await api.favorites.add(id); } catch(e) { fetchFavorites(); }
-            }} favorites={favorites} setSelectedAttraction={setSelectedAttraction} openEditModal={(e, a) => { e.stopPropagation(); setEditingAttraction(a); setIsAdminModalOpen(true); }} />} />
+            <Route path="/" element={
+              <HomeContent 
+                theme={theme} 
+                currentTheme={currentTheme} 
+                searchTerm={searchTerm} 
+                setSearchTerm={setSearchTerm} 
+                isAuthenticated={isAuthenticated} 
+                currentUser={currentUser} 
+                openAddModal={() => { setEditingAttraction(null); setIsAdminModalOpen(true); }} 
+                selectedProvince={selectedProvince} 
+                setSelectedProvince={setSelectedProvince} 
+                isDataLoading={isDataLoading} 
+                dynamicProvinces={dynamicProvinces} 
+                filteredAttractions={paginatedAttractions} // Now passing paginated
+                handleToggleFavorite={async (e, id) => {
+                  if (e) { e.stopPropagation(); e.preventDefault(); }
+                  if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
+                  const isFav = favorites.has(id);
+                  if (isFav && favoriteNotes[id] && !window.confirm("取消收藏将同步删除备注，确定？")) return;
+                  const newFavs = new Set(favorites); if (isFav) newFavs.delete(id); else newFavs.add(id);
+                  setFavorites(newFavs);
+                  try { if (isFav) await api.favorites.remove(id); else await api.favorites.add(id); } catch(e) { fetchFavorites(); }
+                }} 
+                favorites={favorites} 
+                setSelectedAttraction={setSelectedAttraction} 
+                openEditModal={(e, a) => { e.stopPropagation(); setEditingAttraction(a); setIsAdminModalOpen(true); }}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />} 
+            />
             <Route path="/login" element={isAuthenticated ? <Navigate to="/profile" /> : <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen"><div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}><LoginForm onLoginSuccess={async () => { setIsAuthChecking(true); try { const data = await api.auth.me(); if(data.authenticated && data.user) { setIsAuthenticated(true); setCurrentUser(data.user); localStorage.setItem('china_travel_user', JSON.stringify(data.user)); } } catch(e){} setIsAuthChecking(false); }} /></div></div>} />
             <Route path="/register" element={isAuthenticated ? <Navigate to="/profile" /> : <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen"><div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}><RegisterForm /></div></div>} />
             <Route path="/profile" element={isAuthenticated ? (

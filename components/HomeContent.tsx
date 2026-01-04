@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, Loader2, Edit } from 'lucide-react';
+import { Search, Plus, Loader2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import { WeatherWidget } from './WeatherWidget';
 import { AttractionCard } from './AttractionCard';
 import { Attraction, User } from '../types';
@@ -22,6 +23,9 @@ interface HomeContentProps {
   favorites: Set<string>;
   setSelectedAttraction: (attraction: Attraction | null) => void;
   openEditModal: (e: React.MouseEvent, attraction: Attraction) => void;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }
 
 export const HomeContent: React.FC<HomeContentProps> = ({
@@ -40,7 +44,10 @@ export const HomeContent: React.FC<HomeContentProps> = ({
   handleToggleFavorite,
   favorites,
   setSelectedAttraction,
-  openEditModal
+  openEditModal,
+  currentPage,
+  totalPages,
+  onPageChange
 }) => {
   return (
     <>
@@ -68,10 +75,8 @@ export const HomeContent: React.FC<HomeContentProps> = ({
             </p>
 
             <div className="relative max-w-lg mx-auto group animate__animated animate__fadeInUp animate__delay-1s">
-              {/* Decorative Glow */}
               <div className="absolute inset-0 bg-teal-500/30 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full"></div>
               
-              {/* Search Bar - Updated UI */}
               <div className="relative flex items-center bg-white/80 backdrop-blur-md shadow-2xl shadow-teal-900/20 rounded-full p-1.5 transition-all transform group-hover:scale-[1.02] border border-white/20 focus-within:border-teal-400 focus-within:bg-white/95">
                 <div className="pl-3 pr-2">
                   <Search className="w-5 h-5 text-teal-600" />
@@ -98,7 +103,6 @@ export const HomeContent: React.FC<HomeContentProps> = ({
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 -mt-10 relative z-20">
-        {/* Admin Add Button */}
         {isAuthenticated && currentUser?.isAdmin && (
            <div className="flex justify-end mb-6 animate__animated animate__fadeInRight">
               <button 
@@ -110,7 +114,6 @@ export const HomeContent: React.FC<HomeContentProps> = ({
            </div>
         )}
 
-        {/* Filter Section */}
         <div className={`mb-12 overflow-x-auto pb-4 no-scrollbar flex justify-center animate__animated animate__fadeInUp`}>
           <div className={`inline-flex p-1.5 rounded-2xl ${theme === 'dark' ? 'bg-slate-800/80 border border-slate-700' : 'bg-white border border-slate-200'} backdrop-blur-sm shadow-xl`}>
             {isDataLoading ? (
@@ -133,52 +136,113 @@ export const HomeContent: React.FC<HomeContentProps> = ({
           </div>
         </div>
 
-        {/* Grid */}
         {isDataLoading ? (
           <div className="flex justify-center items-center py-20">
              <Loader2 className="w-10 h-10 text-teal-500 animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            <AnimatePresence>
-              {filteredAttractions.map((attraction, i) => (
-                <motion.div
-                  key={attraction.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
-                  className="relative group animate__animated animate__fadeInUp"
-                  style={{ animationDelay: `${i * 0.1}s` }}
+          <>
+            <motion.div 
+              key={`${selectedProvince}-${searchTerm}-${currentPage}`}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.4 }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
+              <AnimatePresence mode="popLayout">
+                {filteredAttractions.map((attraction, i) => (
+                  <motion.div
+                    key={attraction.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.3 }}
+                    className="relative group"
+                  >
+                    <AttractionCard 
+                      attraction={attraction} 
+                      onClick={setSelectedAttraction} 
+                      theme={theme}
+                      currentTheme={currentTheme}
+                      searchTerm={searchTerm}
+                      isFavorite={favorites.has(attraction.id)}
+                      onToggleFavorite={handleToggleFavorite}
+                    />
+                    
+                    {isAuthenticated && currentUser?.isAdmin && (
+                      <button 
+                        onClick={(e) => openEditModal(e, attraction)}
+                        className="absolute top-4 right-14 z-20 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-all opacity-0 group-hover:opacity-100"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              {filteredAttractions.length === 0 && (
+                 <div className="col-span-full text-center py-20 text-slate-500">
+                    <p>未找到相关景点，试着换个关键词？</p>
+                 </div>
+              )}
+            </motion.div>
+
+            {/* Pagination UI */}
+            {totalPages > 1 && (
+              <div className="mt-16 flex justify-center items-center gap-2">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => {
+                    onPageChange(currentPage - 1);
+                    window.scrollTo({ top: 400, behavior: 'smooth' });
+                  }}
+                  className={`p-2 rounded-xl border transition-all ${
+                    currentPage === 1 
+                      ? 'opacity-30 cursor-not-allowed text-slate-400 border-slate-200 dark:border-slate-800' 
+                      : `${theme === 'dark' ? 'border-slate-700 text-slate-100 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`
+                  }`}
                 >
-                  <AttractionCard 
-                    attraction={attraction} 
-                    onClick={setSelectedAttraction} 
-                    theme={theme}
-                    currentTheme={currentTheme}
-                    searchTerm={searchTerm}
-                    isFavorite={favorites.has(attraction.id)}
-                    onToggleFavorite={handleToggleFavorite}
-                  />
-                  
-                  {isAuthenticated && currentUser?.isAdmin && (
-                    <button 
-                      onClick={(e) => openEditModal(e, attraction)}
-                      className="absolute top-4 right-14 z-20 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-all opacity-0 group-hover:opacity-100"
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+
+                <div className="flex gap-2 mx-4">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => {
+                        onPageChange(page);
+                        window.scrollTo({ top: 400, behavior: 'smooth' });
+                      }}
+                      className={`w-10 h-10 rounded-xl font-bold transition-all ${
+                        currentPage === page
+                          ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/20'
+                          : `${theme === 'dark' ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-50'}`
+                      }`}
                     >
-                      <Edit className="w-4 h-4" />
+                      {page}
                     </button>
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            {filteredAttractions.length === 0 && (
-               <div className="col-span-full text-center py-20 text-slate-500">
-                  <p>未找到相关景点，试着换个关键词？</p>
-               </div>
+                  ))}
+                </div>
+
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => {
+                    onPageChange(currentPage + 1);
+                    window.scrollTo({ top: 400, behavior: 'smooth' });
+                  }}
+                  className={`p-2 rounded-xl border transition-all ${
+                    currentPage === totalPages 
+                      ? 'opacity-30 cursor-not-allowed text-slate-400 border-slate-200 dark:border-slate-800' 
+                      : `${theme === 'dark' ? 'border-slate-700 text-slate-100 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`
+                  }`}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
             )}
-          </div>
+          </>
         )}
       </main>
     </>
