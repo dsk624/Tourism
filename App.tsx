@@ -13,7 +13,7 @@ import { AttractionCard } from './components/AttractionCard';
 import RegisterForm from './components/RegisterForm';
 import LoginForm from './components/LoginForm';
 import { Attraction, User } from './types';
-import { User as UserIcon, Map, Loader2, Eye, LogOut } from 'lucide-react';
+import { User as UserIcon, Map, Loader2, Eye, LogOut, Edit, Plus } from 'lucide-react';
 import { api } from './services/api';
 
 const ITEMS_PER_PAGE = 9;
@@ -146,7 +146,6 @@ const App: React.FC = () => {
   };
   const currentTheme = themes[theme];
 
-  // Logic to calculate filtered attractions and pagination
   const { filteredAttractions, paginatedAttractions, totalPages } = useMemo(() => {
     let filtered = attractions;
     if (selectedProvince !== '全部') filtered = filtered.filter(a => a.province === selectedProvince);
@@ -158,14 +157,11 @@ const App: React.FC = () => {
         (a.tags || []).some(tag => (tag || '').toLowerCase().includes(lowerTerm))
       );
     }
-
     const total = Math.ceil(filtered.length / ITEMS_PER_PAGE);
     const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
     return { filteredAttractions: filtered, paginatedAttractions: paginated, totalPages: total };
   }, [selectedProvince, searchTerm, attractions, currentPage]);
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedProvince, searchTerm]);
@@ -205,7 +201,7 @@ const App: React.FC = () => {
                 setSelectedProvince={setSelectedProvince} 
                 isDataLoading={isDataLoading} 
                 dynamicProvinces={dynamicProvinces} 
-                filteredAttractions={paginatedAttractions} // Now passing paginated
+                filteredAttractions={paginatedAttractions}
                 handleToggleFavorite={async (e, id) => {
                   if (e) { e.stopPropagation(); e.preventDefault(); }
                   if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
@@ -253,38 +249,87 @@ const App: React.FC = () => {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 blur-3xl rounded-full -mr-16 -mt-16"></div>
                 </div>
                 <div className="mb-10">
-                  <h3 className="text-2xl font-bold mb-6 flex items-center gap-2 px-2">
-                    <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">
-                      {currentUser?.isAdmin ? <Map className="w-5 h-5" /> : <div className="text-red-500">❤</div>}
-                    </div>
-                    {currentUser?.isAdmin ? '管理概览' : '我的旅行收藏'}
-                  </h3>
-                  {!currentUser?.isAdmin && (favorites.size > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {attractions.filter(a => favorites.has(a.id)).map(a => (
-                        <AttractionCard 
-                          key={a.id} 
-                          attraction={a} 
-                          onClick={setSelectedAttraction} 
-                          theme={theme} 
-                          currentTheme={currentTheme} 
-                          isFavorite={true} 
-                          onToggleFavorite={() => {}} 
-                          note={favoriteNotes[a.id]} 
-                          onUpdateNote={async (id, note) => { 
-                            if (!isAuthenticated) return; 
-                            setFavoriteNotes(prev => ({ ...prev, [id]: note })); 
-                            try { await api.favorites.updateNote(id, note); } catch(e){} 
-                          }} 
-                        />
-                      ))}
-                    </div>
+                  <div className="flex justify-between items-center mb-6 px-2">
+                    <h3 className="text-2xl font-bold flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">
+                        {currentUser?.isAdmin ? <Map className="w-5 h-5" /> : <div className="text-red-500">❤</div>}
+                      </div>
+                      {currentUser?.isAdmin ? '管理概览' : '我的旅行收藏'}
+                    </h3>
+                    {currentUser?.isAdmin && (
+                      <button 
+                        onClick={() => { setEditingAttraction(null); setIsAdminModalOpen(true); }}
+                        className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-teal-500/20 transition-all"
+                      >
+                        <Plus className="w-4 h-4" /> 新增景点
+                      </button>
+                    )}
+                  </div>
+
+                  {currentUser?.isAdmin ? (
+                    attractions.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {attractions.map(a => (
+                          <div key={a.id} className="relative group">
+                             <AttractionCard 
+                                attraction={a} 
+                                onClick={setSelectedAttraction} 
+                                theme={theme} 
+                                currentTheme={currentTheme} 
+                                isFavorite={favorites.has(a.id)} 
+                                onToggleFavorite={null} 
+                             />
+                             <button 
+                                onClick={(e) => { e.stopPropagation(); setEditingAttraction(a); setIsAdminModalOpen(true); }}
+                                className="absolute top-4 right-4 z-20 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md p-2 rounded-full text-teal-500 shadow-lg border border-teal-100 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="编辑景点"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className={`p-12 text-center rounded-2xl ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-slate-50'} border ${currentTheme.border} border-dashed`}>
+                        <p className="text-lg opacity-60 mb-4">暂无景点数据</p>
+                        <button onClick={() => { setEditingAttraction(null); setIsAdminModalOpen(true); }} className="px-6 py-2 bg-teal-500 text-white rounded-full font-medium">立即创建</button>
+                      </div>
+                    )
                   ) : (
-                    <div className={`p-12 text-center rounded-2xl ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-slate-50'} border ${currentTheme.border} border-dashed`}>
-                      <p className="text-lg opacity-60 mb-4">暂无收藏</p>
-                      <Link to="/"><button className="px-6 py-2 bg-teal-500 text-white rounded-full font-medium">去探索</button></Link>
-                    </div>
-                  ))}
+                    favorites.size > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {attractions.filter(a => favorites.has(a.id)).map(a => (
+                          <AttractionCard 
+                            key={a.id} 
+                            attraction={a} 
+                            onClick={setSelectedAttraction} 
+                            theme={theme} 
+                            currentTheme={currentTheme} 
+                            isFavorite={true} 
+                            onToggleFavorite={async (e, id) => {
+                              if (e) { e.stopPropagation(); e.preventDefault(); }
+                              if (window.confirm("确定取消收藏吗？")) {
+                                const newFavs = new Set(favorites); newFavs.delete(id);
+                                setFavorites(newFavs);
+                                try { await api.favorites.remove(id); } catch(e) { fetchFavorites(); }
+                              }
+                            }} 
+                            note={favoriteNotes[a.id]} 
+                            onUpdateNote={async (id, note) => { 
+                              if (!isAuthenticated) return; 
+                              setFavoriteNotes(prev => ({ ...prev, [id]: note })); 
+                              try { await api.favorites.updateNote(id, note); } catch(e){} 
+                            }} 
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className={`p-12 text-center rounded-2xl ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-slate-50'} border ${currentTheme.border} border-dashed`}>
+                        <p className="text-lg opacity-60 mb-4">暂无收藏</p>
+                        <Link to="/"><button className="px-6 py-2 bg-teal-500 text-white rounded-full font-medium">去探索</button></Link>
+                      </div>
+                    )
+                  )}
                 </div>
               </div>
             ) : <Navigate to="/login" />} />
@@ -307,7 +352,7 @@ const App: React.FC = () => {
           </div>
         </footer>
 
-        <DetailModal attraction={selectedAttraction} allAttractions={attractions} onClose={() => setSelectedAttraction(null)} isFavorite={selectedAttraction ? favorites.has(selectedAttraction.id) : false} onToggleFavorite={() => {}} />
+        <DetailModal attraction={selectedAttraction} allAttractions={attractions} onClose={() => setSelectedAttraction(null)} isFavorite={selectedAttraction ? favorites.has(selectedAttraction.id) : false} onToggleFavorite={null} />
         <FeedbackWidget />
         <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
         <AdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} onSubmit={async (data) => { try { if (editingAttraction) await api.attractions.update(editingAttraction.id, data); else await api.attractions.create(data); setIsAdminModalOpen(false); fetchAttractions(); } catch(e){ alert('操作失败'); } }} onDelete={async (id) => { if (confirm('确定删除？')) { try { await api.attractions.delete(id); setIsAdminModalOpen(false); fetchAttractions(); } catch(e){ alert('失败'); } } }} initialData={editingAttraction} />
