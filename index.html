@@ -5,22 +5,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>华夏游 | China Travel</title>
+    
+    <!-- 性能优化：预连接到常用 CDN -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="preconnect" href="https://esm.sh" />
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+    <link rel="dns-prefetch" href="https://esm.sh" />
+
     <!-- SEO优化 -->
     <meta name="description" content="华夏游 - 探索中华之美，寻访名山大川，品味千年文化。从河南出发，丈量每一寸锦绣河山。" />
     <meta name="keywords" content="华夏游,旅游,中国旅游,景点,名山大川,文化旅游,河南旅游" />
     <meta name="author" content="华夏游" />
     <meta name="robots" content="index, follow" />
     
-    <!-- RSS & Sitemap 发现链接 -->
-    <link rel="alternate" type="application/rss+xml" title="华夏游景点更新 RSS" href="/rss.xml" />
-    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
-    
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230d9488' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m8 3 4 8 5-5 5 15H2L8 3z'/%3E%3C/svg%3E" type="image/svg+xml" sizes="any" />
     
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/noto-sans-sc@latest/css/noto-sans-sc.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     
     <script type="importmap">
 {
@@ -32,22 +34,19 @@
     "framer-motion": "https://cdn.jsdelivr.net/npm/framer-motion@12.0.0/+esm",
     "lucide-react": "https://cdn.jsdelivr.net/npm/lucide-react@0.469.0/+esm",
     "leaflet": "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm",
+    "vite": "https://esm.sh/vite@^7.3.1",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "path": "https://esm.sh/path@^0.12.7",
-    "vite": "https://esm.sh/vite@^7.3.0",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "vitest/": "https://esm.sh/vitest@^4.0.16/"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "vitest/": "https://esm.sh/vitest@^4.0.16/",
+    "path": "https://esm.sh/path@^0.12.7"
   }
 }
 </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-    <script src="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-    <script src="https://myhkw.cn/api/player/demo" id="myhk" key="demo" m="1" skin="yellowcat" au="0" lr="l"></script>
+    <script src="https://myhkw.cn/api/player/demo" id="myhk" key="demo" m="1" skin="yellowcat" au="0" lr="l" async></script>
   </body>
 </html>

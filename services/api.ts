@@ -44,9 +44,10 @@ export const api = {
     updateNote: (attractionId: string, note: string) => fetchClient<any>('/api/favorites', { method: 'PUT', body: JSON.stringify({ attractionId, note }) }),
     remove: (attractionId: string) => fetchClient<any>('/api/favorites', { method: 'DELETE', body: JSON.stringify({ attractionId }) }),
   },
+  // Fix: Add schedules API definition to support旅程记事 functionality
   schedules: {
     getAll: () => fetchClient<Schedule[]>('/api/schedules'),
-    create: (data: Omit<Schedule, 'id'>) => fetchClient<any>('/api/schedules', { method: 'POST', body: JSON.stringify(data) }),
+    create: (data: any) => fetchClient<any>('/api/schedules', { method: 'POST', body: JSON.stringify(data) }),
     delete: (id: number) => fetchClient<any>(`/api/schedules?id=${id}`, { method: 'DELETE' }),
   },
   feedback: {

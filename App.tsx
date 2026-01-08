@@ -6,7 +6,6 @@ import { DetailModal } from './components/DetailModal';
 import { FeedbackWidget } from './components/FeedbackWidget';
 import { AdminModal } from './components/AdminModal';
 import { ContactModal } from './components/ContactModal';
-import { CalendarModal } from './components/CalendarModal';
 import { LoginPromptModal } from './components/LoginPromptModal';
 import { Navbar } from './components/Navbar';
 import { HomeContent } from './components/HomeContent';
@@ -36,7 +35,6 @@ const App: React.FC = () => {
   const [viewCount, setViewCount] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [activeProfileTab, setActiveProfileTab] = useState<'management' | 'favorites'>('favorites');
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const hasIncrementedView = useRef(false);
 
   // Auth & Admin State
@@ -45,7 +43,7 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('china_travel_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [isAuthChecking, setIsAuthChecking] = useState(() => !localStorage.getItem('china_travel_user'));
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   // Favorites & Data State
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -65,7 +63,6 @@ const App: React.FC = () => {
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const [editingAttraction, setEditingAttraction] = useState<Attraction | null>(null);
 
-  // Fetch Logic
   const fetchAttractions = async () => {
     setIsDataLoading(true);
     try {
@@ -77,18 +74,13 @@ const App: React.FC = () => {
     finally { setIsDataLoading(false); }
   };
 
-  const handleStats = async () => {
-    if (hasIncrementedView.current) return;
-    hasIncrementedView.current = true;
+  const fetchFavorites = async () => {
+    if (!isAuthenticated) return;
     try {
-      const data = await api.stats.incrementViews();
-      setViewCount(data.views);
-    } catch (e) {
-      try {
-        const data = await api.stats.getViews();
-        setViewCount(data.views);
-      } catch (err) {}
-    }
+      const data = await api.favorites.getAll();
+      setFavorites(new Set(data.favorites));
+      if (data.notes) setFavoriteNotes(data.notes);
+    } catch (e) {}
   };
 
   const handleLogoutAction = async () => {
@@ -102,25 +94,6 @@ const App: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const data = await api.auth.me();
-        if (data.authenticated && data.user) {
-          setIsAuthenticated(true);
-          setCurrentUser(data.user);
-          localStorage.setItem('china_travel_user', JSON.stringify(data.user));
-          if (data.user.isAdmin) setActiveProfileTab('management');
-          fetchFavorites();
-        } else { handleAuthFailure(); }
-      } catch (e) { handleAuthFailure(); }
-      finally { setIsAuthChecking(false); }
-    };
-    checkAuth();
-    fetchAttractions();
-    handleStats();
-  }, []);
-
   const handleAuthFailure = () => {
     setIsAuthenticated(false);
     setCurrentUser(null);
@@ -129,19 +102,43 @@ const App: React.FC = () => {
     setFavoriteNotes({});
   };
 
-  const fetchFavorites = async () => {
-    if (!isAuthenticated) return;
-    try {
-      const data = await api.favorites.getAll();
-      setFavorites(new Set(data.favorites));
-      if (data.notes) setFavoriteNotes(data.notes);
-    } catch (e) {}
-  };
-
   useEffect(() => {
-    if (isAuthenticated) fetchFavorites();
-    else { setFavorites(new Set()); setFavoriteNotes({}); }
-  }, [isAuthenticated]);
+    const initializeApp = async () => {
+      // 并行执行初始数据加载，显著提升首屏性能
+      const [authResult, attractionsResult] = await Promise.allSettled([
+        api.auth.me(),
+        api.attractions.getAll()
+      ]);
+
+      // 处理鉴权
+      if (authResult.status === 'fulfilled' && authResult.value.authenticated && authResult.value.user) {
+        setIsAuthenticated(true);
+        setCurrentUser(authResult.value.user);
+        localStorage.setItem('china_travel_user', JSON.stringify(authResult.value.user));
+        if (authResult.value.user.isAdmin) setActiveProfileTab('management');
+        fetchFavorites();
+      } else {
+        handleAuthFailure();
+      }
+      setIsAuthChecking(false);
+
+      // 处理景点数据
+      if (attractionsResult.status === 'fulfilled' && Array.isArray(attractionsResult.value)) {
+        setAttractions(attractionsResult.value.map((item: any) => ({ ...item, imageUrl: item.image_url || item.imageUrl })));
+      }
+      setIsDataLoading(false);
+
+      // 异步增加访问量
+      if (!hasIncrementedView.current) {
+        hasIncrementedView.current = true;
+        api.stats.incrementViews().then(data => setViewCount(data.views)).catch(() => {
+          api.stats.getViews().then(data => setViewCount(data.views)).catch(() => {});
+        });
+      }
+    };
+
+    initializeApp();
+  }, []);
 
   const themes = {
     light: { primary: 'bg-teal-600', primaryText: 'text-teal-600', bg: 'bg-slate-50', cardBg: 'bg-white', text: 'text-slate-800', border: 'border-slate-200' },
@@ -190,7 +187,6 @@ const App: React.FC = () => {
           handleLogout={handleLogoutAction}
           setIsContactModalOpen={setIsContactModalOpen}
           mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
-          setIsCalendarOpen={setIsCalendarOpen}
         />
 
         <AnimatePresence>
@@ -199,7 +195,7 @@ const App: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {isAuthChecking ? (
+        {isAuthChecking && isDataLoading ? (
           <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 text-teal-500 animate-spin" /></div>
         ) : (
           <Routes>
@@ -381,7 +377,6 @@ const App: React.FC = () => {
         <DetailModal attraction={selectedAttraction} allAttractions={attractions} onClose={() => setSelectedAttraction(null)} isFavorite={selectedAttraction ? favorites.has(selectedAttraction.id) : false} onToggleFavorite={handleToggleFavorite} />
         <FeedbackWidget />
         <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
-        <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} isAuthenticated={isAuthenticated} />
         <AdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} onSubmit={async (data) => { try { if (editingAttraction) await api.attractions.update(editingAttraction.id, data); else await api.attractions.create(data); setIsAdminModalOpen(false); fetchAttractions(); } catch(e){ alert('操作失败'); } }} onDelete={async (id) => { if (confirm('确定删除此景点？')) { try { await api.attractions.delete(id); setIsAdminModalOpen(false); fetchAttractions(); } catch(e){ alert('删除失败'); } } }} initialData={editingAttraction} />
         <LoginPromptModal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)} />
       </div>

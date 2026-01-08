@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, LogOut, Settings, Calendar, User as UserIcon, ChevronDown } from 'lucide-react';
+import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, LogOut, Settings, User as UserIcon, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '../types';
 
@@ -14,11 +14,10 @@ interface NavbarProps {
   setIsContactModalOpen: (isOpen: boolean) => void;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
-  setIsCalendarOpen: (open: boolean) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  theme, setTheme, isAuthenticated, currentUser, handleLogout, setIsContactModalOpen, mobileMenuOpen, setMobileMenuOpen, setIsCalendarOpen
+  theme, setTheme, isAuthenticated, currentUser, handleLogout, setIsContactModalOpen, mobileMenuOpen, setMobileMenuOpen
 }) => {
   const location = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -53,13 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Desktop Controls */}
         <div className="hidden md:flex items-center gap-6">
-          <Link to="/" className="text-sm font-bold opacity-70 hover:opacity-100 transition-opacity">首页</Link>
-          <button 
-            onClick={() => setIsCalendarOpen(true)}
-            className="flex items-center gap-2 text-sm font-bold opacity-70 hover:opacity-100 transition-opacity"
-          >
-            <Calendar className="w-4 h-4" /> 旅程日历
-          </button>
+          <Link to="/" className={`text-sm font-bold transition-opacity ${location.pathname === '/' ? 'text-teal-500' : 'opacity-70 hover:opacity-100'}`}>首页</Link>
 
           {/* Settings Dropdown */}
           <div className="relative" ref={dropdownRef}>
@@ -95,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   <button 
                     onClick={() => { setIsContactModalOpen(true); setSettingsOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-teal-500/10 rounded-xl transition-colors"
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-teal-500/10 rounded-xl transition-colors text-slate-700 dark:text-slate-300"
                   >
                     <MessageCircle className="w-4 h-4 text-blue-500" /> 联系反馈
                   </button>
@@ -104,7 +97,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   {isAuthenticated ? (
                     <>
-                      <Link to="/profile" onClick={() => setSettingsOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-teal-500/10 rounded-xl transition-colors">
+                      <Link to="/profile" onClick={() => setSettingsOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-teal-500/10 rounded-xl transition-colors text-slate-700 dark:text-slate-300">
                         <UserIcon className="w-4 h-4 text-teal-500" /> 个人中心
                       </Link>
                       <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10 rounded-xl transition-colors">
@@ -123,7 +116,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Mobile Toggle */}
-        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2">
+        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 text-slate-500">
           {mobileMenuOpen ? <X /> : <Menu />}
         </button>
       </div>
