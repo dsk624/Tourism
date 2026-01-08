@@ -11,10 +11,11 @@ interface Props {
   onSubmit: (data: any) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   initialData?: Attraction | null;
+  defaultTab?: 'attraction' | 'notification';
 }
 
-export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelete, initialData }) => {
-  const [activeTab, setActiveTab] = useState<'attraction' | 'notification'>('attraction');
+export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelete, initialData, defaultTab = 'attraction' }) => {
+  const [activeTab, setActiveTab] = useState<'attraction' | 'notification'>(defaultTab);
   const [formData, setFormData] = useState({
     name: '',
     province: '河南',
@@ -30,6 +31,13 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
   const [newNotifContent, setNewNotifContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // 当 defaultTab 变化且弹窗打开时，更新当前激活的 Tab
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(defaultTab);
+    }
+  }, [isOpen, defaultTab]);
 
   const fetchNotifs = async () => {
     try {
@@ -176,7 +184,6 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
           <div className="flex flex-col flex-grow overflow-hidden">
             {activeTab === 'attraction' ? (
               <div className="flex flex-col md:flex-row flex-grow overflow-hidden">
-                {/* Attraction Form Logic (保持原有) */}
                 <div className="w-full md:w-1/2 p-6 sm:p-8 overflow-y-auto no-scrollbar border-r dark:border-slate-800">
                   <form id="attractionForm" onSubmit={handleSubmit} className={`space-y-5 sm:space-y-6 ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
                     <div>
@@ -206,7 +213,6 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                   </form>
                 </div>
                 <div className="hidden md:flex w-1/2 bg-slate-50 dark:bg-slate-800/80 p-8 flex-col items-center justify-center relative">
-                   {/* Preview (保持原有) */}
                    <div className="w-full max-w-sm">
                       <div className="bg-white dark:bg-slate-800 rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700">
                          <div className="h-48 w-full bg-slate-200 dark:bg-slate-700">
@@ -222,7 +228,6 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
               </div>
             ) : (
               <div className="p-6 sm:p-8 overflow-y-auto space-y-8 no-scrollbar">
-                {/* Notification Management Form */}
                 <div className="bg-teal-50 dark:bg-teal-900/20 p-6 rounded-3xl border border-teal-100 dark:border-teal-800">
                   <h4 className="font-black text-slate-800 dark:text-white mb-4">发布新通知</h4>
                   <div className="flex flex-col sm:flex-row gap-4">
@@ -251,13 +256,13 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                           <div className={`p-2 rounded-xl ${n.is_active ? 'bg-teal-100 text-teal-600' : 'bg-slate-100 text-slate-400'}`}>
                             {n.is_active ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                           </div>
-                          <div>
-                            <p className={`font-bold ${n.is_active ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500 line-through'}`}>{n.content}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-bold truncate ${n.is_active ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500 line-through'}`}>{n.content}</p>
                             <span className="text-[10px] text-slate-400">{new Date(n.created_at).toLocaleString()}</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => toggleNotif(n)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-teal-500">
+                          <button onClick={() => toggleNotif(n)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-teal-500 text-xs font-bold whitespace-nowrap">
                             {n.is_active ? '下架' : '上架'}
                           </button>
                           <button onClick={() => deleteNotif(n.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl text-red-500">
@@ -273,7 +278,6 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
             )}
           </div>
 
-          {/* Footer Actions */}
           {activeTab === 'attraction' && (
             <div className="px-6 sm:px-8 py-5 border-t dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center z-10">
               {initialData && onDelete ? (

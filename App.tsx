@@ -65,6 +65,7 @@ const App: React.FC = () => {
 
   // Modals
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [adminModalTab, setAdminModalTab] = useState<'attraction' | 'notification'>('attraction');
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const [editingAttraction, setEditingAttraction] = useState<Attraction | null>(null);
@@ -102,7 +103,6 @@ const App: React.FC = () => {
         hasIncrementedView.current = true;
       }
     } catch (e) {
-      // 降级：获取当前值
       try {
         const res = await api.stats.getViews();
         if (res && res.views) setViewCount(res.views);
@@ -178,6 +178,12 @@ const App: React.FC = () => {
     } catch(e) { fetchFavorites(); }
   };
 
+  const openAdminModal = (tab: 'attraction' | 'notification' = 'attraction', data: Attraction | null = null) => {
+    setAdminModalTab(tab);
+    setEditingAttraction(data);
+    setIsAdminModalOpen(true);
+  };
+
   return (
     <Router>
       <ScrollToTop />
@@ -188,6 +194,7 @@ const App: React.FC = () => {
           handleLogout={handleLogoutAction}
           setIsContactModalOpen={setIsContactModalOpen}
           mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
+          onOpenAdminNotifications={() => openAdminModal('notification')}
         />
 
         <AnimatePresence>
@@ -205,12 +212,12 @@ const App: React.FC = () => {
                 theme={theme} currentTheme={currentTheme} 
                 searchTerm={searchTerm} setSearchTerm={setSearchTerm} 
                 isAuthenticated={isAuthenticated} currentUser={currentUser} 
-                openAddModal={() => { setEditingAttraction(null); setIsAdminModalOpen(true); }} 
+                openAddModal={() => openAdminModal('attraction')} 
                 selectedProvince={selectedProvince} setSelectedProvince={setSelectedProvince} 
                 isDataLoading={isDataLoading} dynamicProvinces={staticProvinces} 
                 filteredAttractions={attractions} handleToggleFavorite={handleToggleFavorite} 
                 favorites={favoritesIds} setSelectedAttraction={setSelectedAttraction} 
-                openEditModal={(e, a) => { e.stopPropagation(); setEditingAttraction(a); setIsAdminModalOpen(true); }}
+                openEditModal={(e, a) => { e.stopPropagation(); openAdminModal('attraction', a); }}
                 currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage}
               />} 
             />
@@ -284,7 +291,7 @@ const App: React.FC = () => {
                          {attractions.map(attr => (
                             <div key={attr.id} className="relative group">
                               <AttractionCard attraction={attr} theme={theme} currentTheme={currentTheme} onClick={setSelectedAttraction} isFavorite={favoritesIds.has(attr.id)} onToggleFavorite={handleToggleFavorite} />
-                              <button onClick={(e) => { e.stopPropagation(); setEditingAttraction(attr); setIsAdminModalOpen(true); }} className="absolute top-4 right-14 z-20 bg-white/90 backdrop-blur-md p-2.5 rounded-xl text-teal-600 shadow-xl transition-all opacity-0 group-hover:opacity-100">
+                              <button onClick={(e) => { e.stopPropagation(); openAdminModal('attraction', attr); }} className="absolute top-4 right-14 z-20 bg-white/90 backdrop-blur-md p-2.5 rounded-xl text-teal-600 shadow-xl transition-all opacity-0 group-hover:opacity-100">
                                 <Edit className="w-5 h-5" />
                               </button>
                             </div>
@@ -320,14 +327,21 @@ const App: React.FC = () => {
                   </div>
                </div>
             </div>
-            <p className="text-xs opacity-40 dark:opacity-60 font-medium tracking-wide dark:text-slate-200">© 2025 China Travel Digital Experience.</p>
+            <p className="text-sm opacity-60 dark:opacity-80 font-bold tracking-wide text-slate-500 dark:text-slate-400">© 2025 China Travel Digital Experience.</p>
           </div>
         </footer>
 
         <DetailModal attraction={selectedAttraction} allAttractions={attractions} onClose={() => setSelectedAttraction(null)} isFavorite={selectedAttraction ? favoritesIds.has(selectedAttraction.id) : false} onToggleFavorite={handleToggleFavorite} theme={theme} />
         <FeedbackWidget isAuthenticated={isAuthenticated} onOpenLogin={() => setIsLoginPromptOpen(true)} />
         <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
-        <AdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} onSubmit={async (data) => { try { if (editingAttraction) await api.attractions.update(editingAttraction.id, data); else await api.attractions.create(data); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('操作失败'); } }} onDelete={async (id) => { if (confirm('确定删除此景点？')) { try { await api.attractions.delete(id); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('删除失败'); } } }} initialData={editingAttraction} />
+        <AdminModal 
+          isOpen={isAdminModalOpen} 
+          onClose={() => setIsAdminModalOpen(false)} 
+          defaultTab={adminModalTab}
+          onSubmit={async (data) => { try { if (editingAttraction) await api.attractions.update(editingAttraction.id, data); else await api.attractions.create(data); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('操作失败'); } }} 
+          onDelete={async (id) => { if (confirm('确定删除此景点？')) { try { await api.attractions.delete(id); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('删除失败'); } } }} 
+          initialData={editingAttraction} 
+        />
         <LoginPromptModal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)} />
       </div>
     </Router>

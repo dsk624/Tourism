@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, LogOut, Settings, User as UserIcon, ChevronDown, Bell, Volume2 } from 'lucide-react';
+import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, LogOut, Settings, User as UserIcon, ChevronDown, Bell, Volume2, Megaphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '../types';
 import { api, Notification } from '../services/api';
@@ -15,10 +15,11 @@ interface NavbarProps {
   setIsContactModalOpen: (isOpen: boolean) => void;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
+  onOpenAdminNotifications?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  theme, setTheme, isAuthenticated, currentUser, handleLogout, setIsContactModalOpen, mobileMenuOpen, setMobileMenuOpen
+  theme, setTheme, isAuthenticated, currentUser, handleLogout, setIsContactModalOpen, mobileMenuOpen, setMobileMenuOpen, onOpenAdminNotifications
 }) => {
   const location = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -35,7 +36,6 @@ export const Navbar: React.FC<NavbarProps> = ({
       }
     };
     fetchNotifications();
-    // 每 5 分钟刷新一次通知
     const interval = setInterval(fetchNotifications, 300000);
     return () => clearInterval(interval);
   }, []);
@@ -57,6 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   }[theme];
 
   const isDark = theme === 'dark';
+  const isAdmin = currentUser?.isAdmin;
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50">
@@ -67,10 +68,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-teal-600 dark:bg-teal-900/90 text-white py-2 overflow-hidden relative"
+            className="bg-teal-600 dark:bg-teal-900/90 text-white py-2 overflow-hidden relative group/marquee"
           >
             <div className="max-w-7xl mx-auto px-4 flex items-center gap-3">
-              <Volume2 className="w-4 h-4 flex-shrink-0 animate-pulse" />
+              <div className="flex items-center gap-2">
+                <Volume2 className="w-4 h-4 flex-shrink-0 animate-pulse" />
+                {isAdmin && (
+                  <button 
+                    onClick={onOpenAdminNotifications}
+                    className="p-1 rounded-md bg-white/20 hover:bg-white/40 transition-colors opacity-0 group-hover/marquee:opacity-100"
+                    title="管理通知"
+                  >
+                    <Settings className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
               <div className="flex-1 overflow-hidden relative h-5">
                 <div className="absolute whitespace-nowrap animate-marquee flex gap-20 items-center">
                   {notifications.map((n, i) => (
@@ -78,7 +90,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                       {n.content}
                     </span>
                   ))}
-                  {/* Duplicate for seamless loop */}
                   {notifications.map((n, i) => (
                     <span key={`dup-${i}`} className="text-xs font-bold tracking-wide">
                       {n.content}
@@ -155,6 +166,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                         >
                           <UserIcon className="w-4 h-4 text-teal-500" /> 个人中心
                         </Link>
+                        {isAdmin && (
+                          <button 
+                            onClick={() => { onOpenAdminNotifications?.(); setSettingsOpen(false); }}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-black rounded-xl transition-colors ${isDark ? 'text-slate-100 hover:bg-slate-700' : 'text-slate-800 hover:bg-teal-50'}`}
+                          >
+                            <Megaphone className="w-4 h-4 text-amber-500" /> 通知管理
+                          </button>
+                        )}
                         <button 
                           onClick={handleLogout} 
                           className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-black text-red-500 rounded-xl transition-colors ${isDark ? 'hover:bg-red-500/10' : 'hover:bg-red-50'}`}
@@ -218,6 +237,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <div className="p-2 bg-teal-500/10 rounded-lg"><Map className="w-5 h-5 text-teal-500" /></div>
                       探索首页
                     </Link>
+                    {isAdmin && (
+                      <button 
+                        onClick={() => { onOpenAdminNotifications?.(); setMobileMenuOpen(false); }}
+                        className="w-full flex items-center gap-4 text-lg font-bold dark:text-white"
+                      >
+                        <div className="p-2 bg-amber-500/10 rounded-lg"><Megaphone className="w-5 h-5 text-amber-500" /></div>
+                        通知管理
+                      </button>
+                    )}
                     <button 
                       onClick={() => { setIsContactModalOpen(true); setMobileMenuOpen(false); }}
                       className="w-full flex items-center gap-4 text-lg font-bold dark:text-white"
@@ -265,7 +293,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
                 
                 <div className="p-6 text-center">
-                  <p className={`text-[10px] font-bold uppercase tracking-tighter ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>© 2025 CHINA TRAVEL GUIDE</p>
+                  <p className={`text-xs font-bold uppercase tracking-tighter ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>© 2025 CHINA TRAVEL GUIDE</p>
                 </div>
               </motion.div>
             </>
