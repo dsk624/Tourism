@@ -2,6 +2,14 @@
 import { Attraction, AuthResponse, User, Schedule } from '../types';
 import { ATTRACTIONS } from '../constants';
 
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 const fetchClient = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
   const defaultHeaders = { 'Content-Type': 'application/json' };
   const config = { ...options, headers: { ...defaultHeaders, ...options.headers } };
@@ -33,7 +41,20 @@ export const api = {
     incrementViews: () => fetchClient<{ views: number }>('/api/stats', { method: 'POST' }),
   },
   attractions: {
-    getAll: async () => { try { return await fetchClient<Attraction[]>('/api/attractions'); } catch (e) { return ATTRACTIONS; } },
+    getAll: async (params: { page?: number, limit?: number, province?: string, search?: string } = {}) => {
+      const query = new URLSearchParams();
+      if (params.page) query.append('page', params.page.toString());
+      if (params.limit) query.append('limit', params.limit.toString());
+      if (params.province) query.append('province', params.province);
+      if (params.search) query.append('search', params.search);
+      
+      try {
+        return await fetchClient<PaginatedResponse<Attraction>>(`/api/attractions?${query.toString()}`);
+      } catch (e) {
+        // Fallback for demo or error
+        return { data: ATTRACTIONS, total: ATTRACTIONS.length, page: 1, limit: 9, totalPages: 1 };
+      }
+    },
     create: (data: any) => fetchClient<any>('/api/attractions', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: any) => fetchClient<any>(`/api/attractions?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: string) => fetchClient<any>(`/api/attractions?id=${id}`, { method: 'DELETE' }),
@@ -44,7 +65,6 @@ export const api = {
     updateNote: (attractionId: string, note: string) => fetchClient<any>('/api/favorites', { method: 'PUT', body: JSON.stringify({ attractionId, note }) }),
     remove: (attractionId: string) => fetchClient<any>('/api/favorites', { method: 'DELETE', body: JSON.stringify({ attractionId }) }),
   },
-  // Fix: Add schedules API definition to support旅程记事 functionality
   schedules: {
     getAll: () => fetchClient<Schedule[]>('/api/schedules'),
     create: (data: any) => fetchClient<any>('/api/schedules', { method: 'POST', body: JSON.stringify(data) }),
@@ -52,5 +72,6 @@ export const api = {
   },
   feedback: {
     submit: (content: string) => fetchClient<any>('/api/feedback', { method: 'POST', body: JSON.stringify({ content }) }),
+    getAll: () => fetchClient<{ content: string, created_at: string }[]>('/api/feedback'),
   },
 };
