@@ -76,7 +76,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
               />
               <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent md:hidden">
                  <h2 className="text-2xl font-black text-white leading-tight">{attraction.name}</h2>
-                 <p className="text-white/70 flex items-center gap-1 mt-1 text-sm font-bold uppercase tracking-widest">
+                 <p className="text-white/80 flex items-center gap-1 mt-1 text-sm font-bold uppercase tracking-widest">
                    <MapPin className="w-3 h-3" /> {attraction.province}
                  </p>
               </div>
@@ -112,19 +112,19 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
               {activeTab === 'info' ? (
                 <div className="flex flex-col flex-grow">
                   <div className="mb-8 flex-grow">
-                    <p className={`text-base sm:text-lg leading-relaxed font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                    <p className={`text-base sm:text-lg leading-relaxed font-medium ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>
                       {attraction.description}
                     </p>
                   </div>
 
-                  {/* Baidu Search Section - Optimized for Mobile */}
-                  <div className={`${isDark ? 'bg-blue-500/5 border-blue-500/10' : 'bg-blue-50/50 border-blue-100'} rounded-[2rem] p-5 sm:p-6 border mt-auto`}>
+                  {/* Baidu Search Section */}
+                  <div className={`${isDark ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50/50 border-blue-100'} rounded-[2rem] p-5 sm:p-6 border mt-auto`}>
                     <div className="flex items-center gap-2 mb-3">
-                      <Search className={`w-4 h-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
-                      <h3 className={`font-black tracking-tight text-sm uppercase ${isDark ? 'text-blue-200' : 'text-blue-800'}`}>智能探索</h3>
+                      <Search className={`w-4 h-4 ${isDark ? 'text-blue-300' : 'text-blue-600'}`} />
+                      <h3 className={`font-black tracking-tight text-sm uppercase ${isDark ? 'text-blue-100' : 'text-blue-800'}`}>智能探索</h3>
                     </div>
                     
-                    <p className={`text-xs sm:text-sm mb-4 font-bold ${isDark ? 'text-blue-400/60' : 'text-blue-700/60'}`}>
+                    <p className={`text-xs sm:text-sm mb-4 font-bold ${isDark ? 'text-blue-200/80' : 'text-blue-700/60'}`}>
                       想了解更多关于 {attraction.name} 的实时攻略、门票价格和游玩路线？
                     </p>
 
@@ -140,7 +140,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
 
                   <div className="mt-8 flex gap-2 flex-wrap pb-4">
                      {attraction.tags.map(tag => (
-                       <span key={tag} className={`px-3 py-1.5 ${isDark ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-slate-100 text-slate-500'} rounded-xl text-[10px] font-black uppercase tracking-widest`}>
+                       <span key={tag} className={`px-3 py-1.5 ${isDark ? 'bg-slate-800 text-teal-300 border border-slate-700' : 'bg-slate-100 text-slate-500'} rounded-xl text-[10px] font-black uppercase tracking-widest`}>
                          #{tag}
                        </span>
                      ))}

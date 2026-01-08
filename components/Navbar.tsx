@@ -39,6 +39,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     teal: "bg-teal-50/80 border-teal-100 text-teal-900"
   }[theme];
 
+  const isDark = theme === 'dark';
+
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b transition-all duration-300 ${currentThemeStyles}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex justify-between items-center">
@@ -70,9 +72,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className={`absolute right-0 mt-3 w-52 rounded-2xl shadow-2xl border border-white/20 p-2 overflow-hidden ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'}`}
+                  className={`absolute right-0 mt-3 w-52 rounded-2xl shadow-2xl border border-white/20 p-2 overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-white'}`}
                 >
-                  <div className="px-3 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">环境设置</div>
+                  <div className="px-3 py-2 text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">环境设置</div>
                   
                   <div className="flex gap-1 p-1 mb-2 bg-slate-100 dark:bg-slate-900 rounded-xl">
                     {(['light', 'dark', 'teal'] as const).map(t => (
@@ -88,7 +90,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   <button 
                     onClick={() => { setIsContactModalOpen(true); setSettingsOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-teal-500/10 rounded-xl transition-colors text-slate-700 dark:text-slate-300"
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-teal-500/10 rounded-xl transition-colors text-slate-700 dark:text-slate-200"
                   >
                     <MessageCircle className="w-4 h-4 text-blue-500" /> 联系反馈
                   </button>
@@ -97,7 +99,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   {isAuthenticated ? (
                     <>
-                      <Link to="/profile" onClick={() => setSettingsOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-teal-500/10 rounded-xl transition-colors text-slate-700 dark:text-slate-300">
+                      <Link to="/profile" onClick={() => setSettingsOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-teal-500/10 rounded-xl transition-colors text-slate-700 dark:text-slate-200">
                         <UserIcon className="w-4 h-4 text-teal-500" /> 个人中心
                       </Link>
                       <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10 rounded-xl transition-colors">
@@ -140,25 +142,25 @@ export const Navbar: React.FC<NavbarProps> = ({
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={`fixed top-0 right-0 bottom-0 w-[280px] z-50 shadow-2xl md:hidden flex flex-col ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`}
+              className={`fixed top-0 right-0 bottom-0 w-[280px] z-50 shadow-2xl md:hidden flex flex-col ${isDark ? 'bg-slate-900' : 'bg-white'}`}
             >
               <div className="p-6 flex justify-between items-center border-b border-slate-100 dark:border-slate-800">
-                <span className="font-black text-lg">导航菜单</span>
-                <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400">
+                <span className="font-black text-lg dark:text-white">导航菜单</span>
+                <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400 dark:text-slate-300">
                   <X className="w-6 h-6" />
                 </button>
               </div>
 
               <div className="flex-grow overflow-y-auto p-6 space-y-8">
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">主菜单</h4>
-                  <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-4 text-lg font-bold">
+                  <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">主菜单</h4>
+                  <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-4 text-lg font-bold dark:text-white">
                     <div className="p-2 bg-teal-500/10 rounded-lg"><Map className="w-5 h-5 text-teal-500" /></div>
                     探索首页
                   </Link>
                   <button 
                     onClick={() => { setIsContactModalOpen(true); setMobileMenuOpen(false); }}
-                    className="w-full flex items-center gap-4 text-lg font-bold"
+                    className="w-full flex items-center gap-4 text-lg font-bold dark:text-white"
                   >
                     <div className="p-2 bg-blue-500/10 rounded-lg"><MessageCircle className="w-5 h-5 text-blue-500" /></div>
                     联系作者
@@ -166,7 +168,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
 
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">外观设置</h4>
+                  <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">外观设置</h4>
                   <div className="grid grid-cols-3 gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
                     {(['light', 'dark', 'teal'] as const).map(t => (
                       <button 
@@ -181,10 +183,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">账户管理</h4>
+                  <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">账户管理</h4>
                   {isAuthenticated ? (
                     <div className="space-y-3">
-                      <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-4 text-lg font-bold">
+                      <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-4 text-lg font-bold dark:text-white">
                         <div className="p-2 bg-teal-500/10 rounded-lg"><UserIcon className="w-5 h-5 text-teal-500" /></div>
                         个人中心
                       </Link>
@@ -203,7 +205,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
               
               <div className="p-6 text-center">
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">© 2025 CHINA TRAVEL GUIDE</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-300 font-bold uppercase tracking-tighter">© 2025 CHINA TRAVEL GUIDE</p>
               </div>
             </motion.div>
           </>

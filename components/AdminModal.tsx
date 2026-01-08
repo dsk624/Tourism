@@ -100,7 +100,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className="relative bg-white dark:bg-slate-900 w-full max-w-5xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh]"
+          className="relative bg-white dark:bg-slate-900 w-full max-w-5xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] border dark:border-slate-800"
         >
           {/* Header */}
           <div className="flex justify-between items-center px-6 sm:px-8 py-4 sm:py-5 border-b dark:border-slate-800 bg-white dark:bg-slate-900 z-10">
@@ -115,7 +115,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
             <button 
               onClick={onClose} 
               disabled={isDisabled}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-slate-400"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-slate-300"
             >
               <X className="w-6 h-6" />
             </button>
@@ -126,12 +126,12 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
             <div className="w-full md:w-1/2 p-6 sm:p-8 overflow-y-auto no-scrollbar border-r dark:border-slate-800">
               <form id="attractionForm" onSubmit={handleSubmit} className={`space-y-5 sm:space-y-6 ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">景点名称</label>
+                  <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">景点名称</label>
                   <input
                     required
                     disabled={isDisabled}
                     placeholder="例如：清明上河园"
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold"
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold placeholder-slate-400 dark:placeholder-slate-500"
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
                   />
@@ -139,7 +139,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                    <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">所属省份</label>
+                    <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">所属省份</label>
                     <div className="relative">
                       <select
                         disabled={isDisabled}
@@ -151,13 +151,13 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                           <option key={p} value={p}>{p}</option>
                         ))}
                       </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-300">
                         <ChevronDown className="w-4 h-4" />
                       </div>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">评分 (0-5)</label>
+                    <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">评分 (0-5)</label>
                     <input
                       type="number"
                       disabled={isDisabled}
@@ -173,7 +173,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                    <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2 flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> 纬度
                     </label>
                     <input
@@ -181,13 +181,13 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                       disabled={isDisabled}
                       step="any"
                       placeholder="如: 34.8093"
-                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold"
+                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold placeholder-slate-400 dark:placeholder-slate-500"
                       value={formData.lat}
                       onChange={e => setFormData({...formData, lat: e.target.value})}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                    <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2 flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> 经度
                     </label>
                     <input
@@ -195,7 +195,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                       disabled={isDisabled}
                       step="any"
                       placeholder="如: 114.3377"
-                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold"
+                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold placeholder-slate-400 dark:placeholder-slate-500"
                       value={formData.lng}
                       onChange={e => setFormData({...formData, lng: e.target.value})}
                     />
@@ -203,14 +203,14 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">图片链接</label>
+                  <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">图片链接</label>
                   <div className="relative">
-                    <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-300" />
                     <input
                       required
                       disabled={isDisabled}
                       placeholder="https://..."
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold"
+                      className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold placeholder-slate-400 dark:placeholder-slate-500"
                       value={formData.imageUrl}
                       onChange={e => setFormData({...formData, imageUrl: e.target.value})}
                     />
@@ -218,23 +218,23 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">景点描述</label>
+                  <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">景点描述</label>
                   <textarea
                     required
                     disabled={isDisabled}
                     rows={4}
                     placeholder="详细描述..."
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all resize-none text-sm font-bold"
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all resize-none text-sm font-bold placeholder-slate-400 dark:placeholder-slate-500"
                     value={formData.description}
                     onChange={e => setFormData({...formData, description: e.target.value})}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">标签</label>
+                  <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">标签</label>
                   <input
                     disabled={isDisabled}
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold"
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold placeholder-slate-400 dark:placeholder-slate-500"
                     value={formData.tags}
                     onChange={e => setFormData({...formData, tags: e.target.value})}
                     placeholder="使用逗号分隔"
@@ -244,8 +244,8 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
             </div>
 
             {/* Right Column: Preview (Hidden on small screens) */}
-            <div className="hidden md:flex w-1/2 bg-slate-50 dark:bg-slate-800/50 p-8 flex-col items-center justify-center relative">
-              <div className="absolute top-8 left-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            <div className="hidden md:flex w-1/2 bg-slate-50 dark:bg-slate-800/80 p-8 flex-col items-center justify-center relative">
+              <div className="absolute top-8 left-8 text-[10px] font-black text-slate-400 dark:text-teal-400 uppercase tracking-widest">
                 实时预览
               </div>
               
@@ -268,7 +268,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                        <h3 className="font-black text-lg text-slate-800 dark:text-white mb-2 line-clamp-1">
                          {formData.name || '景点名称'}
                        </h3>
-                       <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                       <p className="text-sm text-slate-500 dark:text-slate-300 line-clamp-2 leading-relaxed">
                          {formData.description || '描述内容...'}
                        </p>
                     </div>
@@ -284,7 +284,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                 type="button"
                 disabled={isDisabled}
                 onClick={handleDelete}
-                className="p-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all sm:px-5 sm:flex sm:items-center sm:gap-2"
+                className="p-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/40 rounded-xl transition-all sm:px-5 sm:flex sm:items-center sm:gap-2"
               >
                 {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />} 
                 <span className="hidden sm:inline font-bold text-sm">删除景点</span>
