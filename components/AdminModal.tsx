@@ -1,9 +1,8 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Attraction } from '../types';
-// Add missing Megaphone and List icons to the lucide-react import
 import { X, Save, Trash2, Image as ImageIcon, LayoutTemplate, MapPin, Loader2, ChevronDown, Bell, Eye, EyeOff, Palette, SlidersHorizontal, Megaphone, List } from 'lucide-react';
 import { api, Notification } from '../services/api';
-// Add missing motion and AnimatePresence imports
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
@@ -37,7 +36,6 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
   
   const colorInputRef = useRef<HTMLInputElement>(null);
 
-  // 转换 hex 和 opacity 为 rgba
   const getRGBA = (hex: string, opacity: number) => {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
@@ -96,7 +94,6 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
     try {
       const lat = parseFloat(formData.lat);
       const lng = parseFloat(formData.lng);
-
       await onSubmit({
         ...formData,
         tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
@@ -115,6 +112,8 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
       await api.notifications.create({ content: newNotifContent, bg_color: bgColor });
       setNewNotifContent('');
       fetchNotifs();
+      // 发送刷新通知广播
+      window.dispatchEvent(new CustomEvent('notificationsUpdated'));
     } catch (e) { alert('发布失败'); }
     finally { setIsSubmitting(false); }
   };
@@ -127,6 +126,8 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
         bg_color: notif.bg_color
       });
       fetchNotifs();
+      // 发送刷新通知广播
+      window.dispatchEvent(new CustomEvent('notificationsUpdated'));
     } catch (e) { alert('操作失败'); }
   };
 
@@ -135,6 +136,8 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
     try {
       await api.notifications.delete(id);
       fetchNotifs();
+      // 发送刷新通知广播
+      window.dispatchEvent(new CustomEvent('notificationsUpdated'));
     } catch (e) { alert('删除失败'); }
   };
 

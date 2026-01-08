@@ -28,23 +28,31 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isDismissed, setIsDismissed] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const data = await api.notifications.getActive();
-        setNotifications(data);
-        if (data.length > 0 && !isDismissed) {
-          onNotificationVisibilityChange?.(true);
-        } else {
-          onNotificationVisibilityChange?.(false);
-        }
-      } catch (e) {
-        console.error('Failed to fetch notifications');
+  const fetchNotifications = async () => {
+    try {
+      const data = await api.notifications.getActive();
+      setNotifications(data);
+      if (data.length > 0 && !isDismissed) {
+        onNotificationVisibilityChange?.(true);
+      } else {
+        onNotificationVisibilityChange?.(false);
       }
-    };
+    } catch (e) {
+      console.error('Failed to fetch notifications');
+    }
+  };
+
+  useEffect(() => {
     fetchNotifications();
+    
+    // 监听管理员发布的广播事件
+    window.addEventListener('notificationsUpdated', fetchNotifications);
+    
     const interval = setInterval(fetchNotifications, 300000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('notificationsUpdated', fetchNotifications);
+    };
   }, [onNotificationVisibilityChange, isDismissed]);
 
   useEffect(() => {

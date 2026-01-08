@@ -82,10 +82,15 @@ export const onRequest = async (context: { request: Request; env: Env }) => {
         return new Response(JSON.stringify({ error: '请求太频繁' }), { status: 429, headers: corsHeaders });
       }
       
-      const { content } = await request.json() as { content: string };
+      const body = await request.json() as any;
+      const content = body?.content;
+
+      if (!content || typeof content !== 'string') {
+        return new Response(JSON.stringify({ error: '反馈内容不能为空' }), { status: 400, headers: corsHeaders });
+      }
+
       const userId = await getUserIdFromCookie(request, env.DB);
 
-      // 强制校验：如果没有 userId，说明是游客，拒绝提交
       if (!userId) {
         return new Response(JSON.stringify({ error: '请先登录后再提交反馈' }), { status: 401, headers: corsHeaders });
       }

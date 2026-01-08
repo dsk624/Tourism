@@ -69,18 +69,26 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ topOffset = 0 }) =
   if (loading) return null;
   if (!location || !weather) return null;
 
-  // 动态计算顶部位置
-  const topClass = isExpanded 
-    ? 'inset-0 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm md:inset-auto md:bg-transparent md:backdrop-blur-none' 
-    : 'right-4 md:right-8';
+  // 动态计算位置和层级
+  // 提高 z-index 至 60，确保在导航栏 (z-50) 之上
+  const baseZIndex = isExpanded ? 'z-[60]' : 'z-40';
+  
+  // 展开时的容器样式：移动端居中，桌面端保持右侧
+  const containerClasses = isExpanded 
+    ? 'fixed inset-0 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none md:items-start md:justify-end md:p-0' 
+    : 'fixed right-4 md:right-8';
 
   const style = !isExpanded ? {
-    top: `${topOffset + 88}px`, // 88px 是 nav + 边距的基础高度
+    top: `${topOffset + 88}px`, 
     transition: 'top 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
-  } : {};
+  } : {
+    // 桌面端展开时也应用 top 偏移，防止被顶部遮挡
+    top: window.innerWidth >= 768 ? `${topOffset + 88}px` : 'auto',
+    right: window.innerWidth >= 768 ? '2rem' : 'auto',
+  };
 
   return (
-    <div className={`fixed z-40 ${topClass}`} style={!isExpanded ? style : {}}>
+    <div className={`${baseZIndex} ${containerClasses}`} style={style}>
       <motion.div 
         ref={widgetRef}
         layout
