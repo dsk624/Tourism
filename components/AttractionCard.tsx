@@ -72,7 +72,7 @@ export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, cu
           <MapPin className="w-3 h-3" />
           {attraction.province}
         </div>
-        <p className={`${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} text-sm line-clamp-2 leading-relaxed mb-4 flex-grow`}>
+        <p className={`${theme === 'dark' ? 'text-slate-300' : 'text-slate-500'} text-sm line-clamp-2 leading-relaxed mb-4 flex-grow font-medium`}>
           {attraction.description}
         </p>
         

@@ -11,9 +11,10 @@ interface Props {
   onClose: () => void;
   isFavorite?: boolean;
   onToggleFavorite?: (e: React.MouseEvent | null, id: string) => void;
+  theme?: 'light' | 'dark' | 'teal';
 }
 
-export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClose, isFavorite, onToggleFavorite }) => {
+export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClose, isFavorite, onToggleFavorite, theme = 'light' }) => {
   const [activeTab, setActiveTab] = useState<'info' | 'map'>('info');
 
   if (!attraction) return null;
@@ -22,6 +23,8 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
     const query = `${attraction.province} ${attraction.name} 旅游攻略 必玩景点 美食`;
     window.open(`https://www.baidu.com/s?wd=${encodeURIComponent(query)}`, '_blank');
   };
+
+  const isDark = theme === 'dark';
 
   return (
     <AnimatePresence>
@@ -32,11 +35,11 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
           />
           
           <div
-              className="relative w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate__animated animate__zoomIn animate__faster"
+              className={`relative w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] ${isDark ? 'bg-slate-900' : 'bg-white'} rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row animate__animated animate__zoomIn animate__faster border ${isDark ? 'border-slate-800' : 'border-transparent'}`}
               onClick={(e) => e.stopPropagation()}
             >
             <div className="absolute top-4 right-4 z-10 flex gap-2">
@@ -75,27 +78,27 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
             </div>
 
             {/* Content Section */}
-            <div className="w-full md:w-1/2 p-4 sm:p-6 md:p-8 overflow-y-auto no-scrollbar bg-white flex flex-col">
+            <div className={`w-full md:w-1/2 p-4 sm:p-6 md:p-8 overflow-y-auto no-scrollbar ${isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-800'} flex flex-col`}>
               
               <div className="hidden md:block mb-4 animate__animated animate__fadeInDown animate__delay-1s">
-                 <h2 className="text-3xl font-bold text-slate-800 mb-2">{attraction.name}</h2>
-                 <div className="flex items-center gap-2 text-teal-600 font-medium">
+                 <h2 className={`text-3xl font-black tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>{attraction.name}</h2>
+                 <div className="flex items-center gap-2 text-teal-500 font-bold uppercase tracking-widest text-xs">
                     <MapPin className="w-4 h-4" />
                     <span>中国 · {attraction.province}</span>
                  </div>
               </div>
 
               {/* Tabs */}
-              <div className="flex p-1 bg-slate-100 rounded-xl mb-6">
+              <div className={`flex p-1 ${isDark ? 'bg-slate-800' : 'bg-slate-100'} rounded-2xl mb-6 border ${isDark ? 'border-slate-700' : 'border-transparent'}`}>
                 <button
                   onClick={() => setActiveTab('info')}
-                  className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'info' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'info' ? (isDark ? 'bg-slate-700 text-teal-400 shadow-md' : 'bg-white text-teal-600 shadow-sm') : 'text-slate-500 hover:text-slate-700'}`}
                 >
                   <BookOpen className="w-4 h-4" /> 介绍
                 </button>
                 <button
                   onClick={() => setActiveTab('map')}
-                  className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'map' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'map' ? (isDark ? 'bg-slate-700 text-teal-400 shadow-md' : 'bg-white text-teal-600 shadow-sm') : 'text-slate-500 hover:text-slate-700'}`}
                 >
                   <MapIcon className="w-4 h-4" /> 地图
                 </button>
@@ -103,24 +106,24 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
 
               {activeTab === 'info' ? (
                 <div className="animate__animated animate__fadeIn flex flex-col flex-grow">
-                  <div className="prose prose-slate prose-sm sm:prose-base mb-6 sm:mb-8 flex-grow">
-                    <p className="text-base sm:text-lg leading-relaxed text-slate-600">{attraction.description}</p>
+                  <div className="prose prose-sm sm:prose-base mb-6 sm:mb-8 flex-grow">
+                    <p className={`text-base sm:text-lg leading-relaxed font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{attraction.description}</p>
                   </div>
 
                   {/* Baidu Search Section */}
-                  <div className="bg-blue-50 rounded-2xl p-4 sm:p-6 border border-blue-100 mt-auto">
+                  <div className={`${isDark ? 'bg-blue-500/5 border-blue-500/20' : 'bg-blue-50 border-blue-100'} rounded-[2rem] p-4 sm:p-6 border mt-auto`}>
                     <div className="flex items-center gap-2 mb-3">
-                      <Search className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                      <h3 className="font-bold text-blue-800 text-base sm:text-lg">智能探索</h3>
+                      <Search className={`w-4 h-4 sm:w-5 sm:h-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                      <h3 className={`font-black tracking-tight text-base sm:text-lg ${isDark ? 'text-blue-200' : 'text-blue-800'}`}>智能探索</h3>
                     </div>
                     
-                    <p className="text-sm sm:text-base text-blue-700/80 mb-3 sm:mb-4">
+                    <p className={`text-sm sm:text-base mb-4 font-medium ${isDark ? 'text-blue-400/80' : 'text-blue-700/80'}`}>
                       想了解更多关于 {attraction.name} 的实时攻略、门票价格和游玩路线？
                     </p>
 
                     <button 
                       onClick={handleBaiduSearch}
-                      className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                      className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3.5 px-4 rounded-xl font-black text-sm transition-all shadow-lg shadow-blue-500/20 transform hover:-translate-y-0.5"
                     >
                       <img src="https://www.baidu.com/favicon.ico" alt="Baidu" className="w-4 h-4 bg-white rounded-full p-[1px]" />
                       在百度搜索更多详情
@@ -130,7 +133,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
 
                   <div className="mt-6 sm:mt-8 flex gap-2 sm:gap-3 flex-wrap">
                      {attraction.tags.map(tag => (
-                       <span key={tag} className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs sm:text-sm font-medium">
+                       <span key={tag} className={`px-3 py-1 ${isDark ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-slate-100 text-slate-500'} rounded-lg text-xs sm:text-sm font-bold`}>
                          #{tag}
                        </span>
                      ))}
@@ -146,21 +149,21 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
                       allAttractions={allAttractions}
                     />
                   ) : (
-                    <div className="w-full h-full bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 flex-col border border-slate-100 p-8">
+                    <div className={`${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-100'} w-full h-full rounded-2xl flex items-center justify-center text-slate-400 flex-col border p-8`}>
                        <motion.div
                          animate={{ y: [0, -10, 0] }}
                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                        >
-                         <Ghost className="w-16 h-16 mb-4 text-slate-300" />
+                         <Ghost className="w-16 h-16 mb-4 opacity-50" />
                        </motion.div>
-                       <p className="font-medium text-slate-500">暂无地图坐标数据</p>
-                       <p className="text-xs text-slate-400 mt-2 text-center max-w-[200px]">
+                       <p className="font-black tracking-tight text-sm uppercase">暂无地图坐标数据</p>
+                       <p className="text-xs opacity-60 mt-2 text-center max-w-[200px] font-medium">
                          该景点暂未收录精确坐标，管理员正在努力完善中...
                        </p>
                     </div>
                   )}
                   {attraction.coordinates && (
-                    <p className="text-xs text-slate-400 mt-3 text-center">
+                    <p className="text-[10px] text-slate-500 mt-3 text-center font-bold uppercase tracking-widest">
                       地图数据来源：腾讯地图 (Tencent Maps)
                     </p>
                   )}

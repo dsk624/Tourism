@@ -37,6 +37,15 @@ const App: React.FC = () => {
   const [activeProfileTab, setActiveProfileTab] = useState<'management' | 'favorites'>('favorites');
   const hasIncrementedView = useRef(false);
 
+  // 同步暗色模式类名到 HTML 根节点，使 tailwind 的 dark: 前缀生效
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
   // Auth & Admin State
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('china_travel_user'));
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -132,7 +141,7 @@ const App: React.FC = () => {
 
   const themes = {
     light: { primary: 'bg-teal-600', primaryText: 'text-teal-600', bg: 'bg-slate-50', cardBg: 'bg-white', text: 'text-slate-800', border: 'border-slate-200' },
-    dark: { primary: 'bg-teal-500', primaryText: 'text-teal-400', bg: 'bg-slate-900', cardBg: 'bg-slate-800', text: 'text-slate-100', border: 'border-slate-700' },
+    dark: { primary: 'bg-teal-500', primaryText: 'text-teal-400', bg: 'bg-slate-900', cardBg: 'bg-slate-800', text: 'text-white', border: 'border-slate-700' },
     teal: { primary: 'bg-teal-600', primaryText: 'text-teal-700', bg: 'bg-teal-50', cardBg: 'bg-white', text: 'text-teal-900', border: 'border-teal-100' }
   };
   const currentTheme = themes[theme];
@@ -210,12 +219,12 @@ const App: React.FC = () => {
                       </div>
                       <div className="text-center sm:text-left">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                          <h1 className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">{currentUser?.username}</h1>
+                          <h1 className={`text-3xl font-black tracking-tight ${currentTheme.text}`}>{currentUser?.username}</h1>
                           {currentUser?.isAdmin && (
                             <span className="bg-red-500/10 text-red-500 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest border border-red-500/20 inline-block w-fit mx-auto sm:mx-0">管理员</span>
                           )}
                         </div>
-                        <p className="opacity-60 mt-1.5 text-sm font-medium">您的个人旅行数字化中心</p>
+                        <p className={`mt-1.5 text-sm font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>您的个人旅行数字化中心</p>
                       </div>
                     </div>
                     <button onClick={handleLogoutAction} className="flex items-center gap-2 px-6 py-3 bg-slate-100 dark:bg-slate-700/50 hover:bg-red-500 hover:text-white text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-2xl transition-all font-bold text-sm shadow-sm">
@@ -229,14 +238,14 @@ const App: React.FC = () => {
                     <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
                       <button 
                         onClick={() => setActiveProfileTab('favorites')}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeProfileTab === 'favorites' ? 'bg-white dark:bg-slate-700 text-teal-500 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeProfileTab === 'favorites' ? 'bg-white dark:bg-slate-700 text-teal-500 shadow-md' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
                       >
                         <Heart className="w-4 h-4" /> 我的收藏
                       </button>
                       {currentUser?.isAdmin && (
                         <button 
                           onClick={() => setActiveProfileTab('management')}
-                          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeProfileTab === 'management' ? 'bg-white dark:bg-slate-700 text-teal-500 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeProfileTab === 'management' ? 'bg-white dark:bg-slate-700 text-teal-500 shadow-md' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
                         >
                           <ShieldCheck className="w-4 h-4" /> 景点管理
                         </button>
@@ -293,7 +302,7 @@ const App: React.FC = () => {
           </div>
         </footer>
 
-        <DetailModal attraction={selectedAttraction} allAttractions={attractions} onClose={() => setSelectedAttraction(null)} isFavorite={selectedAttraction ? favoritesIds.has(selectedAttraction.id) : false} onToggleFavorite={handleToggleFavorite} />
+        <DetailModal attraction={selectedAttraction} allAttractions={attractions} onClose={() => setSelectedAttraction(null)} isFavorite={selectedAttraction ? favoritesIds.has(selectedAttraction.id) : false} onToggleFavorite={handleToggleFavorite} theme={theme} />
         <FeedbackWidget />
         <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
         <AdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} onSubmit={async (data) => { try { if (editingAttraction) await api.attractions.update(editingAttraction.id, data); else await api.attractions.create(data); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('操作失败'); } }} onDelete={async (id) => { if (confirm('确定删除此景点？')) { try { await api.attractions.delete(id); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('删除失败'); } } }} initialData={editingAttraction} />
@@ -303,5 +312,4 @@ const App: React.FC = () => {
   );
 };
 
-// Fixed error in index.tsx: Export App component as default
 export default App;

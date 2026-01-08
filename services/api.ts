@@ -75,6 +75,6 @@ export const api = {
   },
   feedback: {
     submit: (content: string) => fetchClient<any>('/api/feedback', { method: 'POST', body: JSON.stringify({ content }) }),
-    getAll: () => fetchClient<{ content: string, created_at: string }[]>('/api/feedback'),
+    getAll: (page: number = 1, limit: number = 9) => fetchClient<PaginatedResponse<{ content: string, created_at: string }>>(`/api/feedback?page=${page}&limit=${limit}`),
   },
 };

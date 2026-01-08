@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquarePlus, X, Send, Loader2, CheckCircle2, List, ChevronLeft, Clock, MessageCircle } from 'lucide-react';
+import { MessageSquarePlus, X, Send, Loader2, CheckCircle2, List, ChevronLeft, Clock, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 
@@ -14,19 +14,22 @@ export const FeedbackWidget: React.FC = () => {
   const [view, setView] = useState<'form' | 'list'>('form');
   const [content, setContent] = useState('');
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   
-  // 用于检测外部点击的引用
   const widgetRef = useRef<HTMLDivElement>(null);
 
-  const fetchFeedbacks = async () => {
+  const fetchFeedbacks = async (page: number) => {
     setIsLoadingList(true);
     try {
-      const data = await api.feedback.getAll();
-      if (Array.isArray(data)) {
-        setFeedbacks(data);
+      const response = await api.feedback.getAll(page, 9);
+      if (response && Array.isArray(response.data)) {
+        setFeedbacks(response.data);
+        setTotalPages(response.totalPages || 1);
+        setCurrentPage(response.page || page);
       }
     } catch (error) {
       console.error('Fetch feedback failed:', error);
@@ -35,13 +38,13 @@ export const FeedbackWidget: React.FC = () => {
     }
   };
 
+  // 当视图切换到列表或页码改变时，获取数据
   useEffect(() => {
     if (isOpen && view === 'list') {
-      fetchFeedbacks();
+      fetchFeedbacks(currentPage);
     }
-  }, [isOpen, view]);
+  }, [isOpen, view, currentPage]);
 
-  // 点击弹窗外部隐藏弹窗
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isOpen && widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
@@ -69,6 +72,7 @@ export const FeedbackWidget: React.FC = () => {
       setContent('');
       setTimeout(() => {
         setIsSuccess(false);
+        setCurrentPage(1); // 提交后重置到第一页
         setView('list');
       }, 1500);
     } catch (error) {
@@ -78,10 +82,15 @@ export const FeedbackWidget: React.FC = () => {
     }
   };
 
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
   const formatTime = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
-      // 按照用户要求显示年份
       return date.toLocaleDateString('zh-CN', { 
         year: 'numeric', 
         month: 'long', 
@@ -101,7 +110,7 @@ export const FeedbackWidget: React.FC = () => {
             initial={{ opacity: 0, y: 20, scale: 0.9, transformOrigin: 'bottom right' }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-teal-500/10 border border-teal-500/20 w-80 sm:w-96 mb-4 pointer-events-auto flex flex-col overflow-hidden max-h-[500px]"
+            className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[2.5rem] shadow-2xl shadow-teal-500/10 border border-teal-500/20 w-80 sm:w-96 mb-4 pointer-events-auto flex flex-col overflow-hidden max-h-[600px]"
           >
             {/* Header */}
             <div className="flex justify-between items-center p-6 border-b border-teal-500/5">
@@ -122,7 +131,10 @@ export const FeedbackWidget: React.FC = () => {
               <div className="flex items-center gap-1">
                 {view === 'form' && (
                   <button 
-                    onClick={() => setView('list')}
+                    onClick={() => {
+                      setCurrentPage(1);
+                      setView('list');
+                    }}
                     className="p-2 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-xl transition-colors"
                     title="查看列表"
                   >
@@ -190,25 +202,52 @@ export const FeedbackWidget: React.FC = () => {
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">加载中...</p>
                       </div>
                     ) : feedbacks.length > 0 ? (
-                      feedbacks.map((item, idx) => (
-                        <motion.div 
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: idx * 0.05 }}
-                          key={idx} 
-                          className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 group"
-                        >
-                          <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed mb-3 break-words font-medium">
-                            {item.content}
-                          </p>
-                          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                            <Clock className="w-3 h-3" />
-                            {formatTime(item.created_at)}
+                      <>
+                        <div className="space-y-4">
+                          {feedbacks.map((item, idx) => (
+                            <motion.div 
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: idx * 0.05 }}
+                              key={idx} 
+                              className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 group"
+                            >
+                              <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed mb-3 break-words font-medium">
+                                {item.content}
+                              </p>
+                              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                                <Clock className="w-3 h-3" />
+                                {formatTime(item.created_at)}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+
+                        {/* 分页控制 */}
+                        {totalPages > 1 && (
+                          <div className="flex items-center justify-between pt-4 pb-2">
+                            <button
+                              disabled={currentPage === 1 || isLoadingList}
+                              onClick={() => handlePageChange(currentPage - 1)}
+                              className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-slate-700"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                              PAGE {currentPage} / {totalPages}
+                            </span>
+                            <button
+                              disabled={currentPage === totalPages || isLoadingList}
+                              onClick={() => handlePageChange(currentPage + 1)}
+                              className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 disabled:opacity-30 transition-all hover:bg-slate-200 dark:hover:bg-slate-700"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
                           </div>
-                        </motion.div>
-                      ))
+                        )}
+                      </>
                     ) : (
-                      <div className="text-center py-20 opacity-30 italic text-sm">暂无反馈记录</div>
+                      <div className="text-center py-20 opacity-30 italic text-sm text-slate-500">暂无反馈记录</div>
                     )}
                   </motion.div>
                 )}
