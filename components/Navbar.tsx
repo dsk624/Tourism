@@ -74,7 +74,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   className={`absolute right-0 mt-3 w-52 rounded-2xl shadow-2xl border border-white/20 p-2 overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-white'}`}
                 >
-                  <div className="px-3 py-2 text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">环境设置</div>
+                  <div className="px-3 py-2 text-[10px] font-black text-slate-500 dark:text-white/40 uppercase tracking-widest">环境设置</div>
                   
                   <div className="flex gap-1 p-1 mb-2 bg-slate-100 dark:bg-slate-900 rounded-xl">
                     {(['light', 'dark', 'teal'] as const).map(t => (
@@ -90,7 +90,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   <button 
                     onClick={() => { setIsContactModalOpen(true); setSettingsOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-teal-500/10 rounded-xl transition-colors text-slate-700 dark:text-slate-200"
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm font-bold hover:bg-teal-500/10 rounded-xl transition-colors text-slate-800 dark:text-white"
                   >
                     <MessageCircle className="w-4 h-4 text-blue-500" /> 联系反馈
                   </button>
@@ -99,10 +99,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   {isAuthenticated ? (
                     <>
-                      <Link to="/profile" onClick={() => setSettingsOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-medium hover:bg-teal-500/10 rounded-xl transition-colors text-slate-700 dark:text-slate-200">
+                      <Link to="/profile" onClick={() => setSettingsOpen(false)} className="flex items-center gap-3 px-3 py-2 text-sm font-bold hover:bg-teal-500/10 rounded-xl transition-colors text-slate-800 dark:text-white">
                         <UserIcon className="w-4 h-4 text-teal-500" /> 个人中心
                       </Link>
-                      <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-500/10 rounded-xl transition-colors">
+                      <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-xl transition-colors">
                         <LogOut className="w-4 h-4" /> 退出登录
                       </button>
                     </>
@@ -153,7 +153,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               <div className="flex-grow overflow-y-auto p-6 space-y-8">
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">主菜单</h4>
+                  <h4 className="text-[10px] font-black text-slate-500 dark:text-white/40 uppercase tracking-widest">主菜单</h4>
                   <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-4 text-lg font-bold dark:text-white">
                     <div className="p-2 bg-teal-500/10 rounded-lg"><Map className="w-5 h-5 text-teal-500" /></div>
                     探索首页
@@ -168,7 +168,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
 
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">外观设置</h4>
+                  <h4 className="text-[10px] font-black text-slate-500 dark:text-white/40 uppercase tracking-widest">外观设置</h4>
                   <div className="grid grid-cols-3 gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
                     {(['light', 'dark', 'teal'] as const).map(t => (
                       <button 
@@ -183,7 +183,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                  <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">账户管理</h4>
+                  <h4 className="text-[10px] font-black text-slate-500 dark:text-white/40 uppercase tracking-widest">账户管理</h4>
                   {isAuthenticated ? (
                     <div className="space-y-3">
                       <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-4 text-lg font-bold dark:text-white">
@@ -205,7 +205,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
               
               <div className="p-6 text-center">
-                <p className="text-[10px] text-slate-400 dark:text-slate-300 font-bold uppercase tracking-tighter">© 2025 CHINA TRAVEL GUIDE</p>
+                <p className="text-[10px] text-slate-500 dark:text-white/40 font-bold uppercase tracking-tighter">© 2025 CHINA TRAVEL GUIDE</p>
               </div>
             </motion.div>
           </>

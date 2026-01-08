@@ -13,7 +13,7 @@ import { AttractionCard } from './components/AttractionCard';
 import RegisterForm from './components/RegisterForm';
 import LoginForm from './components/LoginForm';
 import { Attraction, User } from './types';
-import { User as UserIcon, Map, Loader2, LogOut, Edit, Plus, Heart, FolderHeart, ShieldCheck } from 'lucide-react';
+import { User as UserIcon, Map, Loader2, LogOut, Edit, Plus, Heart, FolderHeart, ShieldCheck, Eye, BarChart3 } from 'lucide-react';
 import { api, FavoriteItem } from './services/api';
 
 const ITEMS_PER_PAGE = 9;
@@ -35,9 +35,10 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [activeProfileTab, setActiveProfileTab] = useState<'management' | 'favorites'>('favorites');
+  const [viewCount, setViewCount] = useState<number>(0);
   const hasIncrementedView = useRef(false);
 
-  // 同步暗色模式类名到 HTML 根节点，使 tailwind 的 dark: 前缀生效
+  // 同步暗色模式类名到 HTML 根节点
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -92,6 +93,23 @@ const App: React.FC = () => {
     }
   };
 
+  const handleIncrementStats = async () => {
+    if (hasIncrementedView.current) return;
+    try {
+      const res = await api.stats.incrementViews();
+      if (res && res.views) {
+        setViewCount(res.views);
+        hasIncrementedView.current = true;
+      }
+    } catch (e) {
+      // 降级：获取当前值
+      try {
+        const res = await api.stats.getViews();
+        if (res && res.views) setViewCount(res.views);
+      } catch (err) {}
+    }
+  };
+
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchPaginatedData(currentPage, selectedProvince, searchTerm);
@@ -124,6 +142,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initializeApp = async () => {
+      handleIncrementStats();
       const [authResult] = await Promise.allSettled([api.auth.me()]);
       if (authResult.status === 'fulfilled' && authResult.value.authenticated && authResult.value.user) {
         setIsAuthenticated(true);
@@ -149,26 +168,14 @@ const App: React.FC = () => {
   const handleToggleFavorite = async (e: React.MouseEvent | null, id: string) => {
     if (e) { e.stopPropagation(); e.preventDefault(); }
     if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
-    
     const isFav = favoritesIds.has(id);
-    
-    // 乐观更新 UI
     const newIds = new Set(favoritesIds);
     if (isFav) newIds.delete(id); else newIds.add(id);
     setFavoritesIds(newIds);
-    
     try { 
-      if (isFav) {
-        await api.favorites.remove(id); 
-      } else {
-        await api.favorites.add(id); 
-      }
-      // 后端成功后刷新完整的收藏列表以同步对象详情
+      if (isFav) await api.favorites.remove(id); else await api.favorites.add(id); 
       fetchFavorites();
-    } catch(e) { 
-      // 失败则回滚
-      fetchFavorites(); 
-    }
+    } catch(e) { fetchFavorites(); }
   };
 
   return (
@@ -224,7 +231,7 @@ const App: React.FC = () => {
                             <span className="bg-red-500/10 text-red-500 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest border border-red-500/20 inline-block w-fit mx-auto sm:mx-0">管理员</span>
                           )}
                         </div>
-                        <p className={`mt-1.5 text-sm font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>您的个人旅行数字化中心</p>
+                        <p className={`mt-1.5 text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-500'}`}>您的个人旅行数字化中心</p>
                       </div>
                     </div>
                     <button onClick={handleLogoutAction} className="flex items-center gap-2 px-6 py-3 bg-slate-100 dark:bg-slate-700/50 hover:bg-red-500 hover:text-white text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-2xl transition-all font-bold text-sm shadow-sm">
@@ -251,11 +258,6 @@ const App: React.FC = () => {
                         </button>
                       )}
                     </div>
-                    {activeProfileTab === 'management' && (
-                       <button onClick={() => { setEditingAttraction(null); setIsAdminModalOpen(true); }} className="px-5 py-2.5 bg-teal-500 text-white rounded-xl text-sm font-black flex items-center gap-2 shadow-lg shadow-teal-500/20 hover:-translate-y-0.5 transition-all">
-                         <Plus className="w-4 h-4" /> 新增景点
-                       </button>
-                    )}
                   </div>
 
                   <AnimatePresence mode="wait">
@@ -270,7 +272,7 @@ const App: React.FC = () => {
                             />
                           ))
                         ) : (
-                          <div className="col-span-full py-32 flex flex-col items-center text-slate-400">
+                          <div className="col-span-full py-32 flex flex-col items-center text-slate-400 dark:text-slate-300">
                             <FolderHeart className="w-20 h-20 opacity-10 mb-6" />
                             <p className="font-bold text-lg">暂无收藏记录</p>
                             <Link to="/" className="text-teal-500 text-sm mt-4 hover:underline">去首页探索更多目的地</Link>
@@ -296,9 +298,29 @@ const App: React.FC = () => {
           </Routes>
         )}
 
-        <footer className={`py-16 border-t ${currentTheme.border} ${theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'}`}>
-          <div className="max-w-7xl mx-auto px-6 text-center">
-            <p className="text-xs opacity-40 font-medium tracking-wide">© 2025 China Travel Digital Experience.</p>
+        <footer className={`py-12 border-t ${currentTheme.border} ${theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'}`}>
+          <div className="max-w-7xl mx-auto px-6 flex flex-col items-center gap-6">
+            {/* View Stats Display */}
+            <div className="flex items-center gap-8 py-4 px-8 rounded-2xl bg-white/50 dark:bg-slate-800/40 backdrop-blur-sm border border-slate-200 dark:border-slate-800">
+               <div className="flex flex-col items-center">
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1">今日浏览</span>
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-teal-500" />
+                    <span className="text-xl font-black text-slate-800 dark:text-white tabular-nums">
+                      {viewCount ? viewCount.toLocaleString() : '---'}
+                    </span>
+                  </div>
+               </div>
+               <div className="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
+               <div className="flex flex-col items-center">
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1">站点状态</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">运行中</span>
+                  </div>
+               </div>
+            </div>
+            <p className="text-xs opacity-40 dark:opacity-60 font-medium tracking-wide dark:text-slate-200">© 2025 China Travel Digital Experience.</p>
           </div>
         </footer>
 
