@@ -1,9 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Attraction } from '../types';
 // Add missing Megaphone and List icons to the lucide-react import
 import { X, Save, Trash2, Image as ImageIcon, LayoutTemplate, MapPin, Loader2, ChevronDown, Bell, Eye, EyeOff, Palette, SlidersHorizontal, Megaphone, List } from 'lucide-react';
 import { api, Notification } from '../services/api';
+// Add missing motion and AnimatePresence imports
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
   isOpen: boolean;
@@ -192,8 +193,72 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                       <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">景点名称</label>
                       <input required disabled={isDisabled} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                     </div>
-                    {/* ... (其他表单项省略，保持原有逻辑) ... */}
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">省份</label>
+                      <input required disabled={isDisabled} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={formData.province} onChange={e => setFormData({...formData, province: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">图片链接</label>
+                      <input required disabled={isDisabled} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">标签 (逗号分隔)</label>
+                      <input disabled={isDisabled} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={formData.tags} onChange={e => setFormData({...formData, tags: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">评分</label>
+                      <input type="number" step="0.1" min="0" max="5" required disabled={isDisabled} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={formData.rating} onChange={e => setFormData({...formData, rating: parseFloat(e.target.value)})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">纬度 (Latitude)</label>
+                        <input type="number" step="any" disabled={isDisabled} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={formData.lat} onChange={e => setFormData({...formData, lat: e.target.value})} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">经度 (Longitude)</label>
+                        <input type="number" step="any" disabled={isDisabled} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={formData.lng} onChange={e => setFormData({...formData, lng: e.target.value})} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">详细描述</label>
+                      <textarea required disabled={isDisabled} rows={5} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold resize-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                    </div>
+                    <div className="flex gap-4 pt-4">
+                      <button type="submit" disabled={isDisabled} className="flex-1 flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-lg shadow-teal-500/20 active:scale-95">
+                        {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                        {initialData ? '保存修改' : '立即发布'}
+                      </button>
+                      {initialData && onDelete && (
+                        <button type="button" onClick={handleDelete} disabled={isDisabled} className="px-6 flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-600 rounded-2xl font-black transition-all">
+                          {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                        </button>
+                      )}
+                    </div>
                   </form>
+                </div>
+                <div className="hidden md:flex md:w-1/2 bg-slate-50 dark:bg-slate-800/20 items-center justify-center p-8">
+                  {formData.imageUrl ? (
+                    <div className="w-full max-w-sm">
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">预览效果</p>
+                       <div className="rounded-[2rem] overflow-hidden shadow-2xl border dark:border-slate-700 bg-white dark:bg-slate-800">
+                          <img src={formData.imageUrl} className="w-full h-48 object-cover" alt="Preview" />
+                          <div className="p-6">
+                             <h5 className="font-black text-lg dark:text-white mb-1">{formData.name || '景点名称'}</h5>
+                             <div className="flex items-center gap-1 text-teal-600 text-[10px] font-bold uppercase mb-2">
+                                <MapPin className="w-3 h-3" /> {formData.province}
+                             </div>
+                             <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{formData.description || '此处显示景点描述预览...'}</p>
+                          </div>
+                       </div>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <div className="w-20 h-20 bg-slate-200 dark:bg-slate-800 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                        <ImageIcon className="w-10 h-10 text-slate-400" />
+                      </div>
+                      <p className="text-sm font-bold text-slate-400">输入图片链接以预览</p>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
