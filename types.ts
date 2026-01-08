@@ -1,4 +1,12 @@
 
+
+export interface Schedule {
+  id: number;
+  title: string;
+  description: string;
+  schedule_date: string;
+}
+
 export interface Attraction {
   id: string;
   name: string;
@@ -32,6 +40,15 @@ export interface AuthResponse {
   user?: User;
 }
 
+// Add missing LocationData interface for weather services
+export interface LocationData {
+  city: string;
+  province: string;
+  latitude: number;
+  longitude: number;
+}
+
+// Add missing WeatherData interface for weather services
 export interface WeatherData {
   temperature: number;
   weatherCode: number;
@@ -39,22 +56,13 @@ export interface WeatherData {
   precipitation: number;
   sunrise: string;
   sunset: string;
-  // 新增详细数据
-  apparentTemperature: number; // 体感温度
-  humidity: number;            // 湿度
-  windSpeed: number;           // 风速
-  uvIndex: number;             // 紫外线指数 (日最大)
-  pressure: number;            // 气压
+  apparentTemperature: number;
+  humidity: number;
+  windSpeed: number;
+  uvIndex: number;
+  pressure: number;
 }
 
-export interface LocationData {
-  city: string;
-  province: string; // mapped from region_name
-  latitude: number;
-  longitude: number;
-}
-
-// Cloudflare D1 types
 export interface D1Database {
   prepare(query: string): D1PreparedStatement;
   exec(query: string): Promise<D1Result>;
@@ -77,19 +85,3 @@ export interface D1Result<T = any> {
 export interface Env {
   DB: D1Database;
 }
-
-// Cloudflare Pages Function types
-export interface EventContext<Env, P extends string, Data> {
-  request: Request;
-  functionPath: string;
-  waitUntil: (promise: Promise<any>) => void;
-  passThroughOnException: () => void;
-  next: (input?: Request | string, init?: RequestInit) => Promise<Response>;
-  env: Env;
-  params: Record<P, string | string[]>;
-  data: Data;
-}
-
-export type PagesFunction<Env = unknown, Params extends string = any, Data = unknown> = (
-  context: EventContext<Env, Params, Data>
-) => Response | Promise<Response>;

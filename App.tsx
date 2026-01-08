@@ -6,6 +6,7 @@ import { DetailModal } from './components/DetailModal';
 import { FeedbackWidget } from './components/FeedbackWidget';
 import { AdminModal } from './components/AdminModal';
 import { ContactModal } from './components/ContactModal';
+import { CalendarModal } from './components/CalendarModal';
 import { LoginPromptModal } from './components/LoginPromptModal';
 import { Navbar } from './components/Navbar';
 import { HomeContent } from './components/HomeContent';
@@ -35,6 +36,7 @@ const App: React.FC = () => {
   const [viewCount, setViewCount] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [activeProfileTab, setActiveProfileTab] = useState<'management' | 'favorites'>('favorites');
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const hasIncrementedView = useRef(false);
 
   // Auth & Admin State
@@ -188,6 +190,7 @@ const App: React.FC = () => {
           handleLogout={handleLogoutAction}
           setIsContactModalOpen={setIsContactModalOpen}
           mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
+          setIsCalendarOpen={setIsCalendarOpen}
         />
 
         <AnimatePresence>
@@ -227,7 +230,6 @@ const App: React.FC = () => {
             <Route path="/register" element={isAuthenticated ? <Navigate to="/profile" /> : <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen"><div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}><RegisterForm /></div></div>} />
             <Route path="/profile" element={isAuthenticated ? (
               <div className="pt-32 px-4 max-w-6xl mx-auto min-h-screen pb-20">
-                {/* User Info Header */}
                 <div className={`p-8 rounded-3xl ${currentTheme.cardBg} border ${currentTheme.border} shadow-xl mb-10 relative overflow-hidden`}>
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
                     <div className="flex items-center gap-6">
@@ -254,7 +256,6 @@ const App: React.FC = () => {
                   <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 blur-[100px] rounded-full -mr-32 -mt-32"></div>
                 </div>
 
-                {/* Statistics Overview */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
                    {currentUser?.isAdmin && (
                     <>
@@ -290,25 +291,17 @@ const App: React.FC = () => {
                    </div>
                 </div>
 
-                {/* Tabs */}
                 {currentUser?.isAdmin && (
                   <div className="flex gap-1 mb-8 p-1.5 bg-slate-200/50 dark:bg-slate-800/50 rounded-2xl w-fit">
-                    <button 
-                      onClick={() => setActiveProfileTab('management')}
-                      className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeProfileTab === 'management' ? 'bg-white dark:bg-slate-700 text-teal-600 dark:text-teal-400 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
+                    <button onClick={() => setActiveProfileTab('management')} className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeProfileTab === 'management' ? 'bg-white dark:bg-slate-700 text-teal-600 dark:text-teal-400 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
                       <Map className="w-4 h-4" /> 景点管理
                     </button>
-                    <button 
-                      onClick={() => setActiveProfileTab('favorites')}
-                      className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeProfileTab === 'favorites' ? 'bg-white dark:bg-slate-700 text-teal-600 dark:text-teal-400 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
+                    <button onClick={() => setActiveProfileTab('favorites')} className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeProfileTab === 'favorites' ? 'bg-white dark:bg-slate-700 text-teal-600 dark:text-teal-400 shadow-md' : 'text-slate-500 hover:text-slate-700'}`}>
                       <Heart className="w-4 h-4" /> 我的收藏
                     </button>
                   </div>
                 )}
 
-                {/* Content Section */}
                 <div className="mb-20">
                   <div className="flex justify-between items-center mb-6 px-2">
                     <h3 className="text-2xl font-black flex items-center gap-3">
@@ -318,41 +311,20 @@ const App: React.FC = () => {
                       {activeProfileTab === 'management' ? '管理概览' : '我的收藏记录'}
                     </h3>
                     {currentUser?.isAdmin && activeProfileTab === 'management' && (
-                      <button 
-                        onClick={() => { setEditingAttraction(null); setIsAdminModalOpen(true); }}
-                        className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white px-5 py-2.5 rounded-2xl text-sm font-bold shadow-lg shadow-teal-500/20 transition-all transform hover:-translate-y-0.5"
-                      >
+                      <button onClick={() => { setEditingAttraction(null); setIsAdminModalOpen(true); }} className="flex items-center gap-2 bg-teal-500 hover:bg-teal-600 text-white px-5 py-2.5 rounded-2xl text-sm font-bold shadow-lg shadow-teal-500/20 transition-all transform hover:-translate-y-0.5">
                         <Plus className="w-4 h-4" /> 新增景点
                       </button>
                     )}
                   </div>
-
                   <AnimatePresence mode="wait">
-                    <motion.div
-                      key={activeProfileTab}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                    >
+                    <motion.div key={activeProfileTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
                       {activeProfileTab === 'management' ? (
                         attractions.length > 0 ? (
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                             {attractions.map(a => (
                               <div key={a.id} className="relative group">
-                                 <AttractionCard 
-                                    attraction={a} 
-                                    onClick={setSelectedAttraction} 
-                                    theme={theme} 
-                                    currentTheme={currentTheme} 
-                                    isFavorite={favorites.has(a.id)} 
-                                    onToggleFavorite={handleToggleFavorite} 
-                                 />
-                                 <button 
-                                    onClick={(e) => { e.stopPropagation(); setEditingAttraction(a); setIsAdminModalOpen(true); }}
-                                    className="absolute top-4 right-14 z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md p-2.5 rounded-xl text-teal-600 shadow-xl border border-teal-100 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
-                                    title="编辑景点"
-                                  >
+                                 <AttractionCard attraction={a} onClick={setSelectedAttraction} theme={theme} currentTheme={currentTheme} isFavorite={favorites.has(a.id)} onToggleFavorite={handleToggleFavorite} />
+                                 <button onClick={(e) => { e.stopPropagation(); setEditingAttraction(a); setIsAdminModalOpen(true); }} className="absolute top-4 right-14 z-20 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md p-2.5 rounded-xl text-teal-600 shadow-xl border border-teal-100 dark:border-slate-700 opacity-0 group-hover:opacity-100 transition-all hover:scale-110">
                                     <Edit className="w-4 h-4" />
                                   </button>
                               </div>
@@ -369,21 +341,7 @@ const App: React.FC = () => {
                         favorites.size > 0 ? (
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                             {attractions.filter(a => favorites.has(a.id)).map(a => (
-                              <AttractionCard 
-                                key={a.id} 
-                                attraction={a} 
-                                onClick={setSelectedAttraction} 
-                                theme={theme} 
-                                currentTheme={currentTheme} 
-                                isFavorite={true} 
-                                onToggleFavorite={handleToggleFavorite} 
-                                note={favoriteNotes[a.id]} 
-                                onUpdateNote={async (id, note) => { 
-                                  if (!isAuthenticated) return; 
-                                  setFavoriteNotes(prev => ({ ...prev, [id]: note })); 
-                                  try { await api.favorites.updateNote(id, note); } catch(e){} 
-                                }} 
-                              />
+                              <AttractionCard key={a.id} attraction={a} onClick={setSelectedAttraction} theme={theme} currentTheme={currentTheme} isFavorite={true} onToggleFavorite={handleToggleFavorite} note={favoriteNotes[a.id]} onUpdateNote={async (id, note) => { if (!isAuthenticated) return; setFavoriteNotes(prev => ({ ...prev, [id]: note })); try { await api.favorites.updateNote(id, note); } catch(e){} }} />
                             ))}
                           </div>
                         ) : (
@@ -409,7 +367,6 @@ const App: React.FC = () => {
               <span className="font-black tracking-tighter text-xl uppercase">华夏游</span>
               <div className="w-10 h-1 bg-teal-500 rounded-full"></div>
             </div>
-            
             <div className="flex flex-col items-center gap-2 mb-8">
                <div className="flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-slate-200/50 dark:bg-slate-800/50 text-sm font-bold border border-slate-300/30 dark:border-slate-700/30 shadow-inner">
                   <Eye className="w-4 h-4 text-teal-500" />
@@ -417,7 +374,6 @@ const App: React.FC = () => {
                   <span className="text-teal-500 font-black tracking-widest">{viewCount !== null ? viewCount.toLocaleString() : '数据同步中...'}</span>
                </div>
             </div>
-
             <p className="text-xs opacity-40 font-medium tracking-wide">© 2025 China Travel Digital Experience. Powered by Cloudflare D1 & React 19.</p>
           </div>
         </footer>
@@ -425,6 +381,7 @@ const App: React.FC = () => {
         <DetailModal attraction={selectedAttraction} allAttractions={attractions} onClose={() => setSelectedAttraction(null)} isFavorite={selectedAttraction ? favorites.has(selectedAttraction.id) : false} onToggleFavorite={handleToggleFavorite} />
         <FeedbackWidget />
         <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
+        <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} isAuthenticated={isAuthenticated} />
         <AdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} onSubmit={async (data) => { try { if (editingAttraction) await api.attractions.update(editingAttraction.id, data); else await api.attractions.create(data); setIsAdminModalOpen(false); fetchAttractions(); } catch(e){ alert('操作失败'); } }} onDelete={async (id) => { if (confirm('确定删除此景点？')) { try { await api.attractions.delete(id); setIsAdminModalOpen(false); fetchAttractions(); } catch(e){ alert('删除失败'); } } }} initialData={editingAttraction} />
         <LoginPromptModal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)} />
       </div>
