@@ -10,6 +10,10 @@ interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+export interface FavoriteItem extends Attraction {
+  note?: string;
+}
+
 const fetchClient = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
   const defaultHeaders = { 'Content-Type': 'application/json' };
   const config = { ...options, headers: { ...defaultHeaders, ...options.headers } };
@@ -51,7 +55,6 @@ export const api = {
       try {
         return await fetchClient<PaginatedResponse<Attraction>>(`/api/attractions?${query.toString()}`);
       } catch (e) {
-        // Fallback for demo or error
         return { data: ATTRACTIONS, total: ATTRACTIONS.length, page: 1, limit: 9, totalPages: 1 };
       }
     },
@@ -60,7 +63,7 @@ export const api = {
     delete: (id: string) => fetchClient<any>(`/api/attractions?id=${id}`, { method: 'DELETE' }),
   },
   favorites: {
-    getAll: () => fetchClient<{ favorites: string[], notes?: Record<string, string> }>('/api/favorites'),
+    getAll: () => fetchClient<FavoriteItem[]>('/api/favorites'),
     add: (attractionId: string, note?: string) => fetchClient<any>('/api/favorites', { method: 'POST', body: JSON.stringify({ attractionId, note }) }),
     updateNote: (attractionId: string, note: string) => fetchClient<any>('/api/favorites', { method: 'PUT', body: JSON.stringify({ attractionId, note }) }),
     remove: (attractionId: string) => fetchClient<any>('/api/favorites', { method: 'DELETE', body: JSON.stringify({ attractionId }) }),

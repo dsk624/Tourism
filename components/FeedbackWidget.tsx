@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquarePlus, X, Send, Loader2, CheckCircle2, List, ChevronLeft, Clock, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
@@ -17,6 +17,9 @@ export const FeedbackWidget: React.FC = () => {
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  
+  // 用于检测外部点击的引用
+  const widgetRef = useRef<HTMLDivElement>(null);
 
   const fetchFeedbacks = async () => {
     setIsLoadingList(true);
@@ -37,6 +40,23 @@ export const FeedbackWidget: React.FC = () => {
       fetchFeedbacks();
     }
   }, [isOpen, view]);
+
+  // 点击弹窗外部隐藏弹窗
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isOpen && widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,15 +81,15 @@ export const FeedbackWidget: React.FC = () => {
   const formatTime = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
-      const now = new Date();
-      const diff = now.getTime() - date.getTime();
-      
-      if (diff < 60000) return '刚刚';
-      if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
-      if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
-      
-      return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-    } catch { return '很久以前'; }
+      // 按照用户要求显示年份
+      return date.toLocaleDateString('zh-CN', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch { return '未知时间'; }
   };
 
   return (
@@ -77,6 +97,7 @@ export const FeedbackWidget: React.FC = () => {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            ref={widgetRef}
             initial={{ opacity: 0, y: 20, scale: 0.9, transformOrigin: 'bottom right' }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
