@@ -2,7 +2,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, Loader2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
-import { WeatherWidget } from './WeatherWidget';
 import { AttractionCard } from './AttractionCard';
 import { Attraction, User } from '../types';
 
@@ -52,7 +51,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({
   return (
     <>
       <div className="relative pt-16 sm:pt-20">
-        <WeatherWidget />
+        {/* 此处原有的 WeatherWidget 已移除，改为由 App.tsx 统一渲染 */}
         <div className="absolute inset-0 z-0">
           <img 
             src="https://picsum.photos/1920/1080?random=99" 
@@ -114,7 +113,6 @@ export const HomeContent: React.FC<HomeContentProps> = ({
            </div>
         )}
 
-        {/* Improved Province Filter with Horizontal Scroll on Mobile */}
         <div className="mb-8 sm:mb-12 animate__animated animate__fadeInUp">
           <div className="flex overflow-x-auto no-scrollbar sm:justify-center py-2 -mx-4 px-4 sm:mx-0 sm:px-0">
             <div className={`inline-flex p-1 sm:p-1.5 rounded-xl sm:rounded-2xl ${theme === 'dark' ? 'bg-slate-800/80 border border-slate-700' : 'bg-white border border-slate-200'} backdrop-blur-sm shadow-lg whitespace-nowrap`}>
@@ -191,7 +189,6 @@ export const HomeContent: React.FC<HomeContentProps> = ({
               )}
             </motion.div>
 
-            {/* Pagination UI - Better for mobile touch */}
             {totalPages > 1 && (
               <div className="mt-12 sm:mt-16 flex flex-col sm:flex-row justify-center items-center gap-4">
                 <div className="flex items-center gap-2">

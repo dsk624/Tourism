@@ -19,7 +19,7 @@ export interface Notification {
   content: string;
   is_active: number;
   priority: number;
-  bg_color: 'teal' | 'blue' | 'rose' | 'amber';
+  bg_color: string; // 改为 string 以支持自定义颜色
   created_at: string;
 }
 
@@ -90,7 +90,7 @@ export const api = {
     delete: (id: number) => fetchClient<any>(`/api/schedules?id=${id}`, { method: 'DELETE' }),
   },
   feedback: {
-    submit: (content: string) => fetchClient<any>('/api/feedback', { method: 'POST', body: JSON.stringify({ content }) }),
+    submit: (content: string) => fetchClient<any>('/api/feedback', { method: 'POST', body: JSON.stringify(content) }),
     getAll: (page: number = 1, limit: number = 9) => fetchClient<PaginatedResponse<{ content: string, created_at: string }>>(`/api/feedback?page=${page}&limit=${limit}`),
   },
 };
