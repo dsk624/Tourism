@@ -110,7 +110,7 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({ isAuthenticated,
             <div className="flex justify-between items-center p-6 border-b border-teal-500/5">
               <div className="flex items-center gap-2">
                 {view === 'list' && (
-                  <button onClick={() => setView('form')} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-200">
+                  <button onClick={() => setView('form')} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-100">
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                 )}
@@ -125,7 +125,7 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({ isAuthenticated,
                     <List className="w-5 h-5" />
                   </button>
                 )}
-                <button onClick={() => setIsOpen(false)} className="p-2 text-slate-400 dark:text-slate-300 hover:text-red-500 rounded-xl transition-colors">
+                <button onClick={() => setIsOpen(false)} className="p-2 text-slate-400 dark:text-slate-200 hover:text-red-500 rounded-xl transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -144,11 +144,11 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({ isAuthenticated,
                       <>
                         {!isAuthenticated ? (
                           <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-                            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400 dark:text-slate-200">
+                            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400 dark:text-slate-100">
                               <Lock className="w-8 h-8" />
                             </div>
                             <h4 className="font-black text-slate-800 dark:text-white mb-2 tracking-tight">仅限登录用户</h4>
-                            <p className="text-xs text-slate-500 dark:text-slate-200 mb-6 leading-relaxed">
+                            <p className="text-xs text-slate-600 dark:text-slate-200 mb-6 leading-relaxed">
                               为了提供更好的反馈体验，请登录后再向我们提交您的建议。
                             </p>
                             <button 
@@ -168,7 +168,7 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({ isAuthenticated,
                               value={content}
                               onChange={(e) => setContent(e.target.value)}
                               placeholder="写下您的想法..."
-                              className="w-full h-32 p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-teal-500 text-sm resize-none text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
+                              className="w-full h-32 p-4 rounded-2xl border-none focus:ring-2 focus:ring-teal-500 text-sm resize-none bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-300"
                               maxLength={500}
                             />
                             <button type="submit" disabled={isSubmitting || !content.trim()} className="w-full py-4 bg-teal-500 hover:bg-teal-600 disabled:opacity-50 text-white rounded-2xl font-black text-sm shadow-lg flex items-center justify-center gap-2 transition-all">
@@ -189,17 +189,17 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({ isAuthenticated,
                       <>
                         <div className="space-y-4">
                           {feedbacks.map((item, idx) => (
-                            <motion.div key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                            <motion.div key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700">
                               <div className="flex items-center gap-2 mb-2">
                                 <UserIcon className="w-3 h-3 text-teal-500" />
-                                <span className="text-[10px] font-black text-slate-600 dark:text-teal-400 uppercase tracking-widest">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-teal-400">
                                   {item.username || '匿名游客'}
                                 </span>
                               </div>
-                              <p className="text-sm text-slate-700 dark:text-slate-100 leading-relaxed mb-3 break-words font-medium">
+                              <p className="text-sm leading-relaxed mb-3 break-words font-medium text-slate-700 dark:text-slate-100">
                                 {item.content}
                               </p>
-                              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase tracking-tighter">
+                              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-tighter text-slate-500 dark:text-slate-300">
                                 <Clock className="w-3 h-3" />
                                 {formatTime(item.created_at)}
                               </div>
@@ -208,24 +208,24 @@ export const FeedbackWidget: React.FC<FeedbackWidgetProps> = ({ isAuthenticated,
                         </div>
                         {totalPages > 1 && (
                           <div className="flex items-center justify-between pt-4 pb-2">
-                            <button disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-200 disabled:opacity-30">
+                            <button disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-100 disabled:opacity-30">
                               <ChevronLeft className="w-4 h-4" />
                             </button>
-                            <span className="text-[10px] font-black text-slate-500 dark:text-slate-300 uppercase tracking-widest">PAGE {currentPage} / {totalPages}</span>
-                            <button disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-200 disabled:opacity-30">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-200">PAGE {currentPage} / {totalPages}</span>
+                            <button disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-100 disabled:opacity-30">
                               <ChevronRight className="w-4 h-4" />
                             </button>
                           </div>
                         )}
                       </>
                     ) : (
-                      <div className="text-center py-20 opacity-30 italic text-sm text-slate-500 dark:text-slate-300">暂无反馈记录</div>
+                      <div className="text-center py-20 opacity-30 italic text-sm text-slate-500 dark:text-slate-200">暂无反馈记录</div>
                     )}
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
-            <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-800/20 text-[10px] text-center font-bold text-slate-500 dark:text-slate-300 uppercase tracking-widest border-t border-teal-500/5">
+            <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-800/40 text-[10px] text-center font-bold uppercase tracking-widest border-t border-teal-500/5 text-slate-500 dark:text-slate-300">
               人人参与 · 共建华夏游
             </div>
           </motion.div>

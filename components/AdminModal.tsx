@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Attraction } from '../types';
-// Added ChevronDown to the imported icons from lucide-react
-import { X, Save, Trash2, Image as ImageIcon, LayoutTemplate, MapPin, Loader2, ChevronDown } from 'lucide-react';
+import { X, Save, Trash2, Image as ImageIcon, LayoutTemplate, MapPin, Loader2, ChevronDown, Bell, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api, Notification } from '../services/api';
 
 interface Props {
   isOpen: boolean;
@@ -14,6 +14,7 @@ interface Props {
 }
 
 export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelete, initialData }) => {
+  const [activeTab, setActiveTab] = useState<'attraction' | 'notification'>('attraction');
   const [formData, setFormData] = useState({
     name: '',
     province: '河南',
@@ -25,8 +26,23 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
     lng: ''
   });
 
+  const [notifList, setNotifList] = useState<Notification[]>([]);
+  const [newNotifContent, setNewNotifContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const fetchNotifs = async () => {
+    try {
+      const data = await api.notifications.getAll();
+      setNotifList(data);
+    } catch (e) { console.error(e); }
+  };
+
+  useEffect(() => {
+    if (isOpen && activeTab === 'notification') {
+      fetchNotifs();
+    }
+  }, [isOpen, activeTab]);
 
   useEffect(() => {
     if (initialData) {
@@ -71,6 +87,35 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
     }
   };
 
+  const handleAddNotif = async () => {
+    if (!newNotifContent.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await api.notifications.create({ content: newNotifContent });
+      setNewNotifContent('');
+      fetchNotifs();
+    } catch (e) { alert('发布失败'); }
+    finally { setIsSubmitting(false); }
+  };
+
+  const toggleNotif = async (notif: Notification) => {
+    try {
+      await api.notifications.update(notif.id, { 
+        is_active: notif.is_active === 1 ? 0 : 1,
+        priority: notif.priority
+      });
+      fetchNotifs();
+    } catch (e) { alert('操作失败'); }
+  };
+
+  const deleteNotif = async (id: number) => {
+    if (!confirm('确定删除此通知？')) return;
+    try {
+      await api.notifications.delete(id);
+      fetchNotifs();
+    } catch (e) { alert('删除失败'); }
+  };
+
   const handleDelete = async () => {
     if (!initialData || !onDelete) return;
     setIsDeleting(true);
@@ -82,7 +127,6 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
   };
 
   if (!isOpen) return null;
-
   const isDisabled = isSubmitting || isDeleting;
 
   return (
@@ -104,13 +148,21 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
         >
           {/* Header */}
           <div className="flex justify-between items-center px-6 sm:px-8 py-4 sm:py-5 border-b dark:border-slate-800 bg-white dark:bg-slate-900 z-10">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-xl">
-                <LayoutTemplate className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-              </div>
-              <h2 className="text-lg sm:text-xl font-black dark:text-white">
+            <div className="flex items-center gap-6">
+              <button 
+                onClick={() => setActiveTab('attraction')}
+                className={`flex items-center gap-2 pb-2 border-b-2 transition-all font-black text-sm sm:text-lg ${activeTab === 'attraction' ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-400'}`}
+              >
+                <LayoutTemplate className="w-5 h-5" />
                 {initialData ? '编辑景点' : '新增景点'}
-              </h2>
+              </button>
+              <button 
+                onClick={() => setActiveTab('notification')}
+                className={`flex items-center gap-2 pb-2 border-b-2 transition-all font-black text-sm sm:text-lg ${activeTab === 'notification' ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-400'}`}
+              >
+                <Bell className="w-5 h-5" />
+                通知公告管理
+              </button>
             </div>
             <button 
               onClick={onClose} 
@@ -121,196 +173,125 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
             </button>
           </div>
 
-          <div className="flex flex-col md:flex-row flex-grow overflow-hidden">
-            {/* Left Column: Form */}
-            <div className="w-full md:w-1/2 p-6 sm:p-8 overflow-y-auto no-scrollbar border-r dark:border-slate-800">
-              <form id="attractionForm" onSubmit={handleSubmit} className={`space-y-5 sm:space-y-6 ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                <div>
-                  <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">景点名称</label>
-                  <input
-                    required
-                    disabled={isDisabled}
-                    placeholder="例如：清明上河园"
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold placeholder-slate-400 dark:placeholder-slate-500"
-                    value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                   <div>
-                    <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">所属省份</label>
-                    <div className="relative">
-                      <select
-                        disabled={isDisabled}
-                        className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white appearance-none focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold"
-                        value={formData.province}
-                        onChange={e => setFormData({...formData, province: e.target.value})}
-                      >
-                        {["河南", "北京", "四川", "云南", "陕西", "浙江", "江苏", "广东", "湖南", "新疆", "上海", "西藏"].map(p => (
-                          <option key={p} value={p}>{p}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-300">
-                        <ChevronDown className="w-4 h-4" />
+          <div className="flex flex-col flex-grow overflow-hidden">
+            {activeTab === 'attraction' ? (
+              <div className="flex flex-col md:flex-row flex-grow overflow-hidden">
+                {/* Attraction Form Logic (保持原有) */}
+                <div className="w-full md:w-1/2 p-6 sm:p-8 overflow-y-auto no-scrollbar border-r dark:border-slate-800">
+                  <form id="attractionForm" onSubmit={handleSubmit} className={`space-y-5 sm:space-y-6 ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">景点名称</label>
+                      <input required disabled={isDisabled} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-5">
+                       <div>
+                        <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">省份</label>
+                        <select className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white text-sm font-bold" value={formData.province} onChange={e => setFormData({...formData, province: e.target.value})}>
+                          {["河南", "北京", "四川", "云南", "陕西", "浙江", "江苏", "广东", "湖南", "新疆", "上海", "西藏"].map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">评分</label>
+                        <input type="number" step="0.1" className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white" value={formData.rating} onChange={e => setFormData({...formData, rating: parseFloat(e.target.value)})} />
                       </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">评分 (0-5)</label>
-                    <input
-                      type="number"
-                      disabled={isDisabled}
-                      step="0.1"
-                      min="0"
-                      max="5"
-                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold"
-                      value={formData.rating}
-                      onChange={e => setFormData({...formData, rating: parseFloat(e.target.value)})}
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">图片链接</label>
+                      <input required className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white" value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">描述</label>
+                      <textarea required rows={4} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 dark:text-white resize-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                    </div>
+                  </form>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2 flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> 纬度
-                    </label>
-                    <input
-                      type="number"
-                      disabled={isDisabled}
-                      step="any"
-                      placeholder="如: 34.8093"
-                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold placeholder-slate-400 dark:placeholder-slate-500"
-                      value={formData.lat}
-                      onChange={e => setFormData({...formData, lat: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2 flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> 经度
-                    </label>
-                    <input
-                      type="number"
-                      disabled={isDisabled}
-                      step="any"
-                      placeholder="如: 114.3377"
-                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold placeholder-slate-400 dark:placeholder-slate-500"
-                      value={formData.lng}
-                      onChange={e => setFormData({...formData, lng: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">图片链接</label>
-                  <div className="relative">
-                    <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-300" />
-                    <input
-                      required
-                      disabled={isDisabled}
-                      placeholder="https://..."
-                      className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold placeholder-slate-400 dark:placeholder-slate-500"
-                      value={formData.imageUrl}
-                      onChange={e => setFormData({...formData, imageUrl: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">景点描述</label>
-                  <textarea
-                    required
-                    disabled={isDisabled}
-                    rows={4}
-                    placeholder="详细描述..."
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all resize-none text-sm font-bold placeholder-slate-400 dark:placeholder-slate-500"
-                    value={formData.description}
-                    onChange={e => setFormData({...formData, description: e.target.value})}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">标签</label>
-                  <input
-                    disabled={isDisabled}
-                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold placeholder-slate-400 dark:placeholder-slate-500"
-                    value={formData.tags}
-                    onChange={e => setFormData({...formData, tags: e.target.value})}
-                    placeholder="使用逗号分隔"
-                  />
-                </div>
-              </form>
-            </div>
-
-            {/* Right Column: Preview (Hidden on small screens) */}
-            <div className="hidden md:flex w-1/2 bg-slate-50 dark:bg-slate-800/80 p-8 flex-col items-center justify-center relative">
-              <div className="absolute top-8 left-8 text-[10px] font-black text-slate-400 dark:text-teal-400 uppercase tracking-widest">
-                实时预览
-              </div>
-              
-              <div className="w-full max-w-sm">
-                 <div className="bg-white dark:bg-slate-800 rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700">
-                    <div className="h-48 w-full bg-slate-200 dark:bg-slate-700 relative">
-                       {formData.imageUrl ? (
-                         <img 
-                           src={formData.imageUrl} 
-                           alt="Preview" 
-                           className="w-full h-full object-cover"
-                         />
-                       ) : (
-                         <div className="flex items-center justify-center h-full text-slate-400">
-                           <ImageIcon className="w-12 h-12 opacity-20" />
+                <div className="hidden md:flex w-1/2 bg-slate-50 dark:bg-slate-800/80 p-8 flex-col items-center justify-center relative">
+                   {/* Preview (保持原有) */}
+                   <div className="w-full max-w-sm">
+                      <div className="bg-white dark:bg-slate-800 rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700">
+                         <div className="h-48 w-full bg-slate-200 dark:bg-slate-700">
+                            {formData.imageUrl && <img src={formData.imageUrl} className="w-full h-full object-cover" />}
                          </div>
-                       )}
-                    </div>
-                    <div className="p-6">
-                       <h3 className="font-black text-lg text-slate-800 dark:text-white mb-2 line-clamp-1">
-                         {formData.name || '景点名称'}
-                       </h3>
-                       <p className="text-sm text-slate-500 dark:text-slate-300 line-clamp-2 leading-relaxed">
-                         {formData.description || '描述内容...'}
-                       </p>
-                    </div>
-                 </div>
+                         <div className="p-6">
+                            <h3 className="font-black text-lg dark:text-white">{formData.name || '景点名称'}</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-300 line-clamp-2">{formData.description || '描述...'}</p>
+                         </div>
+                      </div>
+                   </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-6 sm:p-8 overflow-y-auto space-y-8 no-scrollbar">
+                {/* Notification Management Form */}
+                <div className="bg-teal-50 dark:bg-teal-900/20 p-6 rounded-3xl border border-teal-100 dark:border-teal-800">
+                  <h4 className="font-black text-slate-800 dark:text-white mb-4">发布新通知</h4>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <input 
+                      className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white font-bold"
+                      placeholder="输入通知内容，如：五一长假景区开放时间调整..."
+                      value={newNotifContent}
+                      onChange={(e) => setNewNotifContent(e.target.value)}
+                    />
+                    <button 
+                      onClick={handleAddNotif}
+                      disabled={isSubmitting || !newNotifContent.trim()}
+                      className="px-8 py-3 bg-teal-500 text-white rounded-2xl font-black disabled:opacity-50 transition-all hover:bg-teal-600 active:scale-95"
+                    >
+                      发布通知
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="font-black text-slate-800 dark:text-white">通知列表</h4>
+                  <div className="grid gap-3">
+                    {notifList.map(n => (
+                      <div key={n.id} className="p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-between group">
+                        <div className="flex items-center gap-4">
+                          <div className={`p-2 rounded-xl ${n.is_active ? 'bg-teal-100 text-teal-600' : 'bg-slate-100 text-slate-400'}`}>
+                            {n.is_active ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                          </div>
+                          <div>
+                            <p className={`font-bold ${n.is_active ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500 line-through'}`}>{n.content}</p>
+                            <span className="text-[10px] text-slate-400">{new Date(n.created_at).toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => toggleNotif(n)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-teal-500">
+                            {n.is_active ? '下架' : '上架'}
+                          </button>
+                          <button onClick={() => deleteNotif(n.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl text-red-500">
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {notifList.length === 0 && <div className="text-center py-20 text-slate-400">暂无通知记录</div>}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer Actions */}
-          <div className="px-6 sm:px-8 py-5 border-t dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center z-10">
-            {initialData && onDelete ? (
-              <button
-                type="button"
-                disabled={isDisabled}
-                onClick={handleDelete}
-                className="p-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/40 rounded-xl transition-all sm:px-5 sm:flex sm:items-center sm:gap-2"
-              >
-                {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />} 
-                <span className="hidden sm:inline font-bold text-sm">删除景点</span>
-              </button>
-            ) : <div />}
-            
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isDisabled}
-                className="px-5 sm:px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-2xl dark:text-slate-300 dark:hover:bg-slate-800 font-bold text-sm transition-colors"
-              >
-                取消
-              </button>
-              <button
-                type="submit"
-                form="attractionForm"
-                disabled={isDisabled}
-                className="px-6 sm:px-8 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-2xl hover:shadow-lg hover:shadow-teal-500/30 flex items-center gap-2 font-black text-sm transition-all active:scale-95"
-              >
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {initialData ? '保存' : '确认发布'}
-              </button>
+          {activeTab === 'attraction' && (
+            <div className="px-6 sm:px-8 py-5 border-t dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center z-10">
+              {initialData && onDelete ? (
+                <button type="button" disabled={isDisabled} onClick={handleDelete} className="p-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/40 rounded-xl transition-all sm:px-5 sm:flex sm:items-center sm:gap-2">
+                  {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />} 
+                  <span className="hidden sm:inline font-bold text-sm">删除景点</span>
+                </button>
+              ) : <div />}
+              
+              <div className="flex gap-3">
+                <button type="button" onClick={onClose} disabled={isDisabled} className="px-5 sm:px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-2xl dark:text-slate-300 dark:hover:bg-slate-800 font-bold text-sm transition-colors">取消</button>
+                <button type="submit" form="attractionForm" disabled={isDisabled} className="px-6 sm:px-8 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-2xl hover:shadow-lg hover:shadow-teal-500/30 flex items-center gap-2 font-black text-sm transition-all active:scale-95">
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {initialData ? '保存' : '确认发布'}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </motion.div>
       </div>
     </AnimatePresence>

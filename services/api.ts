@@ -14,6 +14,14 @@ export interface FavoriteItem extends Attraction {
   note?: string;
 }
 
+export interface Notification {
+  id: number;
+  content: string;
+  is_active: number;
+  priority: number;
+  created_at: string;
+}
+
 const fetchClient = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
   const defaultHeaders = { 'Content-Type': 'application/json' };
   const config = { ...options, headers: { ...defaultHeaders, ...options.headers } };
@@ -43,6 +51,13 @@ export const api = {
   stats: {
     getViews: () => fetchClient<{ views: number }>('/api/stats'),
     incrementViews: () => fetchClient<{ views: number }>('/api/stats', { method: 'POST' }),
+  },
+  notifications: {
+    getActive: () => fetchClient<Notification[]>('/api/notifications'),
+    getAll: () => fetchClient<Notification[]>('/api/notifications?all=true'),
+    create: (data: { content: string, priority?: number }) => fetchClient<any>('/api/notifications', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: number, data: { is_active: number, priority: number }) => fetchClient<any>(`/api/notifications?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: number) => fetchClient<any>(`/api/notifications?id=${id}`, { method: 'DELETE' }),
   },
   attractions: {
     getAll: async (params: { page?: number, limit?: number, province?: string, search?: string } = {}) => {
