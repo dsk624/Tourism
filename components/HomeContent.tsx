@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, Loader2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -54,13 +55,18 @@ export const HomeContent: React.FC<HomeContentProps> = ({
     hero_title_highlight: '锦绣中华',
     hero_subtitle: '从古老的河南腹地出发，丈量每一寸山河。沉浸式旅行体验，带您领略千年文化的独特魅力。'
   });
+  const [isSettingsLoading, setIsSettingsLoading] = useState(true);
 
   const loadSettings = async () => {
     try {
       const data = await api.settings.get();
-      if (data) setSettings(prev => ({ ...prev, ...data }));
+      if (data && Object.keys(data).length > 0) {
+        setSettings(prev => ({ ...prev, ...data }));
+      }
     } catch (e) {
       console.warn('Using default hero text');
+    } finally {
+      setIsSettingsLoading(false);
     }
   };
 
@@ -83,48 +89,69 @@ export const HomeContent: React.FC<HomeContentProps> = ({
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-20 sm:pb-24 text-center">
-          <div>
-            <span className="inline-block px-4 py-1.5 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-4 sm:mb-6 backdrop-blur-sm animate__animated animate__fadeInDown">
-              {settings.hero_badge}
-            </span>
-            <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold text-white mb-4 sm:mb-6 tracking-tight leading-tight animate__animated animate__fadeInDown animate__delay-0.5s">
-              {settings.hero_title_main}<span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">{settings.hero_title_highlight}</span>
-            </h1>
-            <p className="text-slate-200 text-sm sm:text-lg md:text-xl max-w-2xl mx-auto mb-8 sm:mb-10 font-light leading-relaxed px-4 animate__animated animate__fadeInUp animate__delay-0.5s">
-              {settings.hero_subtitle}
-            </p>
+          <AnimatePresence mode="wait">
+            {isSettingsLoading ? (
+              <motion.div 
+                key="loading-placeholder"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="h-[280px] sm:h-[350px] flex flex-col items-center justify-center gap-4"
+              >
+                 <div className="w-48 h-6 bg-white/10 rounded-full animate-pulse" />
+                 <div className="w-80 h-12 bg-white/10 rounded-2xl animate-pulse" />
+                 <div className="w-full max-w-lg h-16 bg-white/10 rounded-2xl animate-pulse" />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="hero-content"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              >
+                <span className="inline-block px-4 py-1.5 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-4 sm:mb-6 backdrop-blur-sm">
+                  {settings.hero_badge}
+                </span>
+                <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold text-white mb-4 sm:mb-6 tracking-tight leading-tight">
+                  {settings.hero_title_main}<span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">{settings.hero_title_highlight}</span>
+                </h1>
+                <p className="text-slate-200 text-sm sm:text-lg md:text-xl max-w-2xl mx-auto mb-8 sm:mb-10 font-light leading-relaxed px-4">
+                  {settings.hero_subtitle}
+                </p>
 
-            <div className="relative max-w-lg mx-auto group animate__animated animate__fadeInUp animate__delay-1s px-2">
-              <div className="absolute inset-0 bg-teal-500/30 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full"></div>
-              
-              <div className="relative flex items-center bg-white/80 backdrop-blur-md shadow-2xl shadow-teal-900/20 rounded-full p-1 sm:p-1.5 transition-all transform focus-within:bg-white">
-                <div className="pl-3 pr-2">
-                  <Search className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" />
+                <div className="relative max-w-lg mx-auto group px-2">
+                  <div className="absolute inset-0 bg-teal-500/30 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full"></div>
+                  
+                  <div className="relative flex items-center bg-white/80 backdrop-blur-md shadow-2xl shadow-teal-900/20 rounded-full p-1 sm:p-1.5 transition-all transform focus-within:bg-white">
+                    <div className="pl-3 pr-2">
+                      <Search className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" />
+                    </div>
+                    <input 
+                      type="text"
+                      placeholder="搜索景点、历史或文化..."
+                      className="w-full bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-600 px-2 py-1.5 sm:py-2 text-sm sm:text-base font-medium outline-none"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    {searchTerm && (
+                      <button 
+                        onClick={() => setSearchTerm('')}
+                        className="p-1.5 text-slate-500 hover:text-slate-700 transition-colors mr-1"
+                      >
+                        <Plus className="w-4 h-4 rotate-45" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <input 
-                  type="text"
-                  placeholder="搜索景点、历史或文化..."
-                  className="w-full bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-600 px-2 py-1.5 sm:py-2 text-sm sm:text-base font-medium outline-none"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                {searchTerm && (
-                  <button 
-                    onClick={() => setSearchTerm('')}
-                    className="p-1.5 text-slate-500 hover:text-slate-700 transition-colors mr-1"
-                  >
-                    <Plus className="w-4 h-4 rotate-45" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 -mt-6 sm:-mt-10 relative z-20">
         {isAuthenticated && currentUser?.isAdmin && (
-           <div className="flex justify-end mb-6 animate__animated animate__fadeInRight">
+           <div className="flex justify-end mb-6">
               <button 
                 onClick={openAddModal}
                 className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl shadow-lg shadow-teal-500/30 transition-all font-bold text-sm"
@@ -134,7 +161,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({
            </div>
         )}
 
-        <div className="mb-8 sm:mb-12 animate__animated animate__fadeInUp">
+        <div className="mb-8 sm:mb-12">
           <div className="flex overflow-x-auto no-scrollbar sm:justify-center py-2 -mx-4 px-4 sm:mx-0 sm:px-0">
             <div className={`inline-flex p-1 sm:p-1.5 rounded-xl sm:rounded-2xl ${theme === 'dark' ? 'bg-slate-800/80 border border-slate-700' : 'bg-white border border-slate-200'} backdrop-blur-sm shadow-lg whitespace-nowrap`}>
               {isDataLoading ? (
