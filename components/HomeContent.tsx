@@ -1,9 +1,9 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, Loader2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AttractionCard } from './AttractionCard';
 import { Attraction, User } from '../types';
+import { api } from '../services/api';
 
 interface HomeContentProps {
   theme: 'light' | 'dark' | 'teal';
@@ -48,10 +48,31 @@ export const HomeContent: React.FC<HomeContentProps> = ({
   totalPages,
   onPageChange
 }) => {
+  const [settings, setSettings] = useState({
+    hero_badge: 'Discover The Oriental Beauty',
+    hero_title_main: '探索',
+    hero_title_highlight: '锦绣中华',
+    hero_subtitle: '从古老的河南腹地出发，丈量每一寸山河。沉浸式旅行体验，带您领略千年文化的独特魅力。'
+  });
+
+  const loadSettings = async () => {
+    try {
+      const data = await api.settings.get();
+      if (data) setSettings(prev => ({ ...prev, ...data }));
+    } catch (e) {
+      console.warn('Using default hero text');
+    }
+  };
+
+  useEffect(() => {
+    loadSettings();
+    window.addEventListener('siteSettingsUpdated', loadSettings);
+    return () => window.removeEventListener('siteSettingsUpdated', loadSettings);
+  }, []);
+
   return (
     <>
       <div className="relative pt-16 sm:pt-20">
-        {/* 此处原有的 WeatherWidget 已移除，改为由 App.tsx 统一渲染 */}
         <div className="absolute inset-0 z-0">
           <img 
             src="https://picsum.photos/1920/1080?random=99" 
@@ -64,13 +85,13 @@ export const HomeContent: React.FC<HomeContentProps> = ({
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-20 sm:pb-24 text-center">
           <div>
             <span className="inline-block px-4 py-1.5 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-4 sm:mb-6 backdrop-blur-sm animate__animated animate__fadeInDown">
-              Discover The Oriental Beauty
+              {settings.hero_badge}
             </span>
             <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold text-white mb-4 sm:mb-6 tracking-tight leading-tight animate__animated animate__fadeInDown animate__delay-0.5s">
-              探索<span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">锦绣中华</span>
+              {settings.hero_title_main}<span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">{settings.hero_title_highlight}</span>
             </h1>
             <p className="text-slate-200 text-sm sm:text-lg md:text-xl max-w-2xl mx-auto mb-8 sm:mb-10 font-light leading-relaxed px-4 animate__animated animate__fadeInUp animate__delay-0.5s">
-              从古老的河南腹地出发，丈量每一寸山河。沉浸式旅行体验，带您领略千年文化的独特魅力。
+              {settings.hero_subtitle}
             </p>
 
             <div className="relative max-w-lg mx-auto group animate__animated animate__fadeInUp animate__delay-1s px-2">

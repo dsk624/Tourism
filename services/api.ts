@@ -1,4 +1,3 @@
-
 import { Attraction, AuthResponse, User, Schedule } from '../types';
 import { ATTRACTIONS } from '../constants';
 
@@ -19,7 +18,7 @@ export interface Notification {
   content: string;
   is_active: number;
   priority: number;
-  bg_color: string; // 改为 string 以支持自定义颜色
+  bg_color: string;
   created_at: string;
 }
 
@@ -52,6 +51,10 @@ export const api = {
   stats: {
     getViews: () => fetchClient<{ views: number }>('/api/stats'),
     incrementViews: () => fetchClient<{ views: number }>('/api/stats', { method: 'POST' }),
+  },
+  settings: {
+    get: () => fetchClient<Record<string, string>>('/api/settings'),
+    update: (settings: Record<string, string>) => fetchClient<any>('/api/settings', { method: 'PUT', body: JSON.stringify(settings) }),
   },
   notifications: {
     getActive: () => fetchClient<Notification[]>('/api/notifications'),

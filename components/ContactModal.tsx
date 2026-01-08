@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MessageCircle } from 'lucide-react';
@@ -12,7 +13,7 @@ export const ContactModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -40,21 +41,20 @@ export const ContactModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <MessageCircle className="w-10 h-10 text-teal-600 dark:text-teal-400" />
             </div>
 
-            <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">联系作者</h3>
+            <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">-联系作者-</h3>
             <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">
-              扫描下方二维码添加微信<br/>交流技术或反馈建议
+              长按或扫码添加联系方式<br/>交流技术或反馈建议
             </p>
 
-            <div className="bg-white p-4 rounded-xl shadow-inner border border-slate-100 dark:border-slate-700 inline-block mb-4">
-              {/* 这里使用Picsum作为占位符，您可以替换为您真实的微信二维码图片URL */}
+            <div className="bg-white p-2 rounded-xl shadow-inner border border-slate-100 dark:border-slate-700 inline-block mb-4 overflow-hidden">
               <img 
-                src="https://picsum.photos/200/200?random=qr" 
-                alt="WeChat QR Code" 
-                className="w-48 h-48 rounded-lg object-cover"
+                src="https://kezhanai.dpdns.org/aiblogai/6341767872899_.pic.jpg" 
+                alt="Contact Information" 
+                className="w-56 h-auto rounded-lg"
               />
             </div>
             
-            <p className="text-xs text-slate-400">微信号: ChinaTravel_Admin</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2">华夏游 · 数字化旅行指南</p>
           </div>
         </motion.div>
       </div>

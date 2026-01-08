@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Attraction } from '../types';
-import { X, Save, Trash2, Image as ImageIcon, LayoutTemplate, MapPin, Loader2, ChevronDown, Bell, Eye, EyeOff, Palette, SlidersHorizontal, Megaphone, List } from 'lucide-react';
+import { X, Save, Trash2, Image as ImageIcon, LayoutTemplate, MapPin, Loader2, ChevronDown, Bell, Eye, EyeOff, Palette, SlidersHorizontal, Megaphone, List, Type } from 'lucide-react';
 import { api, Notification } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -11,11 +10,11 @@ interface Props {
   onSubmit: (data: any) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   initialData?: Attraction | null;
-  defaultTab?: 'attraction' | 'notification';
+  defaultTab?: 'attraction' | 'notification' | 'settings';
 }
 
 export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelete, initialData, defaultTab = 'attraction' }) => {
-  const [activeTab, setActiveTab] = useState<'attraction' | 'notification'>(defaultTab);
+  const [activeTab, setActiveTab] = useState<'attraction' | 'notification' | 'settings'>(defaultTab);
   const [formData, setFormData] = useState({
     name: '',
     province: '河南',
@@ -25,6 +24,13 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
     rating: 5.0,
     lat: '',
     lng: ''
+  });
+
+  const [siteSettings, setSiteSettings] = useState({
+    hero_badge: 'DISCOVER THE ORIENTAL BEAUTY',
+    hero_title_main: '探索',
+    hero_title_highlight: '锦绣中华',
+    hero_subtitle: '从古老的河南腹地出发，丈量每一寸山河。沉浸式旅行体验，带您领略千年文化的独特魅力。'
   });
 
   const [notifList, setNotifList] = useState<Notification[]>([]);
@@ -56,9 +62,17 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
     } catch (e) { console.error(e); }
   };
 
+  const fetchSettings = async () => {
+    try {
+      const data = await api.settings.get();
+      setSiteSettings(prev => ({ ...prev, ...data }));
+    } catch (e) { console.error(e); }
+  };
+
   useEffect(() => {
-    if (isOpen && activeTab === 'notification') {
-      fetchNotifs();
+    if (isOpen) {
+      if (activeTab === 'notification') fetchNotifs();
+      if (activeTab === 'settings') fetchSettings();
     }
   }, [isOpen, activeTab]);
 
@@ -104,6 +118,16 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
     }
   };
 
+  const handleUpdateSettings = async () => {
+    setIsSubmitting(true);
+    try {
+      await api.settings.update(siteSettings);
+      alert('站点设置已更新');
+      window.dispatchEvent(new CustomEvent('siteSettingsUpdated'));
+    } catch (e) { alert('更新失败'); }
+    finally { setIsSubmitting(false); }
+  };
+
   const handleAddNotif = async () => {
     if (!newNotifContent.trim()) return;
     setIsSubmitting(true);
@@ -112,7 +136,6 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
       await api.notifications.create({ content: newNotifContent, bg_color: bgColor });
       setNewNotifContent('');
       fetchNotifs();
-      // 发送刷新通知广播
       window.dispatchEvent(new CustomEvent('notificationsUpdated'));
     } catch (e) { alert('发布失败'); }
     finally { setIsSubmitting(false); }
@@ -126,7 +149,6 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
         bg_color: notif.bg_color
       });
       fetchNotifs();
-      // 发送刷新通知广播
       window.dispatchEvent(new CustomEvent('notificationsUpdated'));
     } catch (e) { alert('操作失败'); }
   };
@@ -136,7 +158,6 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
     try {
       await api.notifications.delete(id);
       fetchNotifs();
-      // 发送刷新通知广播
       window.dispatchEvent(new CustomEvent('notificationsUpdated'));
     } catch (e) { alert('删除失败'); }
   };
@@ -171,18 +192,22 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           className="relative bg-white dark:bg-slate-900 w-full max-w-5xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] border dark:border-slate-800"
         >
-          <div className="flex justify-between items-center px-6 sm:px-8 py-4 sm:py-5 border-b dark:border-slate-800 bg-white dark:bg-slate-900 z-10">
-            <div className="flex items-center gap-6">
+          <div className="flex justify-between items-center px-6 sm:px-8 py-4 sm:py-5 border-b dark:border-slate-800 bg-white dark:bg-slate-900 z-10 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-6 min-w-max">
               <button onClick={() => setActiveTab('attraction')} className={`flex items-center gap-2 pb-2 border-b-2 transition-all font-black text-sm sm:text-lg ${activeTab === 'attraction' ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-400'}`}>
                 <LayoutTemplate className="w-5 h-5" />
-                {initialData ? '编辑景点' : '新增景点'}
+                景点
               </button>
               <button onClick={() => setActiveTab('notification')} className={`flex items-center gap-2 pb-2 border-b-2 transition-all font-black text-sm sm:text-lg ${activeTab === 'notification' ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-400'}`}>
                 <Bell className="w-5 h-5" />
-                通知公告管理
+                通知
+              </button>
+              <button onClick={() => setActiveTab('settings')} className={`flex items-center gap-2 pb-2 border-b-2 transition-all font-black text-sm sm:text-lg ${activeTab === 'settings' ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-400'}`}>
+                <Type className="w-5 h-5" />
+                站点设置
               </button>
             </div>
-            <button onClick={onClose} disabled={isDisabled} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-slate-300">
+            <button onClick={onClose} disabled={isDisabled} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-slate-300 ml-4">
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -214,11 +239,11 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">纬度 (Latitude)</label>
+                        <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">纬度</label>
                         <input type="number" step="any" disabled={isDisabled} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={formData.lat} onChange={e => setFormData({...formData, lat: e.target.value})} />
                       </div>
                       <div>
-                        <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">经度 (Longitude)</label>
+                        <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">经度</label>
                         <input type="number" step="any" disabled={isDisabled} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={formData.lng} onChange={e => setFormData({...formData, lng: e.target.value})} />
                       </div>
                     </div>
@@ -264,7 +289,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                   )}
                 </div>
               </div>
-            ) : (
+            ) : activeTab === 'notification' ? (
               <div className="p-6 sm:p-8 overflow-y-auto space-y-8 no-scrollbar">
                 <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-700">
                   <h4 className="font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
@@ -282,9 +307,6 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <label className="text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">外观配置</label>
-                          <div className="text-[10px] font-black text-teal-600 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded-full">
-                            预览效果
-                          </div>
                         </div>
                         <div className="flex items-center gap-4">
                           <div 
@@ -358,6 +380,42 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 sm:p-8 overflow-y-auto space-y-8 no-scrollbar">
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-700">
+                  <h4 className="font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                    <Type className="w-5 h-5 text-teal-500" /> 首页文字内容配置
+                  </h4>
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">顶部 Slogan (Badge)</label>
+                      <input className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={siteSettings.hero_badge} onChange={e => setSiteSettings({...siteSettings, hero_badge: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">主标题文字 (白色)</label>
+                        <input className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={siteSettings.hero_title_main} onChange={e => setSiteSettings({...siteSettings, hero_title_main: e.target.value})} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">标题高亮文字 (渐变色)</label>
+                        <input className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={siteSettings.hero_title_highlight} onChange={e => setSiteSettings({...siteSettings, hero_title_highlight: e.target.value})} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">副标题描述</label>
+                      <textarea rows={4} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold resize-none" value={siteSettings.hero_subtitle} onChange={e => setSiteSettings({...siteSettings, hero_subtitle: e.target.value})} />
+                    </div>
+                    <button 
+                      onClick={handleUpdateSettings}
+                      disabled={isSubmitting}
+                      className="w-full py-4 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-black transition-all shadow-lg shadow-teal-500/20 active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                      确认修改站点文字
+                    </button>
                   </div>
                 </div>
               </div>
