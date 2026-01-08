@@ -303,7 +303,7 @@ const App: React.FC = () => {
         </footer>
 
         <DetailModal attraction={selectedAttraction} allAttractions={attractions} onClose={() => setSelectedAttraction(null)} isFavorite={selectedAttraction ? favoritesIds.has(selectedAttraction.id) : false} onToggleFavorite={handleToggleFavorite} theme={theme} />
-        <FeedbackWidget />
+        <FeedbackWidget isAuthenticated={isAuthenticated} onOpenLogin={() => setIsLoginPromptOpen(true)} />
         <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
         <AdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} onSubmit={async (data) => { try { if (editingAttraction) await api.attractions.update(editingAttraction.id, data); else await api.attractions.create(data); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('操作失败'); } }} onDelete={async (id) => { if (confirm('确定删除此景点？')) { try { await api.attractions.delete(id); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('删除失败'); } } }} initialData={editingAttraction} />
         <LoginPromptModal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)} />
