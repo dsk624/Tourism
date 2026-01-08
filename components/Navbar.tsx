@@ -41,13 +41,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b transition-all duration-300 ${currentThemeStyles}`}>
-      <div className="max-w-7xl mx-auto px-6 h-16 flex justify-between items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex justify-between items-center">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group">
           <div className="p-2 bg-teal-500 rounded-xl shadow-lg shadow-teal-500/20 group-hover:rotate-6 transition-transform">
             <Mountain className="text-white w-5 h-5" />
           </div>
-          <span className="font-black text-xl tracking-tight">华夏游</span>
+          <span className="font-black text-lg sm:text-xl tracking-tight">华夏游</span>
         </Link>
 
         {/* Desktop Controls */}
@@ -116,10 +116,99 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Mobile Toggle */}
-        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 text-slate-500">
+        <button 
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+          className="md:hidden p-2 text-slate-500 dark:text-slate-400 transition-colors"
+        >
           {mobileMenuOpen ? <X /> : <Menu />}
         </button>
       </div>
+
+      {/* Mobile Sidebar Menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden" 
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className={`fixed top-0 right-0 bottom-0 w-[280px] z-50 shadow-2xl md:hidden flex flex-col ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`}
+            >
+              <div className="p-6 flex justify-between items-center border-b border-slate-100 dark:border-slate-800">
+                <span className="font-black text-lg">导航菜单</span>
+                <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="flex-grow overflow-y-auto p-6 space-y-8">
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">主菜单</h4>
+                  <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-4 text-lg font-bold">
+                    <div className="p-2 bg-teal-500/10 rounded-lg"><Map className="w-5 h-5 text-teal-500" /></div>
+                    探索首页
+                  </Link>
+                  <button 
+                    onClick={() => { setIsContactModalOpen(true); setMobileMenuOpen(false); }}
+                    className="w-full flex items-center gap-4 text-lg font-bold"
+                  >
+                    <div className="p-2 bg-blue-500/10 rounded-lg"><MessageCircle className="w-5 h-5 text-blue-500" /></div>
+                    联系作者
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">外观设置</h4>
+                  <div className="grid grid-cols-3 gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
+                    {(['light', 'dark', 'teal'] as const).map(t => (
+                      <button 
+                        key={t}
+                        onClick={() => setTheme(t)}
+                        className={`py-3 rounded-xl flex justify-center transition-all ${theme === t ? 'bg-white dark:bg-slate-700 shadow-sm text-teal-500' : 'text-slate-400'}`}
+                      >
+                        {t === 'light' ? <Sun className="w-5 h-5" /> : t === 'dark' ? <Moon className="w-5 h-5" /> : <Map className="w-5 h-5" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">账户管理</h4>
+                  {isAuthenticated ? (
+                    <div className="space-y-3">
+                      <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-4 text-lg font-bold">
+                        <div className="p-2 bg-teal-500/10 rounded-lg"><UserIcon className="w-5 h-5 text-teal-500" /></div>
+                        个人中心
+                      </Link>
+                      <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="w-full flex items-center gap-4 text-lg font-bold text-red-500">
+                        <div className="p-2 bg-red-500/10 rounded-lg"><LogOut className="w-5 h-5" /></div>
+                        退出登录
+                      </button>
+                    </div>
+                  ) : (
+                    <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 w-full py-4 bg-teal-500 text-white rounded-2xl font-black shadow-lg shadow-teal-500/20">
+                      <LogOut className="w-5 h-5" />
+                      立即登录
+                    </Link>
+                  )}
+                </div>
+              </div>
+              
+              <div className="p-6 text-center">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">© 2025 CHINA TRAVEL GUIDE</p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };
