@@ -19,6 +19,7 @@ export interface Notification {
   content: string;
   is_active: number;
   priority: number;
+  bg_color: 'teal' | 'blue' | 'rose' | 'amber';
   created_at: string;
 }
 
@@ -55,8 +56,8 @@ export const api = {
   notifications: {
     getActive: () => fetchClient<Notification[]>('/api/notifications'),
     getAll: () => fetchClient<Notification[]>('/api/notifications?all=true'),
-    create: (data: { content: string, priority?: number }) => fetchClient<any>('/api/notifications', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: number, data: { is_active: number, priority: number }) => fetchClient<any>(`/api/notifications?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    create: (data: { content: string, priority?: number, bg_color?: string }) => fetchClient<any>('/api/notifications', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: number, data: { is_active: number, priority: number, bg_color: string }) => fetchClient<any>(`/api/notifications?id=${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number) => fetchClient<any>(`/api/notifications?id=${id}`, { method: 'DELETE' }),
   },
   attractions: {

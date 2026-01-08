@@ -16,14 +16,16 @@ interface NavbarProps {
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
   onOpenAdminNotifications?: () => void;
+  onNotificationVisibilityChange?: (isVisible: boolean) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  theme, setTheme, isAuthenticated, currentUser, handleLogout, setIsContactModalOpen, mobileMenuOpen, setMobileMenuOpen, onOpenAdminNotifications
+  theme, setTheme, isAuthenticated, currentUser, handleLogout, setIsContactModalOpen, mobileMenuOpen, setMobileMenuOpen, onOpenAdminNotifications, onNotificationVisibilityChange
 }) => {
   const location = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isDismissed, setIsDismissed] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,6 +33,9 @@ export const Navbar: React.FC<NavbarProps> = ({
       try {
         const data = await api.notifications.getActive();
         setNotifications(data);
+        if (data.length > 0 && !isDismissed) {
+          onNotificationVisibilityChange?.(true);
+        }
       } catch (e) {
         console.error('Failed to fetch notifications');
       }
@@ -38,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 300000);
     return () => clearInterval(interval);
-  }, []);
+  }, [onNotificationVisibilityChange, isDismissed]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -50,6 +55,18 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleDismiss = () => {
+    setIsDismissed(true);
+    onNotificationVisibilityChange?.(false);
+  };
+
+  const colorMap = {
+    teal: "bg-teal-600 dark:bg-teal-900/90",
+    blue: "bg-blue-600 dark:bg-blue-900/90",
+    rose: "bg-rose-600 dark:bg-rose-900/90",
+    amber: "bg-amber-600 dark:bg-amber-900/90"
+  };
+
   const currentThemeStyles = {
     light: "bg-white/80 border-slate-200 text-slate-800",
     dark: "bg-slate-900/80 border-slate-800 text-white",
@@ -58,17 +75,20 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const isDark = theme === 'dark';
   const isAdmin = currentUser?.isAdmin;
+  
+  // 使用第一条通知的颜色作为跑马灯背景
+  const marqueeBg = notifications.length > 0 ? colorMap[notifications[0].bg_color] || colorMap.teal : colorMap.teal;
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50">
       {/* Marquee Notification Bar */}
       <AnimatePresence>
-        {notifications.length > 0 && (
+        {notifications.length > 0 && !isDismissed && (
           <motion.div 
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-teal-600 dark:bg-teal-900/90 text-white py-2 overflow-hidden relative group/marquee"
+            className={`${marqueeBg} text-white py-2 overflow-hidden relative group/marquee`}
           >
             <div className="max-w-7xl mx-auto px-4 flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -97,6 +117,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ))}
                 </div>
               </div>
+              <button 
+                onClick={handleDismiss}
+                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
+                title="关闭通知"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           </motion.div>
         )}
@@ -104,7 +131,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       <nav className={`backdrop-blur-xl border-b transition-all duration-300 ${currentThemeStyles}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex justify-between items-center">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <div className="p-2 bg-teal-500 rounded-xl shadow-lg shadow-teal-500/20 group-hover:rotate-6 transition-transform">
               <Mountain className="text-white w-5 h-5" />
@@ -112,11 +138,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="font-black text-lg sm:text-xl tracking-tight">华夏游</span>
           </Link>
 
-          {/* Desktop Controls */}
           <div className="hidden md:flex items-center gap-6">
             <Link to="/" className={`text-sm font-bold transition-opacity ${location.pathname === '/' ? 'text-teal-500' : 'opacity-70 hover:opacity-100'}`}>首页</Link>
 
-            {/* Settings Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button 
                 onClick={() => setSettingsOpen(!settingsOpen)}
@@ -196,7 +220,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Mobile Toggle */}
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
             className="md:hidden p-2 text-slate-500 dark:text-slate-400 transition-colors"
@@ -205,7 +228,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </div>
 
-        {/* Mobile Sidebar Menu */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <>
@@ -290,10 +312,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                       </Link>
                     )}
                   </div>
-                </div>
-                
-                <div className="p-6 text-center">
-                  <p className={`text-xs font-bold uppercase tracking-tighter ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>© 2025 CHINA TRAVEL GUIDE</p>
                 </div>
               </motion.div>
             </>

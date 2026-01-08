@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Attraction } from '../types';
-import { X, Save, Trash2, Image as ImageIcon, LayoutTemplate, MapPin, Loader2, ChevronDown, Bell, Eye, EyeOff } from 'lucide-react';
+import { X, Save, Trash2, Image as ImageIcon, LayoutTemplate, MapPin, Loader2, ChevronDown, Bell, Eye, EyeOff, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api, Notification } from '../services/api';
 
@@ -29,10 +29,10 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
 
   const [notifList, setNotifList] = useState<Notification[]>([]);
   const [newNotifContent, setNewNotifContent] = useState('');
+  const [newNotifBg, setNewNotifBg] = useState<'teal' | 'blue' | 'rose' | 'amber'>('teal');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // 当 defaultTab 变化且弹窗打开时，更新当前激活的 Tab
   useEffect(() => {
     if (isOpen) {
       setActiveTab(defaultTab);
@@ -99,7 +99,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
     if (!newNotifContent.trim()) return;
     setIsSubmitting(true);
     try {
-      await api.notifications.create({ content: newNotifContent });
+      await api.notifications.create({ content: newNotifContent, bg_color: newNotifBg });
       setNewNotifContent('');
       fetchNotifs();
     } catch (e) { alert('发布失败'); }
@@ -110,7 +110,8 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
     try {
       await api.notifications.update(notif.id, { 
         is_active: notif.is_active === 1 ? 0 : 1,
-        priority: notif.priority
+        priority: notif.priority,
+        bg_color: notif.bg_color
       });
       fetchNotifs();
     } catch (e) { alert('操作失败'); }
@@ -137,6 +138,13 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
   if (!isOpen) return null;
   const isDisabled = isSubmitting || isDeleting;
 
+  const bgColors = [
+    { id: 'teal', class: 'bg-teal-500' },
+    { id: 'blue', class: 'bg-blue-500' },
+    { id: 'rose', class: 'bg-rose-500' },
+    { id: 'amber', class: 'bg-amber-500' }
+  ] as const;
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -154,29 +162,18 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           className="relative bg-white dark:bg-slate-900 w-full max-w-5xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] border dark:border-slate-800"
         >
-          {/* Header */}
           <div className="flex justify-between items-center px-6 sm:px-8 py-4 sm:py-5 border-b dark:border-slate-800 bg-white dark:bg-slate-900 z-10">
             <div className="flex items-center gap-6">
-              <button 
-                onClick={() => setActiveTab('attraction')}
-                className={`flex items-center gap-2 pb-2 border-b-2 transition-all font-black text-sm sm:text-lg ${activeTab === 'attraction' ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-400'}`}
-              >
+              <button onClick={() => setActiveTab('attraction')} className={`flex items-center gap-2 pb-2 border-b-2 transition-all font-black text-sm sm:text-lg ${activeTab === 'attraction' ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-400'}`}>
                 <LayoutTemplate className="w-5 h-5" />
                 {initialData ? '编辑景点' : '新增景点'}
               </button>
-              <button 
-                onClick={() => setActiveTab('notification')}
-                className={`flex items-center gap-2 pb-2 border-b-2 transition-all font-black text-sm sm:text-lg ${activeTab === 'notification' ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-400'}`}
-              >
+              <button onClick={() => setActiveTab('notification')} className={`flex items-center gap-2 pb-2 border-b-2 transition-all font-black text-sm sm:text-lg ${activeTab === 'notification' ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-400'}`}>
                 <Bell className="w-5 h-5" />
                 通知公告管理
               </button>
             </div>
-            <button 
-              onClick={onClose} 
-              disabled={isDisabled}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-slate-300"
-            >
+            <button onClick={onClose} disabled={isDisabled} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-slate-300">
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -228,22 +225,39 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
               </div>
             ) : (
               <div className="p-6 sm:p-8 overflow-y-auto space-y-8 no-scrollbar">
-                <div className="bg-teal-50 dark:bg-teal-900/20 p-6 rounded-3xl border border-teal-100 dark:border-teal-800">
+                <div className="bg-teal-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-teal-100 dark:border-slate-700">
                   <h4 className="font-black text-slate-800 dark:text-white mb-4">发布新通知</h4>
-                  <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="space-y-4">
                     <input 
-                      className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white font-bold"
+                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-bold placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:ring-2 focus:ring-teal-500 transition-all"
                       placeholder="输入通知内容，如：五一长假景区开放时间调整..."
                       value={newNotifContent}
                       onChange={(e) => setNewNotifContent(e.target.value)}
                     />
-                    <button 
-                      onClick={handleAddNotif}
-                      disabled={isSubmitting || !newNotifContent.trim()}
-                      className="px-8 py-3 bg-teal-500 text-white rounded-2xl font-black disabled:opacity-50 transition-all hover:bg-teal-600 active:scale-95"
-                    >
-                      发布通知
-                    </button>
+                    
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <Palette className="w-4 h-4 text-slate-400" />
+                        <div className="flex gap-2">
+                          {bgColors.map(color => (
+                            <button
+                              key={color.id}
+                              onClick={() => setNewNotifBg(color.id)}
+                              className={`w-8 h-8 rounded-full border-4 transition-all ${color.class} ${newNotifBg === color.id ? 'border-teal-500 scale-110 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                              title={color.id}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <button 
+                        onClick={handleAddNotif}
+                        disabled={isSubmitting || !newNotifContent.trim()}
+                        className="w-full sm:w-auto px-8 py-3 bg-teal-500 text-white rounded-2xl font-black disabled:opacity-50 transition-all hover:bg-teal-600 active:scale-95"
+                      >
+                        发布通知
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -257,8 +271,11 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                             {n.is_active ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`font-bold truncate ${n.is_active ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500 line-through'}`}>{n.content}</p>
-                            <span className="text-[10px] text-slate-400">{new Date(n.created_at).toLocaleString()}</span>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${n.bg_color === 'blue' ? 'bg-blue-500' : n.bg_color === 'rose' ? 'bg-rose-500' : n.bg_color === 'amber' ? 'bg-amber-500' : 'bg-teal-500'}`} />
+                              <p className={`font-bold truncate ${n.is_active ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500 line-through'}`}>{n.content}</p>
+                            </div>
+                            <span className="text-[10px] text-slate-400 ml-4">{new Date(n.created_at).toLocaleString()}</span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -277,7 +294,6 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
               </div>
             )}
           </div>
-
           {activeTab === 'attraction' && (
             <div className="px-6 sm:px-8 py-5 border-t dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center z-10">
               {initialData && onDelete ? (
@@ -286,7 +302,6 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                   <span className="hidden sm:inline font-bold text-sm">删除景点</span>
                 </button>
               ) : <div />}
-              
               <div className="flex gap-3">
                 <button type="button" onClick={onClose} disabled={isDisabled} className="px-5 sm:px-6 py-2.5 text-slate-600 hover:bg-slate-100 rounded-2xl dark:text-slate-300 dark:hover:bg-slate-800 font-bold text-sm transition-colors">取消</button>
                 <button type="submit" form="attractionForm" disabled={isDisabled} className="px-6 sm:px-8 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-2xl hover:shadow-lg hover:shadow-teal-500/30 flex items-center gap-2 font-black text-sm transition-all active:scale-95">

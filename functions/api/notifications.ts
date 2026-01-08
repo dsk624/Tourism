@@ -7,7 +7,6 @@ export const onRequest = async (context: any) => {
   const url = new URL(request.url);
   const id = url.searchParams.get('id');
 
-  // 验证管理员权限的辅助函数
   const getAdminUser = async () => {
     const cookieHeader = request.headers.get('Cookie');
     if (!cookieHeader) return null;
@@ -40,22 +39,21 @@ export const onRequest = async (context: any) => {
       });
     }
 
-    // 后续操作需要管理员权限
     const admin = await getAdminUser();
     if (!admin) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 403 });
 
     if (request.method === 'POST') {
-      const { content, priority } = await request.json();
-      await db.prepare('INSERT INTO site_notifications (content, priority) VALUES (?, ?)')
-        .bind(content, priority || 0).run();
+      const { content, priority, bg_color } = await request.json();
+      await db.prepare('INSERT INTO site_notifications (content, priority, bg_color) VALUES (?, ?, ?)')
+        .bind(content, priority || 0, bg_color || 'teal').run();
       return new Response(JSON.stringify({ success: true }));
     }
 
     if (request.method === 'PUT') {
-      const { is_active, priority } = await request.json();
+      const { is_active, priority, bg_color } = await request.json();
       if (id) {
-        await db.prepare('UPDATE site_notifications SET is_active = ?, priority = ? WHERE id = ?')
-          .bind(is_active, priority, id).run();
+        await db.prepare('UPDATE site_notifications SET is_active = ?, priority = ?, bg_color = ? WHERE id = ?')
+          .bind(is_active, priority, bg_color, id).run();
         return new Response(JSON.stringify({ success: true }));
       }
     }
