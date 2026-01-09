@@ -123,7 +123,6 @@ const App: React.FC = () => {
     }
   };
 
-  // 关键：监听登录状态变化，确保登录后自动拉取收藏
   useEffect(() => {
     if (isAuthenticated) {
       fetchFavorites(true);
@@ -266,6 +265,19 @@ const App: React.FC = () => {
                   setCurrentUser(user);
                   navigate('/profile'); 
                 }} />
+                <div className="mt-6 text-center">
+                  <span className="text-sm text-slate-500">还没有账号？</span>
+                  <Link to="/register" className="text-sm font-bold text-teal-500 hover:text-teal-600 ml-2">立即注册</Link>
+                </div>
+              </div>
+            } />
+            <Route path="/register" element={
+              <div className="pt-32 max-w-md mx-auto px-4 pb-20">
+                <RegisterForm />
+                <div className="mt-6 text-center">
+                  <span className="text-sm text-slate-500">已有账号？</span>
+                  <Link to="/login" className="text-sm font-bold text-teal-500 hover:text-teal-600 ml-2">直接登录</Link>
+                </div>
               </div>
             } />
             <Route path="/profile" element={
@@ -311,7 +323,7 @@ const App: React.FC = () => {
             onToggleFavorite={handleToggleFavorite}
           />
         )}
-        <FeedbackWidget isAuthenticated={isAuthenticated} onOpenLogin={() => setIsLoginPromptOpen(true)} />
+        <FeedbackWidget isAuthenticated={isAuthenticated} onOpenLogin={() => navigate('/login')} />
         <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
         {isAdminModalOpen && <AdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} defaultTab={adminModalTab} initialData={editingAttraction} onSubmit={async () => fetchPaginatedData(currentPage, selectedProvince, searchTerm)} />}
         <LoginPromptModal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)} />
