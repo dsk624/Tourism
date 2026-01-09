@@ -5,7 +5,7 @@ import { getUserLocation, getWeather, getWeatherIcon, getWeatherDescription } fr
 import { LocationData, WeatherData } from '../types';
 import { 
   MapPin, Calendar, Clock, Droplets, Sunrise, Sunset, Loader2, 
-  ChevronUp, Wind, Sun, Gauge
+  ChevronUp, Wind, Sun, Gauge, ChevronLeft
 } from 'lucide-react';
 
 interface WeatherWidgetProps {
@@ -69,19 +69,19 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ topOffset = 0 }) =
   if (loading) return null;
   if (!location || !weather) return null;
 
-  // 展开时提高 z-index (z-70)，收起时降低 (z-40) 确保在 Navbar 之下
   const baseZIndex = isExpanded ? 'z-[70]' : 'z-40';
   
+  // 核心样式优化：移动端收起时贴边
   const containerClasses = isExpanded 
-    ? 'fixed inset-0 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none md:items-start md:justify-end md:p-0' 
-    : 'fixed right-4 md:right-8';
+    ? 'fixed inset-0 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none md:items-start md:justify-end md:p-0' 
+    : 'fixed right-0 md:right-8';
 
   const style = !isExpanded ? {
     top: `${topOffset + 88}px`, 
     transition: 'top 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
   } : {
     top: window.innerWidth >= 768 ? `${topOffset + 88}px` : 'auto',
-    right: window.innerWidth >= 768 ? '2rem' : 'auto',
+    right: window.innerWidth >= 768 ? '2rem' : '0',
   };
 
   return (
@@ -90,23 +90,40 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ topOffset = 0 }) =
         ref={widgetRef}
         layout
         onClick={() => !isExpanded && setIsExpanded(true)}
-        whileHover={!isExpanded ? { scale: 1.05, y: -2 } : {}}
-        className={`bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/40 dark:border-slate-700/50 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] cursor-pointer overflow-hidden relative flex flex-col ${isExpanded ? 'w-full max-w-sm sm:max-w-md' : 'w-auto'}`}
+        whileHover={!isExpanded ? { x: -4 } : {}}
+        className={`bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/40 dark:border-slate-700/50 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] cursor-pointer overflow-hidden relative flex flex-col 
+          ${isExpanded 
+            ? 'w-full max-w-sm sm:max-w-md rounded-[2.5rem]' 
+            : 'rounded-l-2xl md:rounded-[2rem] border-r-0 md:border-r'}`}
       >
-        <motion.div layout className={`transition-all duration-300 ${isExpanded ? 'p-6 sm:p-8' : 'px-5 py-3.5'}`}>
+        <motion.div layout className={`transition-all duration-300 ${isExpanded ? 'p-6 sm:p-8' : 'px-3 py-3 md:px-5 md:py-3.5'}`}>
           {!isExpanded && (
-             <motion.div layoutId="compact-view" className="flex items-center gap-4 whitespace-nowrap">
-                <div className="text-3xl filter drop-shadow-md">{getWeatherIcon(weather.weatherCode, weather.isDay)}</div>
-                <div className="flex flex-col">
-                   <div className="text-base font-black text-slate-800 dark:text-white flex items-center gap-2">{Math.round(weather.temperature)}°<span className="text-[10px] font-bold uppercase tracking-widest text-teal-600 bg-teal-500/10 px-2 py-0.5 rounded-full">{getWeatherDescription(weather.weatherCode)}</span></div>
-                   <div className="text-[10px] text-slate-400 font-bold flex items-center gap-1"><MapPin className="w-2.5 h-2.5 text-teal-500" />{location.city}</div>
+             <motion.div layoutId="compact-view" className="flex items-center gap-3 md:gap-4 whitespace-nowrap">
+                <div className="text-2xl md:text-3xl filter drop-shadow-md animate-pulse">
+                  {getWeatherIcon(weather.weatherCode, weather.isDay)}
+                </div>
+                {/* 桌面端显示文字，移动端隐藏实现“收起隐藏” */}
+                <div className="hidden md:flex flex-col">
+                   <div className="text-base font-black text-slate-800 dark:text-white flex items-center gap-2">
+                     {Math.round(weather.temperature)}°
+                     <span className="text-[10px] font-bold uppercase tracking-widest text-teal-600 bg-teal-500/10 px-2 py-0.5 rounded-full">
+                       {getWeatherDescription(weather.weatherCode)}
+                     </span>
+                   </div>
+                   <div className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                     <MapPin className="w-2.5 h-2.5 text-teal-500" />{location.city}
+                   </div>
+                </div>
+                {/* 移动端提示小箭头 */}
+                <div className="md:hidden">
+                  <ChevronLeft className="w-3 h-3 text-slate-300" />
                 </div>
              </motion.div>
           )}
 
           <AnimatePresence mode="popLayout">
             {isExpanded && (
-              <motion.div key="expanded-content" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="space-y-6 w-full">
+              <motion.div key="expanded-content" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6 w-full">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-teal-500/10 rounded-2xl"><Calendar className="w-5 h-5 text-teal-600 dark:text-teal-400" /></div>
@@ -114,6 +131,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ topOffset = 0 }) =
                   </div>
                   <div className="flex items-center gap-2 text-xs text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl"><Clock className="w-3.5 h-3.5" />{date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
+                
                 <div className="flex justify-between items-center px-2">
                    <div className="space-y-1">
                      <div className="flex items-center gap-1.5 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]"><MapPin className="w-3 h-3 text-teal-500" />{location.city} · {location.province}</div>
@@ -122,6 +140,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ topOffset = 0 }) =
                    </div>
                    <div className="text-7xl filter drop-shadow-2xl">{getWeatherIcon(weather.weatherCode, weather.isDay)}</div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-3 text-xs">
                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/30 flex flex-col gap-1 group">
                      <div className="flex items-center gap-2 text-slate-400 font-bold uppercase tracking-wider"><Droplets className="w-4 h-4 text-blue-500" /> 湿度</div>
@@ -152,7 +171,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ topOffset = 0 }) =
                    </div>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); setIsExpanded(false); }} className="w-full py-3 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                   <ChevronUp className="w-4 h-4" /><span className="text-[10px] font-bold uppercase tracking-widest">折叠</span>
+                   <ChevronUp className="w-4 h-4" /><span className="text-[10px] font-bold uppercase tracking-widest">收起并避让</span>
                 </button>
               </motion.div>
             )}

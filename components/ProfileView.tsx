@@ -148,11 +148,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             </motion.div>
           ) : (
             <motion.div key="security" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto space-y-4">
-              <div className="bg-blue-500/5 border border-blue-500/10 p-6 rounded-3xl mb-8 flex items-start gap-4">
-                 <ShieldCheck className="w-6 h-6 text-blue-500 flex-shrink-0" />
+              {/* 优化后的信息提示框 */}
+              <div className="bg-teal-500/10 border border-teal-500/20 p-6 rounded-[2.5rem] mb-8 flex items-start gap-4 shadow-sm">
+                 <ShieldCheck className="w-6 h-6 text-teal-500 flex-shrink-0" />
                  <div>
-                    <h4 className="font-black text-slate-800 dark:text-white mb-1">账号安全等级：高</h4>
-                    <p className="text-xs text-slate-500 leading-relaxed">我们已通过设备指纹技术保护您的账号，以下是最近登录过您账号的设备记录。</p>
+                    <h4 className="font-black text-slate-900 dark:text-teal-400 mb-1.5 text-base">账号安全等级：高</h4>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                      我们已通过设备指纹技术保护您的账号，以下是最近登录过您账号的设备记录。如发现异常，请及时修改密码。
+                    </p>
                  </div>
               </div>
               
