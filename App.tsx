@@ -6,6 +6,7 @@ import { Navbar } from './components/Navbar';
 import { HomeContent } from './components/HomeContent';
 import { AttractionCard } from './components/AttractionCard';
 import { WeatherWidget } from './components/WeatherWidget';
+import { WeChatOverlay } from './components/WeChatOverlay'; // 引入新组件
 import { api, FavoriteItem } from './services/api';
 import { Attraction, User } from './types';
 import { User as UserIcon, Map, Loader2, LogOut, Edit, Heart, FolderHeart, ShieldCheck, Eye } from 'lucide-react';
@@ -52,6 +53,7 @@ const App: React.FC = () => {
   const [viewCount, setViewCount] = useState<number>(0);
   const [isNotificationVisible, setIsNotificationVisible] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isWeChat, setIsWeChat] = useState(false); // 微信检测状态
   const hasIncrementedView = useRef(false);
 
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('china_travel_user'));
@@ -121,6 +123,12 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initializeApp = async () => {
+      // 微信环境检测逻辑
+      const ua = navigator.userAgent.toLowerCase();
+      if (ua.includes('micromessenger')) {
+        setIsWeChat(true);
+      }
+
       const tasks = [
         api.auth.me().catch(() => ({ authenticated: false })),
         api.stats.incrementViews().catch(() => null),
@@ -166,6 +174,10 @@ const App: React.FC = () => {
   return (
     <div className={`min-h-screen transition-colors duration-500 ${currentTheme.bg} ${currentTheme.text} font-sans selection:bg-teal-500 selection:text-white`}>
       <ScrollToTop />
+      
+      {/* 微信引导遮罩 */}
+      {isWeChat && <WeChatOverlay />}
+
       <Navbar 
         theme={theme} setTheme={setTheme}
         isAuthenticated={isAuthenticated} currentUser={currentUser}
