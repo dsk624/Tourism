@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, LogOut, Settings, User as UserIcon, ChevronDown, Bell, Volume2, Megaphone, Calendar as CalendarIcon } from 'lucide-react';
+import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, LogOut, Settings, User as UserIcon, ChevronDown, Bell, Volume2, Megaphone, Calendar as CalendarIcon, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '../types';
 import { api, Notification } from '../services/api';
@@ -166,11 +166,23 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <MessageCircle className="w-4 h-4 text-blue-500" /> 联系反馈
                     </button>
                     <div className={`h-px my-1 mx-2 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`} />
+                    
                     {isAuthenticated ? (
                       <>
                         <Link to="/profile" onClick={() => setSettingsOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 text-sm font-black rounded-xl transition-colors ${isDark ? 'text-slate-100 hover:bg-slate-700' : 'text-slate-800 hover:bg-teal-50'}`}>
                           <UserIcon className="w-4 h-4 text-teal-500" /> 个人中心
                         </Link>
+                        
+                        {/* 管理员专有后台管理入口 */}
+                        {isAdmin && onOpenAdminNotifications && (
+                          <button 
+                            onClick={() => { onOpenAdminNotifications(); setSettingsOpen(false); }} 
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-black rounded-xl transition-colors ${isDark ? 'text-slate-100 hover:bg-slate-700' : 'text-slate-800 hover:bg-teal-50'}`}
+                          >
+                            <ShieldCheck className="w-4 h-4 text-teal-500" /> 后台管理
+                          </button>
+                        )}
+
                         <button onClick={handleLogout} className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-black text-red-500 rounded-xl transition-colors ${isDark ? 'hover:bg-red-500/10' : 'hover:bg-red-50'}`}>
                           <LogOut className="w-4 h-4" /> 退出登录
                         </button>

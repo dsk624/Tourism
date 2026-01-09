@@ -69,11 +69,9 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ topOffset = 0 }) =
   if (loading) return null;
   if (!location || !weather) return null;
 
-  // 动态计算位置和层级
-  // 提高 z-index 至 60，确保在导航栏 (z-50) 之上
-  const baseZIndex = isExpanded ? 'z-[60]' : 'z-40';
+  // 展开时提高 z-index (z-70)，收起时降低 (z-40) 确保在 Navbar 之下
+  const baseZIndex = isExpanded ? 'z-[70]' : 'z-40';
   
-  // 展开时的容器样式：移动端居中，桌面端保持右侧
   const containerClasses = isExpanded 
     ? 'fixed inset-0 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none md:items-start md:justify-end md:p-0' 
     : 'fixed right-4 md:right-8';
@@ -82,7 +80,6 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ topOffset = 0 }) =
     top: `${topOffset + 88}px`, 
     transition: 'top 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
   } : {
-    // 桌面端展开时也应用 top 偏移，防止被顶部遮挡
     top: window.innerWidth >= 768 ? `${topOffset + 88}px` : 'auto',
     right: window.innerWidth >= 768 ? '2rem' : 'auto',
   };

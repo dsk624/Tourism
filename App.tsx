@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DetailModal } from './components/DetailModal';
 import { FeedbackWidget } from './components/FeedbackWidget';
@@ -28,6 +28,7 @@ const ScrollToTop = () => {
 };
 
 const App: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedProvince, setSelectedProvince] = useState<string>('全部');
   const [selectedAttraction, setSelectedAttraction] = useState<Attraction | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -81,9 +82,7 @@ const App: React.FC = () => {
     }
   };
 
-  // 修改：不再依赖内部 state，直接由 API 结果驱动
   const fetchFavorites = async (force: boolean = false) => {
-    // 如果不是强制拉取且未显示登录，则跳过
     if (!force && !isAuthenticated) return;
     
     try {
@@ -93,7 +92,7 @@ const App: React.FC = () => {
         setFavoritesIds(new Set(data.map(item => item.id)));
       }
     } catch (e) {
-      console.warn('Fetch favorites failed (likely not logged in)');
+      console.warn('Fetch favorites failed');
     }
   };
 
@@ -128,10 +127,10 @@ const App: React.FC = () => {
     try {
       await api.auth.logout();
       handleAuthFailure();
-      window.location.href = '/login';
+      navigate('/login');
     } catch (e) {
       handleAuthFailure();
-      window.location.href = '/login';
+      navigate('/login');
     }
   };
 
@@ -153,7 +152,6 @@ const App: React.FC = () => {
           setCurrentUser(res.user);
           localStorage.setItem('china_travel_user', JSON.stringify(res.user));
           if (res.user.isAdmin) setActiveProfileTab('management');
-          // 强制拉取收藏列表，不等待 state 更新
           fetchFavorites(true);
         } else {
           handleAuthFailure();
@@ -199,146 +197,144 @@ const App: React.FC = () => {
   };
 
   return (
-    <Router>
+    <div className={`min-h-screen transition-colors duration-500 ${currentTheme.bg} ${currentTheme.text} font-sans selection:bg-teal-500 selection:text-white`}>
       <ScrollToTop />
-      <div className={`min-h-screen transition-colors duration-500 ${currentTheme.bg} ${currentTheme.text} font-sans selection:bg-teal-500 selection:text-white`}>
-        <Navbar 
-          theme={theme} setTheme={setTheme}
-          isAuthenticated={isAuthenticated} currentUser={currentUser}
-          handleLogout={handleLogoutAction}
-          setIsContactModalOpen={setIsContactModalOpen}
-          mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
-          onOpenAdminNotifications={() => openAdminModal('notification')}
-          onNotificationVisibilityChange={setIsNotificationVisible}
-        />
+      <Navbar 
+        theme={theme} setTheme={setTheme}
+        isAuthenticated={isAuthenticated} currentUser={currentUser}
+        handleLogout={handleLogoutAction}
+        setIsContactModalOpen={setIsContactModalOpen}
+        mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
+        onOpenAdminNotifications={() => openAdminModal('notification')}
+        onNotificationVisibilityChange={setIsNotificationVisible}
+      />
 
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden" />
-          )}
-        </AnimatePresence>
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden" />
+        )}
+      </AnimatePresence>
 
-        <WeatherWidget topOffset={isNotificationVisible ? 40 : 0} />
+      <WeatherWidget topOffset={isNotificationVisible ? 40 : 0} />
 
-        {isAuthChecking && isDataLoading && attractions.length === 0 ? (
-          <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 text-teal-500 animate-spin" /></div>
-        ) : (
-          <Routes>
-            <Route path="/" element={
-              <HomeContent 
-                theme={theme} currentTheme={currentTheme} 
-                searchTerm={searchTerm} setSearchTerm={setSearchTerm} 
-                isAuthenticated={isAuthenticated} currentUser={currentUser} 
-                openAddModal={() => openAdminModal('attraction')} 
-                selectedProvince={selectedProvince} setSelectedProvince={setSelectedProvince} 
-                isDataLoading={isDataLoading} dynamicProvinces={staticProvinces} 
-                filteredAttractions={attractions} handleToggleFavorite={handleToggleFavorite} 
-                favorites={favoritesIds} setSelectedAttraction={setSelectedAttraction} 
-                openEditModal={(e, a) => { e.stopPropagation(); openAdminModal('attraction', a); }}
-                currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage}
-              />} 
-            />
-            <Route path="/login" element={isAuthenticated ? <Navigate to="/profile" /> : <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen"><div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}><LoginForm onLoginSuccess={() => { 
-                setIsAuthChecking(true); 
-                api.auth.me().then(res => { 
-                  if(res.authenticated && res.user){ 
-                    setIsAuthenticated(true); 
-                    setCurrentUser(res.user); 
-                    localStorage.setItem('china_travel_user', JSON.stringify(res.user)); 
-                    fetchFavorites(true); // 强制拉取
-                  } 
-                  setIsAuthChecking(false); 
-                }); 
-              }} /></div></div>} />
-            <Route path="/register" element={isAuthenticated ? <Navigate to="/profile" /> : <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen"><div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}><RegisterForm /></div></div>} />
-            <Route path="/profile" element={isAuthenticated ? (
-              <div className="pt-32 px-4 max-w-6xl mx-auto min-h-screen pb-20">
-                <div className={`p-8 rounded-[2.5rem] ${currentTheme.cardBg} border ${currentTheme.border} shadow-2xl mb-10 relative overflow-hidden`}>
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
-                    <div className="flex items-center gap-6">
-                      <div className="w-20 h-20 bg-teal-500/10 rounded-2xl flex items-center justify-center border border-teal-500/20 transform rotate-3 shadow-inner">
-                        <UserIcon className="w-10 h-10 text-teal-500" />
-                      </div>
-                      <div className="text-center sm:text-left">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                          <h1 className={`text-3xl font-black tracking-tight ${currentTheme.text}`}>{currentUser?.username}</h1>
-                          {currentUser?.isAdmin && (
-                            <span className="bg-red-500/10 text-red-500 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest border border-red-500/20 inline-block w-fit mx-auto sm:mx-0">管理员</span>
-                          )}
-                        </div>
-                        <p className={`mt-1.5 text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-500'}`}>您的个人旅行数字化中心</p>
-                      </div>
+      {isAuthChecking && isDataLoading && attractions.length === 0 ? (
+        <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 text-teal-500 animate-spin" /></div>
+      ) : (
+        <Routes>
+          <Route path="/" element={
+            <HomeContent 
+              theme={theme} currentTheme={currentTheme} 
+              searchTerm={searchTerm} setSearchTerm={setSearchTerm} 
+              isAuthenticated={isAuthenticated} currentUser={currentUser} 
+              openAddModal={() => openAdminModal('attraction')} 
+              selectedProvince={selectedProvince} setSelectedProvince={setSelectedProvince} 
+              isDataLoading={isDataLoading} dynamicProvinces={staticProvinces} 
+              filteredAttractions={attractions} handleToggleFavorite={handleToggleFavorite} 
+              favorites={favoritesIds} setSelectedAttraction={setSelectedAttraction} 
+              openEditModal={(e, a) => { e.stopPropagation(); openAdminModal('attraction', a); }}
+              currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage}
+            />} 
+          />
+          <Route path="/login" element={isAuthenticated ? <Navigate to="/profile" /> : <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen"><div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}><LoginForm onLoginSuccess={() => { 
+              setIsAuthChecking(true); 
+              api.auth.me().then(res => { 
+                if(res.authenticated && res.user){ 
+                  setIsAuthenticated(true); 
+                  setCurrentUser(res.user); 
+                  localStorage.setItem('china_travel_user', JSON.stringify(res.user)); 
+                  fetchFavorites(true);
+                } 
+                setIsAuthChecking(false); 
+              }); 
+            }} /></div></div>} />
+          <Route path="/register" element={isAuthenticated ? <Navigate to="/profile" /> : <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen"><div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}><RegisterForm /></div></div>} />
+          <Route path="/profile" element={isAuthenticated ? (
+            <div className="pt-32 px-4 max-w-6xl mx-auto min-h-screen pb-20">
+              <div className={`p-8 rounded-[2.5rem] ${currentTheme.cardBg} border ${currentTheme.border} shadow-2xl mb-10 relative overflow-hidden`}>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+                  <div className="flex items-center gap-6">
+                    <div className="w-20 h-20 bg-teal-500/10 rounded-2xl flex items-center justify-center border border-teal-500/20 transform rotate-3 shadow-inner">
+                      <UserIcon className="w-10 h-10 text-teal-500" />
                     </div>
-                    <button onClick={handleLogoutAction} className="flex items-center gap-2 px-6 py-3 bg-slate-100 dark:bg-slate-700/50 hover:bg-red-500 hover:text-white text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-2xl transition-all font-bold text-sm shadow-sm">
-                      <LogOut className="w-4 h-4" /> 退出登录
-                    </button>
-                  </div>
-                </div>
-                <div className="mb-20">
-                  <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4">
-                    <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
-                      <button onClick={() => setActiveProfileTab('favorites')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeProfileTab === 'favorites' ? 'bg-white dark:bg-slate-700 text-teal-500 shadow-md' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}><Heart className="w-4 h-4" /> 我的收藏</button>
-                      {currentUser?.isAdmin && (
-                        <button onClick={() => setActiveProfileTab('management')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeProfileTab === 'management' ? 'bg-white dark:bg-slate-700 text-teal-500 shadow-md' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}><ShieldCheck className="w-4 h-4" /> 景点管理</button>
-                      )}
-                    </div>
-                  </div>
-                  <AnimatePresence mode="wait">
-                    {activeProfileTab === 'favorites' ? (
-                      <motion.div key="fav-grid" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {favoritesList.length > 0 ? (
-                          favoritesList.map(item => (
-                            <AttractionCard key={item.id} attraction={item} theme={theme} currentTheme={currentTheme} onClick={setSelectedAttraction} isFavorite={true} onToggleFavorite={handleToggleFavorite} note={item.note} />
-                          ))
-                        ) : (
-                          <div className="col-span-full py-32 flex flex-col items-center text-slate-400 dark:text-slate-300">
-                            <FolderHeart className="w-20 h-20 opacity-10 mb-6" />
-                            <p className="font-bold text-lg">暂无收藏记录</p>
-                            <Link to="/" className="text-teal-500 text-sm mt-4 hover:underline">去首页探索更多目的地</Link>
-                          </div>
+                    <div className="text-center sm:text-left">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <h1 className={`text-3xl font-black tracking-tight ${currentTheme.text}`}>{currentUser?.username}</h1>
+                        {currentUser?.isAdmin && (
+                          <span className="bg-red-500/10 text-red-500 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest border border-red-500/20 inline-block w-fit mx-auto sm:mx-0">管理员</span>
                         )}
-                      </motion.div>
-                    ) : (
-                      <motion.div key="admin-grid" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                         {attractions.map(attr => (
-                            <div key={attr.id} className="relative group">
-                              <AttractionCard attraction={attr} theme={theme} currentTheme={currentTheme} onClick={setSelectedAttraction} isFavorite={favoritesIds.has(attr.id)} onToggleFavorite={handleToggleFavorite} />
-                              <button onClick={(e) => { e.stopPropagation(); openAdminModal('attraction', attr); }} className="absolute top-4 right-14 z-20 bg-white/90 backdrop-blur-md p-2.5 rounded-xl text-teal-600 shadow-xl transition-all opacity-0 group-hover:opacity-100"><Edit className="w-5 h-5" /></button>
-                            </div>
-                         ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      </div>
+                      <p className={`mt-1.5 text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-500'}`}>您的个人旅行数字化中心</p>
+                    </div>
+                  </div>
+                  <button onClick={handleLogoutAction} className="flex items-center gap-2 px-6 py-3 bg-slate-100 dark:bg-slate-700/50 hover:bg-red-500 hover:text-white text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-2xl transition-all font-bold text-sm shadow-sm">
+                    <LogOut className="w-4 h-4" /> 退出登录
+                  </button>
                 </div>
               </div>
-            ) : <Navigate to="/login" />} />
-          </Routes>
-        )}
-
-        <footer className={`py-12 border-t ${currentTheme.border} ${theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'}`}>
-          <div className="max-w-7xl mx-auto px-6 flex flex-col items-center gap-6">
-            <div className="flex items-center gap-8 py-4 px-8 rounded-2xl bg-white/50 dark:bg-slate-800/40 backdrop-blur-sm border border-slate-200 dark:border-slate-800">
-               <div className="flex flex-col items-center">
-                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1">今日浏览</span>
-                  <div className="flex items-center gap-2"><Eye className="w-4 h-4 text-teal-500" /><span className="text-xl font-black text-slate-800 dark:text-white tabular-nums">{viewCount ? viewCount.toLocaleString() : '---'}</span></div>
-               </div>
-               <div className="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
-               <div className="flex flex-col items-center">
-                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1">站点状态</span>
-                  <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /><span className="text-sm font-bold text-slate-700 dark:text-slate-200">运行中</span></div>
-               </div>
+              <div className="mb-20">
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4">
+                  <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <button onClick={() => setActiveProfileTab('favorites')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeProfileTab === 'favorites' ? 'bg-white dark:bg-slate-700 text-teal-500 shadow-md' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}><Heart className="w-4 h-4" /> 我的收藏</button>
+                    {currentUser?.isAdmin && (
+                      <button onClick={() => setActiveProfileTab('management')} className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${activeProfileTab === 'management' ? 'bg-white dark:bg-slate-700 text-teal-500 shadow-md' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}><ShieldCheck className="w-4 h-4" /> 景点管理</button>
+                    )}
+                  </div>
+                </div>
+                <AnimatePresence mode="wait">
+                  {activeProfileTab === 'favorites' ? (
+                    <motion.div key="fav-grid" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {favoritesList.length > 0 ? (
+                        favoritesList.map(item => (
+                          <AttractionCard key={item.id} attraction={item} theme={theme} currentTheme={currentTheme} onClick={setSelectedAttraction} isFavorite={true} onToggleFavorite={handleToggleFavorite} note={item.note} />
+                        ))
+                      ) : (
+                        <div className="col-span-full py-32 flex flex-col items-center text-slate-400 dark:text-slate-300">
+                          <FolderHeart className="w-20 h-20 opacity-10 mb-6" />
+                          <p className="font-bold text-lg">暂无收藏记录</p>
+                          <Link to="/" className="text-teal-500 text-sm mt-4 hover:underline">去首页探索更多目的地</Link>
+                        </div>
+                      )}
+                    </motion.div>
+                  ) : (
+                    <motion.div key="admin-grid" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                       {attractions.map(attr => (
+                          <div key={attr.id} className="relative group">
+                            <AttractionCard attraction={attr} theme={theme} currentTheme={currentTheme} onClick={setSelectedAttraction} isFavorite={favoritesIds.has(attr.id)} onToggleFavorite={handleToggleFavorite} />
+                            <button onClick={(e) => { e.stopPropagation(); openAdminModal('attraction', attr); }} className="absolute top-4 right-14 z-20 bg-white/90 backdrop-blur-md p-2.5 rounded-xl text-teal-600 shadow-xl transition-all opacity-0 group-hover:opacity-100"><Edit className="w-5 h-5" /></button>
+                          </div>
+                       ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
-            <p className="text-sm opacity-60 dark:opacity-80 font-bold tracking-wide text-slate-500 dark:text-slate-400">© 2025 China Travel Digital Experience.</p>
-          </div>
-        </footer>
+          ) : <Navigate to="/login" />} />
+        </Routes>
+      )}
 
-        <DetailModal attraction={selectedAttraction} allAttractions={attractions} onClose={() => setSelectedAttraction(null)} isFavorite={selectedAttraction ? favoritesIds.has(selectedAttraction.id) : false} onToggleFavorite={handleToggleFavorite} theme={theme} />
-        <FeedbackWidget isAuthenticated={isAuthenticated} onOpenLogin={() => setIsLoginPromptOpen(true)} />
-        <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
-        <AdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} defaultTab={adminModalTab} onSubmit={async (data) => { try { if (editingAttraction) await api.attractions.update(editingAttraction.id, data); else await api.attractions.create(data); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('操作失败'); } }} onDelete={async (id) => { if (confirm('确定删除此景点？')) { try { await api.attractions.delete(id); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('删除失败'); } } }} initialData={editingAttraction} />
-        <LoginPromptModal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)} />
-      </div>
-    </Router>
+      <footer className={`py-12 border-t ${currentTheme.border} ${theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'}`}>
+        <div className="max-w-7xl mx-auto px-6 flex flex-col items-center gap-6">
+          <div className="flex items-center gap-8 py-4 px-8 rounded-2xl bg-white/50 dark:bg-slate-800/40 backdrop-blur-sm border border-slate-200 dark:border-slate-800">
+             <div className="flex flex-col items-center">
+                <span className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1">今日浏览</span>
+                <div className="flex items-center gap-2"><Eye className="w-4 h-4 text-teal-500" /><span className="text-xl font-black text-slate-800 dark:text-white tabular-nums">{viewCount ? viewCount.toLocaleString() : '---'}</span></div>
+             </div>
+             <div className="w-px h-8 bg-slate-200 dark:bg-slate-700"></div>
+             <div className="flex flex-col items-center">
+                <span className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1">站点状态</span>
+                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /><span className="text-sm font-bold text-slate-700 dark:text-slate-200">运行中</span></div>
+             </div>
+          </div>
+          <p className="text-sm opacity-60 dark:opacity-80 font-bold tracking-wide text-slate-500 dark:text-slate-400">© 2025 China Travel Digital Experience.</p>
+        </div>
+      </footer>
+
+      <DetailModal attraction={selectedAttraction} allAttractions={attractions} onClose={() => setSelectedAttraction(null)} isFavorite={selectedAttraction ? favoritesIds.has(selectedAttraction.id) : false} onToggleFavorite={handleToggleFavorite} theme={theme} />
+      <FeedbackWidget isAuthenticated={isAuthenticated} onOpenLogin={() => setIsLoginPromptOpen(true)} />
+      <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
+      <AdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} defaultTab={adminModalTab} onSubmit={async (data) => { try { if (editingAttraction) await api.attractions.update(editingAttraction.id, data); else await api.attractions.create(data); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('操作失败'); } }} onDelete={async (id) => { if (confirm('确定删除此景点？')) { try { await api.attractions.delete(id); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('删除失败'); } } }} initialData={editingAttraction} />
+      <LoginPromptModal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)} />
+    </div>
   );
 };
 
