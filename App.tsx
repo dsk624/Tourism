@@ -123,6 +123,15 @@ const App: React.FC = () => {
     }
   };
 
+  // 关键：监听登录状态变化，确保登录后自动拉取收藏
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchFavorites(true);
+    } else {
+      setFavoritesIds(new Set());
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchPaginatedData(currentPage, selectedProvince, searchTerm);
@@ -137,27 +146,29 @@ const App: React.FC = () => {
   useEffect(() => {
     const initializeApp = async () => {
       setIsAuthChecking(true);
-      const tasks = [
-        api.auth.me().catch(() => ({ authenticated: false })),
-        api.stats.incrementViews().catch(() => null),
-        api.stats.getViews().catch(() => ({ views: 0 }))
-      ];
+      try {
+        const tasks = [
+          api.auth.me().catch(() => ({ authenticated: false })),
+          api.stats.incrementViews().catch(() => null),
+          api.stats.getViews().catch(() => ({ views: 0 }))
+        ];
 
-      const [authRes, incRes, viewsRes] = await Promise.all(tasks);
+        const [authRes, incRes, viewsRes] = await Promise.all(tasks);
 
-      if (authRes?.authenticated && authRes?.user) {
-        setIsAuthenticated(true);
-        setCurrentUser(authRes.user);
-        localStorage.setItem('china_travel_user', JSON.stringify(authRes.user));
-        fetchFavorites(true);
-      } else {
-        setIsAuthenticated(false);
-        setCurrentUser(null);
-        localStorage.removeItem('china_travel_user');
+        if (authRes?.authenticated && authRes?.user) {
+          setIsAuthenticated(true);
+          setCurrentUser(authRes.user);
+          localStorage.setItem('china_travel_user', JSON.stringify(authRes.user));
+        } else {
+          setIsAuthenticated(false);
+          setCurrentUser(null);
+          localStorage.removeItem('china_travel_user');
+        }
+
+        if (viewsRes) setViewCount(viewsRes.views);
+      } finally {
+        setIsAuthChecking(false);
       }
-
-      if (viewsRes) setViewCount(viewsRes.views);
-      setIsAuthChecking(false);
     };
 
     initializeApp();
@@ -175,14 +186,14 @@ const App: React.FC = () => {
     localStorage.removeItem('china_travel_user');
     setIsAuthenticated(false);
     setCurrentUser(null);
+    setFavoritesIds(new Set());
     navigate('/');
-    location.reload();
   };
 
   const handleToggleFavorite = async (e: React.MouseEvent | null, id: string) => {
     if (e) {
       e.preventDefault();
-      e.stopPropagation(); // 阻止事件冒泡，不触发详情弹窗
+      e.stopPropagation();
     }
 
     if (!isAuthenticated) {
@@ -199,7 +210,6 @@ const App: React.FC = () => {
       } else {
         await api.favorites.add(id);
       }
-      // 直接拉取最新的收藏 ID 集合，无感同步状态
       await fetchFavorites(true);
     } catch (err) {
       console.error('Favorite toggle failed', err);
@@ -249,7 +259,15 @@ const App: React.FC = () => {
                 favoriteActionLoadingId={isFavoriteActionLoading}
               />} 
             />
-            <Route path="/login" element={<div className="pt-32 max-w-md mx-auto px-4 pb-20"><LoginForm onLoginSuccess={() => { setIsAuthenticated(true); navigate('/profile'); }} /></div>} />
+            <Route path="/login" element={
+              <div className="pt-32 max-w-md mx-auto px-4 pb-20">
+                <LoginForm onLoginSuccess={(user) => { 
+                  setIsAuthenticated(true); 
+                  setCurrentUser(user);
+                  navigate('/profile'); 
+                }} />
+              </div>
+            } />
             <Route path="/profile" element={
               isAuthenticated ? (
                 <ProfileView 

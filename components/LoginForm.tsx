@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { LogIn, AlertCircle, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { User } from '../types';
 
 const generateFingerprint = async () => {
   const canvas = document.createElement('canvas');
@@ -24,7 +25,7 @@ const generateFingerprint = async () => {
 };
 
 interface LoginFormProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (user: User) => void;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
@@ -47,12 +48,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
         fingerprint
       });
 
-      if (data.success) {
-        if (data.user) {
-          localStorage.setItem('china_travel_user', JSON.stringify(data.user));
-        }
-        onLoginSuccess();
-        navigate('/profile');
+      if (data.success && data.user) {
+        localStorage.setItem('china_travel_user', JSON.stringify(data.user));
+        onLoginSuccess(data.user);
       } else {
         setError(data.message || '登录失败');
       }
