@@ -1,10 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, LogOut, Settings, User as UserIcon, ChevronDown, Bell, Volume2, Megaphone } from 'lucide-react';
+import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, LogOut, Settings, User as UserIcon, ChevronDown, Bell, Volume2, Megaphone, Calendar as CalendarIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '../types';
 import { api, Notification } from '../services/api';
+import { CalendarModal } from './CalendarModal';
 
 interface NavbarProps {
   theme: 'light' | 'dark' | 'teal';
@@ -24,6 +25,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const location = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isDismissed, setIsDismissed] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -44,10 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   useEffect(() => {
     fetchNotifications();
-    
-    // 监听管理员发布的广播事件
     window.addEventListener('notificationsUpdated', fetchNotifications);
-    
     const interval = setInterval(fetchNotifications, 300000);
     return () => {
       clearInterval(interval);
@@ -81,21 +80,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   
   const getSafeBgColor = (notif: Notification) => {
     const val = notif.bg_color;
-    if (val.startsWith('#') || val.startsWith('rgba') || val.startsWith('rgb')) {
-      return val;
-    }
-    const colorMap: any = {
-      teal: "#0d9488",
-      blue: "#2563eb",
-      rose: "#e11d48",
-      amber: "#d97706"
-    };
-    return colorMap[val] || "#0d9488";
+    if (val.startsWith('#') || val.startsWith('rgba') || val.startsWith('rgb')) return val;
+    return "#0d9488";
   };
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50">
-      {/* Marquee Notification Bar */}
       <AnimatePresence>
         {notifications.length > 0 && !isDismissed && (
           <motion.div 
@@ -108,37 +98,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="max-w-7xl mx-auto px-4 flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <Volume2 className="w-4 h-4 flex-shrink-0 animate-pulse" />
-                {isAdmin && (
-                  <button 
-                    onClick={onOpenAdminNotifications}
-                    className="p-1 rounded-md bg-white/20 hover:bg-white/40 transition-colors opacity-0 group-hover/marquee:opacity-100"
-                    title="管理通知"
-                  >
-                    <Settings className="w-3 h-3" />
-                  </button>
-                )}
               </div>
               <div className="flex-1 overflow-hidden relative h-5">
                 <div className="absolute whitespace-nowrap animate-marquee flex gap-20 items-center">
                   {notifications.map((n, i) => (
-                    <span key={i} className="text-xs font-bold tracking-wide drop-shadow-sm">
-                      {n.content}
-                    </span>
+                    <span key={i} className="text-xs font-bold tracking-wide drop-shadow-sm">{n.content}</span>
                   ))}
                   {notifications.map((n, i) => (
-                    <span key={`dup-${i}`} className="text-xs font-bold tracking-wide drop-shadow-sm">
-                      {n.content}
-                    </span>
+                    <span key={`dup-${i}`} className="text-xs font-bold tracking-wide drop-shadow-sm">{n.content}</span>
                   ))}
                 </div>
               </div>
-              <button 
-                onClick={handleDismiss}
-                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
-                title="关闭通知"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+              <button onClick={handleDismiss} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"><X className="w-3.5 h-3.5" /></button>
             </div>
           </motion.div>
         )}
@@ -155,6 +126,16 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <div className="hidden md:flex items-center gap-6">
             <Link to="/" className={`text-sm font-bold transition-opacity ${location.pathname === '/' ? 'text-teal-500' : 'opacity-70 hover:opacity-100'}`}>首页</Link>
+            
+            {isAuthenticated && (
+              <button 
+                onClick={() => setIsCalendarOpen(true)}
+                className="flex items-center gap-2 p-2 rounded-xl hover:bg-teal-500/10 text-teal-500 transition-colors"
+                title="我的日程"
+              >
+                <CalendarIcon className="w-5 h-5" />
+              </button>
+            )}
 
             <div className="relative" ref={dropdownRef}>
               <button 
@@ -174,58 +155,28 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className={`absolute right-0 mt-3 w-52 rounded-2xl shadow-2xl border p-2 overflow-hidden ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
                   >
                     <div className={`px-3 py-2 text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-300' : 'text-slate-400'}`}>环境设置</div>
-                    
                     <div className={`flex gap-1 p-1 mb-2 rounded-xl ${isDark ? 'bg-slate-900' : 'bg-slate-100'}`}>
                       {(['light', 'dark', 'teal'] as const).map(t => (
-                        <button 
-                          key={t}
-                          onClick={() => setTheme(t)}
-                          className={`flex-1 py-1.5 rounded-lg flex justify-center transition-all ${theme === t ? 'bg-white dark:bg-slate-700 shadow-sm text-teal-500' : 'text-slate-400 hover:text-slate-200'}`}
-                        >
+                        <button key={t} onClick={() => setTheme(t)} className={`flex-1 py-1.5 rounded-lg flex justify-center transition-all ${theme === t ? 'bg-white dark:bg-slate-700 shadow-sm text-teal-500' : 'text-slate-400'}`}>
                           {t === 'light' ? <Sun className="w-4 h-4" /> : t === 'dark' ? <Moon className="w-4 h-4" /> : <Map className="w-4 h-4" />}
                         </button>
                       ))}
                     </div>
-
-                    <button 
-                      onClick={() => { setIsContactModalOpen(true); setSettingsOpen(false); }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-black rounded-xl transition-colors ${isDark ? 'text-slate-100 hover:bg-slate-700' : 'text-slate-800 hover:bg-teal-50'}`}
-                    >
+                    <button onClick={() => { setIsContactModalOpen(true); setSettingsOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-black rounded-xl transition-colors ${isDark ? 'text-slate-100 hover:bg-slate-700' : 'text-slate-800 hover:bg-teal-50'}`}>
                       <MessageCircle className="w-4 h-4 text-blue-500" /> 联系反馈
                     </button>
-
                     <div className={`h-px my-1 mx-2 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`} />
-
                     {isAuthenticated ? (
                       <>
-                        <Link 
-                          to="/profile" 
-                          onClick={() => setSettingsOpen(false)} 
-                          className={`flex items-center gap-3 px-3 py-2.5 text-sm font-black rounded-xl transition-colors ${isDark ? 'text-slate-100 hover:bg-slate-700' : 'text-slate-800 hover:bg-teal-50'}`}
-                        >
+                        <Link to="/profile" onClick={() => setSettingsOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 text-sm font-black rounded-xl transition-colors ${isDark ? 'text-slate-100 hover:bg-slate-700' : 'text-slate-800 hover:bg-teal-50'}`}>
                           <UserIcon className="w-4 h-4 text-teal-500" /> 个人中心
                         </Link>
-                        {isAdmin && (
-                          <button 
-                            onClick={() => { onOpenAdminNotifications?.(); setSettingsOpen(false); }}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-black rounded-xl transition-colors ${isDark ? 'text-slate-100 hover:bg-slate-700' : 'text-slate-800 hover:bg-teal-50'}`}
-                          >
-                            <Megaphone className="w-4 h-4 text-amber-500" /> 通知管理
-                          </button>
-                        )}
-                        <button 
-                          onClick={handleLogout} 
-                          className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-black text-red-500 rounded-xl transition-colors ${isDark ? 'hover:bg-red-500/10' : 'hover:bg-red-50'}`}
-                        >
+                        <button onClick={handleLogout} className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-black text-red-500 rounded-xl transition-colors ${isDark ? 'hover:bg-red-500/10' : 'hover:bg-red-50'}`}>
                           <LogOut className="w-4 h-4" /> 退出登录
                         </button>
                       </>
                     ) : (
-                      <Link 
-                        to="/login" 
-                        onClick={() => setSettingsOpen(false)} 
-                        className={`flex items-center gap-3 px-3 py-2.5 text-sm font-black text-teal-500 rounded-xl transition-colors ${isDark ? 'hover:bg-teal-500/10' : 'hover:bg-teal-50'}`}
-                      >
+                      <Link to="/login" onClick={() => setSettingsOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 text-sm font-black text-teal-500 rounded-xl transition-colors ${isDark ? 'hover:bg-teal-500/10' : 'hover:bg-teal-50'}`}>
                         <LogOut className="w-4 h-4" /> 登录账户
                       </Link>
                     )}
@@ -234,104 +185,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               </AnimatePresence>
             </div>
           </div>
-
-          <button 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-            className="md:hidden p-2 text-slate-500 dark:text-slate-400 transition-colors"
-          >
-            {mobileMenuOpen ? <X /> : <Menu />}
-          </button>
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 text-slate-500 dark:text-slate-400"><Menu /></button>
         </div>
 
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <>
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setMobileMenuOpen(false)}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden" 
-              />
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className={`fixed top-0 right-0 bottom-0 w-[280px] z-50 shadow-2xl md:hidden flex flex-col ${isDark ? 'bg-slate-900' : 'bg-white'}`}
-              >
-                <div className="p-6 flex justify-between items-center border-b border-slate-100 dark:border-slate-800">
-                  <span className="font-black text-lg dark:text-white">导航菜单</span>
-                  <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400 dark:text-slate-300">
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="flex-grow overflow-y-auto p-6 space-y-8">
-                  <div className="space-y-4">
-                    <h4 className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>主菜单</h4>
-                    <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-4 text-lg font-bold dark:text-white">
-                      <div className="p-2 bg-teal-500/10 rounded-lg"><Map className="w-5 h-5 text-teal-500" /></div>
-                      探索首页
-                    </Link>
-                    {isAdmin && (
-                      <button 
-                        onClick={() => { onOpenAdminNotifications?.(); setMobileMenuOpen(false); }}
-                        className="w-full flex items-center gap-4 text-lg font-bold dark:text-white"
-                      >
-                        <div className="p-2 bg-amber-500/10 rounded-lg"><Megaphone className="w-5 h-5 text-amber-500" /></div>
-                        通知管理
-                      </button>
-                    )}
-                    <button 
-                      onClick={() => { setIsContactModalOpen(true); setMobileMenuOpen(false); }}
-                      className="w-full flex items-center gap-4 text-lg font-bold dark:text-white"
-                    >
-                      <div className="p-2 bg-blue-500/10 rounded-lg"><MessageCircle className="w-5 h-5 text-blue-500" /></div>
-                      联系作者
-                    </button>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>外观设置</h4>
-                    <div className="grid grid-cols-3 gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
-                      {(['light', 'dark', 'teal'] as const).map(t => (
-                        <button 
-                          key={t}
-                          onClick={() => setTheme(t)}
-                          className={`py-3 rounded-xl flex justify-center transition-all ${theme === t ? 'bg-white dark:bg-slate-700 shadow-sm text-teal-500' : 'text-slate-400'}`}
-                        >
-                          {t === 'light' ? <Sun className="w-5 h-5" /> : t === 'dark' ? <Moon className="w-5 h-5" /> : <Map className="w-5 h-5" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <h4 className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>账户管理</h4>
-                    {isAuthenticated ? (
-                      <div className="space-y-3">
-                        <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-4 text-lg font-bold dark:text-white">
-                          <div className="p-2 bg-teal-500/10 rounded-lg"><UserIcon className="w-5 h-5 text-teal-500" /></div>
-                          个人中心
-                        </Link>
-                        <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="w-full flex items-center gap-4 text-lg font-bold text-red-500">
-                          <div className="p-2 bg-red-500/10 rounded-lg"><LogOut className="w-5 h-5" /></div>
-                          退出登录
-                        </button>
-                      </div>
-                    ) : (
-                      <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 w-full py-4 bg-teal-500 text-white rounded-2xl font-black shadow-lg shadow-teal-500/20">
-                        <LogOut className="w-5 h-5" />
-                        立即登录
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+        <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} isAuthenticated={isAuthenticated} />
       </nav>
     </div>
   );
