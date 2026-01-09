@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState } from 'react';
-// Fix: Removed incorrect imports of motion and AnimatePresence from lucide-react
 import { Search, Plus, Loader2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion as FMotion, AnimatePresence as FAnimatePresence } from 'framer-motion';
 import { AttractionCard } from './AttractionCard';
@@ -80,15 +79,14 @@ export const HomeContent: React.FC<HomeContentProps> = ({
   return (
     <>
       <div className="relative pt-24 sm:pt-32">
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          {/* 优化首屏图片加载：fetchPriority="high" 并 eager 加载 */}
+        <div className="absolute inset-0 z-0 overflow-hidden bg-slate-900">
           <img 
-            src="https://picsum.photos/1920/1080?random=99" 
-            className="w-full h-[450px] sm:h-[600px] object-cover opacity-90 transition-transform duration-[10s] hover:scale-110"
+            src="https://picsum.photos/1200/800?random=99" 
+            className="w-full h-[450px] sm:h-[600px] object-cover opacity-80"
             alt="Hero Background"
             loading="eager"
-            // Fix: React uses camelCase for DOM properties (fetchPriority instead of fetchpriority)
             fetchPriority="high"
+            decoding="sync"
           />
           <div className={`absolute inset-0 bg-gradient-to-b ${theme === 'dark' ? 'from-slate-900/40 via-slate-900/80 to-slate-900' : 'from-slate-900/20 via-slate-900/50 to-slate-50'}`} />
         </div>
@@ -100,25 +98,24 @@ export const HomeContent: React.FC<HomeContentProps> = ({
                  <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
               </FMotion.div>
             ) : (
-              <FMotion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+              <FMotion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                 <span className="inline-block px-4 py-1.5 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-6 backdrop-blur-sm">
                   {settings.hero_badge}
                 </span>
-                <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white mb-6 tracking-tighter leading-none">
+                <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white mb-6 tracking-tighter leading-none drop-shadow-2xl">
                   {settings.hero_title_main}<span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">{settings.hero_title_highlight}</span>
                 </h1>
-                <p className="text-slate-200 text-sm sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 font-medium leading-relaxed px-4 opacity-90">
+                <p className="text-slate-200 text-sm sm:text-lg md:text-xl max-w-2xl mx-auto mb-10 font-medium leading-relaxed px-4 opacity-90 drop-shadow">
                   {settings.hero_subtitle}
                 </p>
 
                 <div className="relative max-w-xl mx-auto group px-2">
-                  <div className="absolute inset-0 bg-teal-500/20 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                  <div className="relative flex items-center bg-white/90 backdrop-blur-2xl shadow-2xl rounded-[2rem] p-1.5 focus-within:bg-white transition-all">
+                  <div className="absolute inset-0 bg-teal-500/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                  <div className="relative flex items-center bg-white/95 backdrop-blur-2xl shadow-2xl rounded-[2rem] p-1.5 focus-within:bg-white transition-all">
                     <div className="pl-4 pr-2"><Search className="w-5 h-5 text-teal-600" /></div>
                     <input type="text" placeholder="发现下一个目的地..." className="w-full bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-500 py-3 text-base font-bold outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                   </div>
                 </div>
-              {/* Fix: Use the correct FMotion alias for the closing tag */}
               </FMotion.div>
             )}
           </FAnimatePresence>
@@ -126,14 +123,6 @@ export const HomeContent: React.FC<HomeContentProps> = ({
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 -mt-10 sm:-mt-16 relative z-20">
-        {isAuthenticated && currentUser?.isAdmin && (
-           <div className="flex justify-end mb-8">
-              <button onClick={openAddModal} className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-2xl shadow-xl shadow-teal-500/20 transition-all font-black text-sm active:scale-95">
-                <Plus className="w-5 h-5" /> 新增景点
-              </button>
-           </div>
-        )}
-
         <div className="mb-12">
           <div className="flex overflow-x-auto no-scrollbar sm:justify-center py-2">
             <div className={`inline-flex p-1.5 rounded-2xl ${theme === 'dark' ? 'bg-slate-800/80 border border-slate-700' : 'bg-white border border-slate-200'} backdrop-blur-xl shadow-xl whitespace-nowrap`}>
@@ -155,7 +144,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({
         </div>
 
         {isDataLoading ? (
-          <div className="flex justify-center items-center py-32"><Loader2 className="w-12 h-12 text-teal-500 animate-spin" /></div>
+          <div className="flex justify-center items-center py-32"><Loader2 className="w-10 h-10 text-teal-500 animate-spin" /></div>
         ) : (
           <FMotion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
              {filteredAttractions.map((attr) => (

@@ -1,78 +1,66 @@
-const CACHE_NAME = 'china-travel-cache-v1';
-const RUNTIME_CACHE = 'china-travel-runtime';
 
-// 预缓存关键资源（如果使用构建工具，这里通常会自动注入）
-const PRECACHE_URLS = [
+const CACHE_NAME = 'china-travel-v2';
+const STATIC_ASSETS = [
   '/',
   '/index.html',
+  'https://cdn.jsdelivr.net/npm/react@19.0.0/+esm',
+  'https://cdn.jsdelivr.net/npm/react-dom@19.0.0/+esm'
 ];
 
-// 安装事件：预缓存
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
   );
+  self.skipWaiting();
 });
 
-// 激活事件：清理旧缓存
 self.addEventListener('activate', event => {
-  const currentCaches = [CACHE_NAME, RUNTIME_CACHE];
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return cacheNames.filter(cacheName => !currentCaches.includes(cacheName));
-    }).then(cachesToDelete => {
-      return Promise.all(cachesToDelete.map(cacheToDelete => {
-        return caches.delete(cacheToDelete);
-      }));
-    }).then(() => self.clients.claim())
+    caches.keys().then(keys => Promise.all(
+      keys.map(key => key !== CACHE_NAME && caches.delete(key))
+    ))
   );
+  self.clients.claim();
 });
 
-// Fetch事件：网络优先策略（Network First）
 self.addEventListener('fetch', event => {
-  // 忽略非 GET 请求
-  if (event.request.method !== 'GET') return;
+  const { request } = event;
+  const url = new URL(request.url);
 
-  // 忽略 API 请求（通常需要实时性，或者可以在这里实现 Stale-While-Revalidate）
-  // 这里我们对 API 请求不缓存，或者使用不同的策略
-  if (event.request.url.includes('/api/')) {
-    return;
-  }
-
-  // 图片和静态资源：缓存优先 (Cache First)
-  if (event.request.destination === 'image' || 
-      event.request.destination === 'style' || 
-      event.request.destination === 'script' || 
-      event.request.destination === 'font') {
+  // 1. 静态库文件：Cache First
+  if (url.origin.includes('cdn.jsdelivr.net') || url.origin.includes('esm.sh')) {
     event.respondWith(
-      caches.match(event.request).then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return caches.open(RUNTIME_CACHE).then(cache => {
-          return fetch(event.request).then(response => {
-            return cache.put(event.request, response.clone()).then(() => {
-              return response;
-            });
-          });
-        });
-      })
+      caches.match(request).then(cached => cached || fetch(request).then(response => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+        return response;
+      }))
     );
     return;
   }
 
-  // 页面导航：网络优先，失败回退到缓存
+  // 2. 图片：Cache First (但限制最大存储)
+  if (request.destination === 'image') {
+    event.respondWith(
+      caches.match(request).then(cached => cached || fetch(request).then(response => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+        }
+        return response;
+      }))
+    );
+    return;
+  }
+
+  // 3. 页面和 API：Network First / Stale-While-Revalidate
   event.respondWith(
-    fetch(event.request).then(response => {
-      return caches.open(RUNTIME_CACHE).then(cache => {
-        return cache.put(event.request, response.clone()).then(() => {
-          return response;
-        });
-      });
-    }).catch(() => {
-      return caches.match(event.request);
-    })
+    fetch(request).then(response => {
+      if (response.ok && request.method === 'GET' && !url.pathname.includes('/api/')) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+      }
+      return response;
+    }).catch(() => caches.match(request))
   );
 });

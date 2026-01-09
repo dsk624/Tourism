@@ -84,15 +84,16 @@ export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, isAuthenticate
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
           className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[calc(100dvh-5rem)] border border-white/20 dark:border-slate-800 z-10"
         >
-          {/* 1. 固定头部 */}
+          {/* 1. 固定头部 - 修复对比度 */}
           <div className="px-6 sm:px-8 py-5 sm:py-6 flex items-center justify-between border-b dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-teal-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-teal-500/20">
                 <CalendarIcon className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-black tracking-tight dark:text-white">旅行日程</h2>
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-widest leading-none mt-1">Travel Plan</p>
+                <h2 className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">旅行日程</h2>
+                {/* 强化此处颜色：由 text-slate-500 改为 text-slate-700/dark:text-teal-400，并增加字重 */}
+                <p className="text-[10px] font-black text-slate-700 dark:text-teal-400 uppercase tracking-[0.25em] leading-none mt-1.5 opacity-80">Travel Plan</p>
               </div>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 dark:text-slate-300">
@@ -161,10 +162,8 @@ export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, isAuthenticate
                           <div className="text-[10px] font-black text-slate-400 dark:text-teal-400/80 leading-none mb-0.5">{parseInt(dateArr[1])}月</div>
                           <div className="text-base font-black text-slate-800 dark:text-white leading-none">{dateArr[2]}</div>
                         </div>
-                        {/* 优化卡片背景与边框颜色 */}
                         <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 flex justify-between items-center group hover:border-teal-500/30 transition-all shadow-sm">
                           <div className="flex-1 min-w-0 pr-2">
-                            {/* 明确定义标题颜色：亮色为深，暗色为白 */}
                             <h4 className="font-black text-sm text-slate-900 dark:text-white truncate">
                               {s.title}
                             </h4>

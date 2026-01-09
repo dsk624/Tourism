@@ -2,9 +2,19 @@
 import { LocationData, WeatherData } from '../types';
 
 /**
- * 获取用户位置（无感模式）
+ * 默认位置：郑州（华夏文明腹地）
+ */
+const DEFAULT_LOCATION: LocationData = {
+  city: '郑州市',
+  province: '河南省',
+  latitude: 34.7466,
+  longitude: 113.6253
+};
+
+/**
+ * 获取用户位置（增强型无感模式）
  * 依次尝试 Cloudflare 边缘定位和 GeoJS IP 定位
- * 如果全部失败，返回 null，从而让组件不渲染
+ * 如果全部失败，回退到默认位置，确保组件始终可见
  */
 export const getUserLocation = async (): Promise<LocationData | null> => {
   try {
@@ -38,7 +48,7 @@ const fetchIPLocation = async (): Promise<LocationData | null> => {
     
     // 必须有经纬度才视为成功
     if (!data.latitude || !data.longitude || isNaN(parseFloat(data.latitude))) {
-      return null;
+      throw new Error('IP coordinates missing');
     }
     
     return {
@@ -48,8 +58,9 @@ const fetchIPLocation = async (): Promise<LocationData | null> => {
       longitude: parseFloat(data.longitude)
     };
   } catch (error) {
-    console.error('All location methods failed. Weather widget will be hidden.');
-    return null;
+    console.warn('All automatic location methods failed. Using default location (Zhengzhou).');
+    // 如果所有自动手段都失败，返回默认值而不是 null，保证天气组件不消失
+    return DEFAULT_LOCATION;
   }
 };
 

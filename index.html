@@ -3,33 +3,40 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>华夏游 | China Travel</title>
     
-    <!-- 性能优化：核心域名预连接 -->
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
-    <link rel="preconnect" href="https://esm.sh" />
-    <link rel="preconnect" href="https://api.open-meteo.com" />
-    
-    <!-- 关键路径资源预加载 (Module Preload) -->
-    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/react@19.0.0/+esm" />
-    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/react-dom@19.0.0/+esm" />
-    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/framer-motion@12.0.0/+esm" />
-    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/lucide-react@0.469.0/+esm" />
+    <!-- 1. 预连接核心域名 -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preconnect" href="https://esm.sh" crossorigin />
+    <link rel="dns-prefetch" href="https://api.open-meteo.com" />
+    <link rel="dns-prefetch" href="https://picsum.photos" />
 
-    <!-- SEO优化 -->
-    <meta name="description" content="华夏游 - 探索中华之美，寻访名山大川，品味千年文化。从河南出发，丈量每一寸锦绣河山。" />
-    <meta name="keywords" content="华夏游,旅游,中国旅游,景点,名山大川,文化旅游,河南旅游" />
-    <meta name="author" content="华夏游" />
-    <meta name="robots" content="index, follow" />
+    <!-- 2. 关键路径内联样式：防止白屏 -->
+    <style>
+      body { margin: 0; background-color: #0f172a; font-family: sans-serif; }
+      #root:empty { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+      #root:empty::before { 
+        content: ''; width: 64px; height: 64px; 
+        background: #14b8a6; border-radius: 18px; 
+        box-shadow: 0 10px 25px -5px rgba(20, 184, 166, 0.4);
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      #root:empty::after {
+        content: 'CHINA TRAVEL'; margin-top: 20px; 
+        color: #5eead4; font-size: 10px; font-weight: 900; 
+        letter-spacing: 0.3em; opacity: 0.5;
+      }
+      @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .7; transform: scale(0.95); } }
+    </style>
+
+    <!-- 3. 异步加载非关键 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/noto-sans-sc@latest/css/noto-sans-sc.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" media="print" onload="this.media='all'">
     
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230d9488' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m8 3 4 8 5-5 5 15H2L8 3z'/%3E%3C/svg%3E" type="image/svg+xml" sizes="any" />
-    
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/noto-sans-sc@latest/css/noto-sans-sc.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
-    
+
     <script type="importmap">
 {
   "imports": {
