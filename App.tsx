@@ -10,6 +10,7 @@ import { LoginPromptModal } from './components/LoginPromptModal';
 import { Navbar } from './components/Navbar';
 import { HomeContent } from './components/HomeContent';
 import { AttractionCard } from './components/AttractionCard';
+import { CalendarModal } from './components/CalendarModal';
 import RegisterForm from './components/RegisterForm';
 import LoginForm from './components/LoginForm';
 import { Attraction, User } from './types';
@@ -39,6 +40,7 @@ const App: React.FC = () => {
   const [activeProfileTab, setActiveProfileTab] = useState<'management' | 'favorites'>('favorites');
   const [viewCount, setViewCount] = useState<number>(0);
   const [isNotificationVisible, setIsNotificationVisible] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const hasIncrementedView = useRef(false);
 
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('china_travel_user'));
@@ -207,6 +209,7 @@ const App: React.FC = () => {
         mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
         onOpenAdminNotifications={() => openAdminModal('notification')}
         onNotificationVisibilityChange={setIsNotificationVisible}
+        onOpenCalendar={() => setIsCalendarOpen(true)}
       />
 
       <AnimatePresence>
@@ -334,6 +337,7 @@ const App: React.FC = () => {
       <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
       <AdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} defaultTab={adminModalTab} onSubmit={async (data) => { try { if (editingAttraction) await api.attractions.update(editingAttraction.id, data); else await api.attractions.create(data); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('操作失败'); } }} onDelete={async (id) => { if (confirm('确定删除此景点？')) { try { await api.attractions.delete(id); setIsAdminModalOpen(false); fetchPaginatedData(currentPage, selectedProvince, searchTerm); } catch(e){ alert('删除失败'); } } }} initialData={editingAttraction} />
       <LoginPromptModal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)} />
+      <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} isAuthenticated={isAuthenticated} />
     </div>
   );
 };

@@ -5,7 +5,6 @@ import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, LogOut, Settings, Use
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '../types';
 import { api, Notification } from '../services/api';
-import { CalendarModal } from './CalendarModal';
 
 interface NavbarProps {
   theme: 'light' | 'dark' | 'teal';
@@ -18,14 +17,14 @@ interface NavbarProps {
   setMobileMenuOpen: (open: boolean) => void;
   onOpenAdminNotifications?: () => void;
   onNotificationVisibilityChange?: (isVisible: boolean) => void;
+  onOpenCalendar: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  theme, setTheme, isAuthenticated, currentUser, handleLogout, setIsContactModalOpen, mobileMenuOpen, setMobileMenuOpen, onOpenAdminNotifications, onNotificationVisibilityChange
+  theme, setTheme, isAuthenticated, currentUser, handleLogout, setIsContactModalOpen, mobileMenuOpen, setMobileMenuOpen, onOpenAdminNotifications, onNotificationVisibilityChange, onOpenCalendar
 }) => {
   const location = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isDismissed, setIsDismissed] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -129,7 +128,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             
             {isAuthenticated && (
               <button 
-                onClick={() => setIsCalendarOpen(true)}
+                onClick={onOpenCalendar}
                 className="flex items-center gap-2 p-2 rounded-xl hover:bg-teal-500/10 text-teal-500 transition-colors"
                 title="我的日程"
               >
@@ -218,7 +217,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </Link>
 
                 {isAuthenticated && (
-                  <button onClick={() => { setIsCalendarOpen(true); setMobileMenuOpen(false); }} className={`w-full flex items-center justify-between p-4 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                  <button onClick={() => { onOpenCalendar(); setMobileMenuOpen(false); }} className={`w-full flex items-center justify-between p-4 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                     <div className="flex items-center gap-3">
                       <CalendarIcon className="w-5 h-5 text-teal-500" />
                       <span className="font-black">我的旅行日程</span>
@@ -287,8 +286,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             </motion.div>
           )}
         </AnimatePresence>
-
-        <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} isAuthenticated={isAuthenticated} />
       </nav>
     </div>
   );
