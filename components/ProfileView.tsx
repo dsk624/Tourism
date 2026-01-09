@@ -53,17 +53,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     fetchData();
   }, [activeTab]);
 
-  // 监听收藏状态变化，重新拉取列表以保持同步
+  // 处理收藏切换并局部更新列表
   const handleInternalToggleFavorite = async (e: React.MouseEvent | null, id: string) => {
     await onToggleFavorite(e, id);
-    fetchData(); // 重新加载列表
+    // 操作完成后重新拉取列表对象，实现平滑移除/同步
+    await fetchData();
   };
 
   const isDark = theme === 'dark';
 
   return (
     <div className="min-h-screen pb-20">
-      {/* 1. 头部区域 */}
       <div className="relative pt-32 pb-16 px-4">
         <div className="absolute inset-0 z-0 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-teal-500/20 to-transparent dark:from-teal-900/40" />
@@ -94,7 +94,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       </div>
 
-      {/* 2. 内容导航 */}
       <div className="max-w-5xl mx-auto px-4 mb-12">
         <div className="flex p-1.5 bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm max-w-md mx-auto">
           <button 
@@ -112,7 +111,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       </div>
 
-      {/* 3. 列表展示 */}
       <div className="max-w-6xl mx-auto px-4">
         <AnimatePresence mode="wait">
           {isLoading ? (

@@ -31,7 +31,6 @@ const ScrollToTop = () => {
   return null;
 };
 
-// 增强版全局加载页
 const PageLoader = () => (
   <motion.div 
     initial={{ opacity: 0 }} 
@@ -183,7 +182,7 @@ const App: React.FC = () => {
   const handleToggleFavorite = async (e: React.MouseEvent | null, id: string) => {
     if (e) {
       e.preventDefault();
-      e.stopPropagation(); // 关键：阻止事件冒泡到卡片的 onClick
+      e.stopPropagation(); // 阻止事件冒泡，不触发详情弹窗
     }
 
     if (!isAuthenticated) {
@@ -200,9 +199,10 @@ const App: React.FC = () => {
       } else {
         await api.favorites.add(id);
       }
+      // 直接拉取最新的收藏 ID 集合，无感同步状态
       await fetchFavorites(true);
     } catch (err) {
-      console.error('Favorite action failed', err);
+      console.error('Favorite toggle failed', err);
     } finally {
       setIsFavoriteActionLoading(null);
     }
@@ -295,7 +295,7 @@ const App: React.FC = () => {
         )}
         <FeedbackWidget isAuthenticated={isAuthenticated} onOpenLogin={() => setIsLoginPromptOpen(true)} />
         <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
-        {isAdminModalOpen && <AdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} defaultTab={adminModalTab} initialData={editingAttraction} onSubmit={async () => location.reload()} />}
+        {isAdminModalOpen && <AdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} defaultTab={adminModalTab} initialData={editingAttraction} onSubmit={async () => fetchPaginatedData(currentPage, selectedProvince, searchTerm)} />}
         <LoginPromptModal isOpen={isLoginPromptOpen} onClose={() => setIsLoginPromptOpen(false)} />
         <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} isAuthenticated={isAuthenticated} />
       </Suspense>
