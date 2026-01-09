@@ -29,13 +29,13 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
   return (
     <AnimatePresence>
       {attraction && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-0 sm:p-6 overflow-hidden">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md"
           />
           
           <motion.div
@@ -43,13 +43,10 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className={`relative w-full max-w-4xl max-h-[92vh] sm:max-h-[90vh] ${isDark ? 'bg-slate-900' : 'bg-white'} rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row border ${isDark ? 'border-slate-800' : 'border-transparent'}`}
+              className={`relative w-full max-w-4xl h-full sm:h-auto sm:max-h-[90vh] ${isDark ? 'bg-slate-900' : 'bg-white'} rounded-none sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row border ${isDark ? 'border-slate-800' : 'border-transparent'} z-10`}
               onClick={(e) => e.stopPropagation()}
             >
-            {/* Mobile Drag Indicator */}
-            <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-3 sm:hidden flex-shrink-0" />
-
-            <div className="absolute top-4 right-4 z-10 flex gap-2">
+            <div className="absolute top-4 right-4 z-20 flex gap-2">
                 {onToggleFavorite && (
                     <button
                     onClick={(e) => onToggleFavorite(e, attraction.id)}
@@ -67,7 +64,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
             </div>
 
             {/* Image Section */}
-            <div className="w-full md:w-1/2 h-56 sm:h-72 md:h-auto relative bg-slate-200">
+            <div className="w-full md:w-1/2 h-64 sm:h-72 md:h-auto relative bg-slate-200 flex-shrink-0">
                <img
                 src={attraction.imageUrl}
                 alt={attraction.name}
@@ -83,7 +80,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
             </div>
 
             {/* Content Section */}
-            <div className={`w-full md:w-1/2 p-6 sm:p-8 overflow-y-auto no-scrollbar ${isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-800'} flex flex-col`}>
+            <div className={`w-full md:w-1/2 p-6 sm:p-8 overflow-y-auto no-scrollbar ${isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-800'} flex flex-col min-h-0`}>
               
               <div className="hidden md:block mb-6">
                  <h2 className={`text-3xl font-black tracking-tight mb-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>{attraction.name}</h2>
@@ -94,7 +91,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
               </div>
 
               {/* Tabs */}
-              <div className={`flex p-1 ${isDark ? 'bg-slate-800' : 'bg-slate-100'} rounded-2xl mb-6 border ${isDark ? 'border-slate-700' : 'border-transparent'}`}>
+              <div className={`flex p-1 ${isDark ? 'bg-slate-800' : 'bg-slate-100'} rounded-2xl mb-6 border ${isDark ? 'border-slate-700' : 'border-transparent'} flex-shrink-0`}>
                 <button
                   onClick={() => setActiveTab('info')}
                   className={`flex-1 py-2.5 text-xs sm:text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 ${activeTab === 'info' ? (isDark ? 'bg-slate-700 text-teal-400 shadow-md' : 'bg-white text-teal-600 shadow-sm') : 'text-slate-500 hover:text-slate-700'}`}
@@ -117,17 +114,14 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
                     </p>
                   </div>
 
-                  {/* Baidu Search Section */}
                   <div className={`${isDark ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50/50 border-blue-100'} rounded-[2rem] p-5 sm:p-6 border mt-auto`}>
                     <div className="flex items-center gap-2 mb-3">
                       <Search className={`w-4 h-4 ${isDark ? 'text-blue-300' : 'text-blue-600'}`} />
                       <h3 className={`font-black tracking-tight text-sm uppercase ${isDark ? 'text-blue-100' : 'text-blue-800'}`}>智能探索</h3>
                     </div>
-                    
                     <p className={`text-xs sm:text-sm mb-4 font-bold ${isDark ? 'text-blue-200/80' : 'text-blue-700/60'}`}>
                       想了解更多关于 {attraction.name} 的实时攻略、门票价格和游玩路线？
                     </p>
-
                     <button 
                       onClick={handleBaiduSearch}
                       className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3.5 px-4 rounded-2xl font-black text-sm transition-all shadow-lg shadow-blue-500/20 active:scale-95"

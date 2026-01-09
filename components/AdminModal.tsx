@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Attraction } from '../types';
 import { X, Save, Trash2, Image as ImageIcon, LayoutTemplate, MapPin, Loader2, ChevronDown, Bell, Eye, EyeOff, Palette, SlidersHorizontal, Megaphone, List, Type } from 'lucide-react';
@@ -177,22 +178,22 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center p-0 sm:p-4 overflow-hidden">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={isDisabled ? undefined : onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-md"
+          className="fixed inset-0 bg-black/60 backdrop-blur-md"
         />
         <motion.div
           initial={{ y: '100%' }}
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          className="relative bg-white dark:bg-slate-900 w-full max-w-5xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] border dark:border-slate-800"
+          className="relative bg-white dark:bg-slate-900 w-full max-w-5xl h-full sm:h-auto sm:max-h-[90vh] rounded-none sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border dark:border-slate-800 z-10"
         >
-          <div className="flex justify-between items-center px-6 sm:px-8 py-4 sm:py-5 border-b dark:border-slate-800 bg-white dark:bg-slate-900 z-10 overflow-x-auto no-scrollbar">
+          <div className="flex justify-between items-center px-6 sm:px-8 py-4 sm:py-5 border-b dark:border-slate-800 bg-white dark:bg-slate-900 z-10 overflow-x-auto no-scrollbar flex-shrink-0">
             <div className="flex items-center gap-6 min-w-max">
               <button onClick={() => setActiveTab('attraction')} className={`flex items-center gap-2 pb-2 border-b-2 transition-all font-black text-sm sm:text-lg ${activeTab === 'attraction' ? 'border-teal-500 text-teal-600' : 'border-transparent text-slate-400'}`}>
                 <LayoutTemplate className="w-5 h-5" />
@@ -212,10 +213,10 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
             </button>
           </div>
 
-          <div className="flex flex-col flex-grow overflow-hidden">
+          <div className="flex flex-col flex-grow overflow-hidden min-h-0">
             {activeTab === 'attraction' ? (
               <div className="flex flex-col md:flex-row flex-grow overflow-hidden">
-                <div className="w-full md:w-1/2 p-6 sm:p-8 overflow-y-auto no-scrollbar border-r dark:border-slate-800">
+                <div className="w-full md:w-1/2 p-6 sm:p-8 overflow-y-auto no-scrollbar border-r dark:border-slate-800 min-h-0">
                   <form id="attractionForm" onSubmit={handleSubmit} className={`space-y-5 sm:space-y-6 ${isDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
                     <div>
                       <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">景点名称</label>
@@ -251,7 +252,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                       <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">详细描述</label>
                       <textarea required disabled={isDisabled} rows={5} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold resize-none" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
                     </div>
-                    <div className="flex gap-4 pt-4">
+                    <div className="flex gap-4 pt-4 pb-6">
                       <button type="submit" disabled={isDisabled} className="flex-1 flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-lg shadow-teal-500/20 active:scale-95">
                         {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                         {initialData ? '保存修改' : '立即发布'}
@@ -264,7 +265,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                     </div>
                   </form>
                 </div>
-                <div className="hidden md:flex md:w-1/2 bg-slate-50 dark:bg-slate-800/20 items-center justify-center p-8">
+                <div className="hidden md:flex md:w-1/2 bg-slate-50 dark:bg-slate-800/20 items-center justify-center p-8 overflow-y-auto no-scrollbar">
                   {formData.imageUrl ? (
                     <div className="w-full max-w-sm">
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">预览效果</p>
@@ -290,7 +291,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                 </div>
               </div>
             ) : activeTab === 'notification' ? (
-              <div className="p-6 sm:p-8 overflow-y-auto space-y-8 no-scrollbar">
+              <div className="p-6 sm:p-8 overflow-y-auto space-y-8 no-scrollbar min-h-0 flex-grow">
                 <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-700">
                   <h4 className="font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
                     <Megaphone className="w-5 h-5 text-teal-500" /> 发布新通知
@@ -351,7 +352,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                   </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 pb-10">
                   <h4 className="font-black text-slate-800 dark:text-white flex items-center gap-2">
                     <List className="w-5 h-5 text-teal-500" /> 通知列表
                   </h4>
@@ -370,7 +371,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                             <span className="text-[10px] text-slate-400">{new Date(n.created_at).toLocaleString()}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           <button onClick={() => toggleNotif(n)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-teal-500 text-xs font-bold">
                             {n.is_active ? '下架' : '上架'}
                           </button>
@@ -384,7 +385,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                 </div>
               </div>
             ) : (
-              <div className="p-6 sm:p-8 overflow-y-auto space-y-8 no-scrollbar">
+              <div className="p-6 sm:p-8 overflow-y-auto space-y-8 no-scrollbar min-h-0 flex-grow">
                 <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-700">
                   <h4 className="font-black text-slate-800 dark:text-white mb-6 flex items-center gap-2">
                     <Type className="w-5 h-5 text-teal-500" /> 首页文字内容配置
@@ -394,7 +395,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                       <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">顶部 Slogan (Badge)</label>
                       <input className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={siteSettings.hero_badge} onChange={e => setSiteSettings({...siteSettings, hero_badge: e.target.value})} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">主标题文字 (白色)</label>
                         <input className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={siteSettings.hero_title_main} onChange={e => setSiteSettings({...siteSettings, hero_title_main: e.target.value})} />
@@ -411,7 +412,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                     <button 
                       onClick={handleUpdateSettings}
                       disabled={isSubmitting}
-                      className="w-full py-4 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-black transition-all shadow-lg shadow-teal-500/20 active:scale-95 flex items-center justify-center gap-2"
+                      className="w-full py-4 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-black transition-all shadow-lg shadow-teal-500/20 active:scale-95 flex items-center justify-center gap-2 mb-10"
                     >
                       {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                       确认修改站点文字

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, LogOut, Settings, User as UserIcon, ChevronDown, Bell, Volume2, Megaphone, Calendar as CalendarIcon, ShieldCheck } from 'lucide-react';
+import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, LogOut, Settings, User as UserIcon, ChevronDown, Bell, Volume2, Megaphone, Calendar as CalendarIcon, ShieldCheck, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '../types';
 import { api, Notification } from '../services/api';
@@ -173,7 +173,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <UserIcon className="w-4 h-4 text-teal-500" /> 个人中心
                         </Link>
                         
-                        {/* 管理员专有后台管理入口 */}
                         {isAdmin && onOpenAdminNotifications && (
                           <button 
                             onClick={() => { onOpenAdminNotifications(); setSettingsOpen(false); }} 
@@ -197,8 +196,97 @@ export const Navbar: React.FC<NavbarProps> = ({
               </AnimatePresence>
             </div>
           </div>
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 text-slate-500 dark:text-slate-400"><Menu /></button>
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 text-slate-500 dark:text-slate-400">
+            {mobileMenuOpen ? <X /> : <Menu />}
+          </button>
         </div>
+
+        {/* 移动端全屏菜单 */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className={`fixed inset-0 top-16 z-50 md:hidden flex flex-col p-6 overflow-y-auto no-scrollbar ${isDark ? 'bg-slate-900' : 'bg-white'}`}
+            >
+              <div className="space-y-4">
+                <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`flex items-center justify-between p-4 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                   <span className="font-black">首页浏览</span>
+                   <ChevronRight className="w-4 h-4 text-teal-500" />
+                </Link>
+
+                {isAuthenticated && (
+                  <button onClick={() => { setIsCalendarOpen(true); setMobileMenuOpen(false); }} className={`w-full flex items-center justify-between p-4 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                    <div className="flex items-center gap-3">
+                      <CalendarIcon className="w-5 h-5 text-teal-500" />
+                      <span className="font-black">我的旅行日程</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-teal-500" />
+                  </button>
+                )}
+
+                <div className={`p-5 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">环境设置</p>
+                  <div className={`flex gap-2 p-1 rounded-xl ${isDark ? 'bg-slate-900' : 'bg-white shadow-inner'}`}>
+                    {(['light', 'dark', 'teal'] as const).map(t => (
+                      <button key={t} onClick={() => setTheme(t)} className={`flex-1 py-3 rounded-lg flex justify-center items-center gap-2 transition-all ${theme === t ? 'bg-teal-500 text-white shadow-lg' : 'text-slate-400'}`}>
+                        {t === 'light' ? <Sun className="w-4 h-4" /> : t === 'dark' ? <Moon className="w-4 h-4" /> : <Map className="w-4 h-4" />}
+                        <span className="text-[10px] font-black uppercase">{t}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button onClick={() => { setIsContactModalOpen(true); setMobileMenuOpen(false); }} className={`w-full flex items-center justify-between p-4 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                  <div className="flex items-center gap-3">
+                    <MessageCircle className="w-5 h-5 text-blue-500" />
+                    <span className="font-black">联系反馈</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-teal-500" />
+                </button>
+
+                <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />
+
+                {isAuthenticated ? (
+                  <div className="space-y-3">
+                    <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className={`flex items-center justify-between p-4 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                      <div className="flex items-center gap-3">
+                        <UserIcon className="w-5 h-5 text-teal-500" />
+                        <span className="font-black">个人中心</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-teal-500" />
+                    </Link>
+
+                    {isAdmin && onOpenAdminNotifications && (
+                      <button onClick={() => { onOpenAdminNotifications(); setMobileMenuOpen(false); }} className={`w-full flex items-center justify-between p-4 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                        <div className="flex items-center gap-3">
+                          <ShieldCheck className="w-5 h-5 text-teal-500" />
+                          <span className="font-black">后台管理系统</span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-teal-500" />
+                      </button>
+                    )}
+
+                    <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="w-full flex items-center gap-3 p-4 rounded-2xl text-red-500 font-black border border-red-500/10">
+                      <LogOut className="w-5 h-5" /> 退出当前账户
+                    </button>
+                  </div>
+                ) : (
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="w-full flex items-center justify-center gap-3 p-4 bg-teal-500 text-white rounded-2xl font-black shadow-lg shadow-teal-500/20">
+                    <LogOut className="w-5 h-5" /> 立即登录账户
+                  </Link>
+                )}
+              </div>
+              
+              <div className="mt-auto py-10 text-center">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">华夏游 · 数字化指南</p>
+                <p className="text-[9px] text-slate-300 mt-1">© 2025 China Travel Experience</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} isAuthenticated={isAuthenticated} />
       </nav>
