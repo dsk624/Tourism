@@ -40,14 +40,6 @@ const App: React.FC = () => {
   const [isNotificationVisible, setIsNotificationVisible] = useState(false);
   const hasIncrementedView = useRef(false);
 
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
-
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('china_travel_user'));
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('china_travel_user');
@@ -63,10 +55,18 @@ const App: React.FC = () => {
   const staticProvinces = ['全部', '河南', '北京', '四川', '云南', '陕西', '浙江', '江苏', '广东', '湖南', '新疆', '上海', '西藏'];
 
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-  const [adminModalTab, setAdminModalTab] = useState<'attraction' | 'notification'>('attraction');
+  const [adminModalTab, setAdminModalTab] = useState<'attraction' | 'notification' | 'settings'>('attraction');
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const [editingAttraction, setEditingAttraction] = useState<Attraction | null>(null);
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   const fetchPaginatedData = async (page: number, province: string, search: string) => {
     setIsDataLoading(true);
@@ -81,14 +81,19 @@ const App: React.FC = () => {
     }
   };
 
-  const fetchFavorites = async () => {
-    if (!isAuthenticated) return;
+  // 修改：不再依赖内部 state，直接由 API 结果驱动
+  const fetchFavorites = async (force: boolean = false) => {
+    // 如果不是强制拉取且未显示登录，则跳过
+    if (!force && !isAuthenticated) return;
+    
     try {
       const data = await api.favorites.getAll();
-      setFavoritesList(data);
-      setFavoritesIds(new Set(data.map(item => item.id)));
+      if (Array.isArray(data)) {
+        setFavoritesList(data);
+        setFavoritesIds(new Set(data.map(item => item.id)));
+      }
     } catch (e) {
-      console.error('Fetch favorites failed:', e);
+      console.warn('Fetch favorites failed (likely not logged in)');
     }
   };
 
@@ -141,17 +146,23 @@ const App: React.FC = () => {
   useEffect(() => {
     const initializeApp = async () => {
       handleIncrementStats();
-      const [authResult] = await Promise.allSettled([api.auth.me()]);
-      if (authResult.status === 'fulfilled' && authResult.value.authenticated && authResult.value.user) {
-        setIsAuthenticated(true);
-        setCurrentUser(authResult.value.user);
-        localStorage.setItem('china_travel_user', JSON.stringify(authResult.value.user));
-        if (authResult.value.user.isAdmin) setActiveProfileTab('management');
-        fetchFavorites();
-      } else {
+      try {
+        const res = await api.auth.me();
+        if (res.authenticated && res.user) {
+          setIsAuthenticated(true);
+          setCurrentUser(res.user);
+          localStorage.setItem('china_travel_user', JSON.stringify(res.user));
+          if (res.user.isAdmin) setActiveProfileTab('management');
+          // 强制拉取收藏列表，不等待 state 更新
+          fetchFavorites(true);
+        } else {
+          handleAuthFailure();
+        }
+      } catch (e) {
         handleAuthFailure();
+      } finally {
+        setIsAuthChecking(false);
       }
-      setIsAuthChecking(false);
     };
     initializeApp();
   }, []);
@@ -166,17 +177,22 @@ const App: React.FC = () => {
   const handleToggleFavorite = async (e: React.MouseEvent | null, id: string) => {
     if (e) { e.stopPropagation(); e.preventDefault(); }
     if (!isAuthenticated) { setIsLoginPromptOpen(true); return; }
+    
     const isFav = favoritesIds.has(id);
     const newIds = new Set(favoritesIds);
     if (isFav) newIds.delete(id); else newIds.add(id);
     setFavoritesIds(newIds);
+    
     try { 
-      if (isFav) await api.favorites.remove(id); else await api.favorites.add(id); 
-      fetchFavorites();
-    } catch(e) { fetchFavorites(); }
+      if (isFav) await api.favorites.remove(id); 
+      else await api.favorites.add(id); 
+      fetchFavorites(true);
+    } catch(e) { 
+      fetchFavorites(true); 
+    }
   };
 
-  const openAdminModal = (tab: 'attraction' | 'notification' = 'attraction', data: Attraction | null = null) => {
+  const openAdminModal = (tab: 'attraction' | 'notification' | 'settings' = 'attraction', data: Attraction | null = null) => {
     setAdminModalTab(tab);
     setEditingAttraction(data);
     setIsAdminModalOpen(true);
@@ -222,7 +238,18 @@ const App: React.FC = () => {
                 currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage}
               />} 
             />
-            <Route path="/login" element={isAuthenticated ? <Navigate to="/profile" /> : <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen"><div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}><LoginForm onLoginSuccess={() => { setIsAuthChecking(true); api.auth.me().then(res => { if(res.authenticated && res.user){ setIsAuthenticated(true); setCurrentUser(res.user); localStorage.setItem('china_travel_user', JSON.stringify(res.user)); fetchFavorites(); } setIsAuthChecking(false); }); }} /></div></div>} />
+            <Route path="/login" element={isAuthenticated ? <Navigate to="/profile" /> : <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen"><div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}><LoginForm onLoginSuccess={() => { 
+                setIsAuthChecking(true); 
+                api.auth.me().then(res => { 
+                  if(res.authenticated && res.user){ 
+                    setIsAuthenticated(true); 
+                    setCurrentUser(res.user); 
+                    localStorage.setItem('china_travel_user', JSON.stringify(res.user)); 
+                    fetchFavorites(true); // 强制拉取
+                  } 
+                  setIsAuthChecking(false); 
+                }); 
+              }} /></div></div>} />
             <Route path="/register" element={isAuthenticated ? <Navigate to="/profile" /> : <div className="pt-32 pb-20 px-4 flex justify-center items-center min-h-screen"><div className={`w-full max-w-md p-8 rounded-3xl shadow-2xl ${currentTheme.cardBg} ${currentTheme.border} border`}><RegisterForm /></div></div>} />
             <Route path="/profile" element={isAuthenticated ? (
               <div className="pt-32 px-4 max-w-6xl mx-auto min-h-screen pb-20">
