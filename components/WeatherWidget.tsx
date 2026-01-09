@@ -66,12 +66,11 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ topOffset = 0 }) =
     });
   };
 
-  if (loading) return null;
-  if (!location || !weather) return null;
+  if (loading || !location || !weather) return null;
 
   const baseZIndex = isExpanded ? 'z-[70]' : 'z-40';
   
-  // 核心样式优化：移动端收起时贴边
+  // 核心样式优化：极致小巧的吸附位置
   const containerClasses = isExpanded 
     ? 'fixed inset-0 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none md:items-start md:justify-end md:p-0' 
     : 'fixed right-0 md:right-8';
@@ -90,19 +89,22 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ topOffset = 0 }) =
         ref={widgetRef}
         layout
         onClick={() => !isExpanded && setIsExpanded(true)}
-        whileHover={!isExpanded ? { x: -4 } : {}}
-        className={`bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/40 dark:border-slate-700/50 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] cursor-pointer overflow-hidden relative flex flex-col 
+        // 移动端收起时轻微向左探出，增加点击暗示
+        whileHover={!isExpanded ? { x: -2 } : {}}
+        className={`bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/40 dark:border-slate-700/50 shadow-xl cursor-pointer overflow-hidden relative flex flex-col transition-all
           ${isExpanded 
             ? 'w-full max-w-sm sm:max-w-md rounded-[2.5rem]' 
-            : 'rounded-l-2xl md:rounded-[2rem] border-r-0 md:border-r'}`}
+            : 'rounded-l-full md:rounded-[2rem] border-r-0 md:border-r'}`}
       >
-        <motion.div layout className={`transition-all duration-300 ${isExpanded ? 'p-6 sm:p-8' : 'px-3 py-3 md:px-5 md:py-3.5'}`}>
+        <motion.div layout className={`transition-all duration-300 ${isExpanded ? 'p-6 sm:p-8' : 'p-2 md:px-5 md:py-3.5'}`}>
           {!isExpanded && (
-             <motion.div layoutId="compact-view" className="flex items-center gap-3 md:gap-4 whitespace-nowrap">
-                <div className="text-2xl md:text-3xl filter drop-shadow-md animate-pulse">
+             <motion.div layoutId="compact-view" className="flex items-center gap-2 md:gap-4 whitespace-nowrap">
+                {/* 移动端图标缩小 */}
+                <div className="text-xl md:text-3xl filter drop-shadow-sm flex items-center justify-center">
                   {getWeatherIcon(weather.weatherCode, weather.isDay)}
                 </div>
-                {/* 桌面端显示文字，移动端隐藏实现“收起隐藏” */}
+                
+                {/* 桌面端保持原有丰富信息 */}
                 <div className="hidden md:flex flex-col">
                    <div className="text-base font-black text-slate-800 dark:text-white flex items-center gap-2">
                      {Math.round(weather.temperature)}°
@@ -114,10 +116,8 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ topOffset = 0 }) =
                      <MapPin className="w-2.5 h-2.5 text-teal-500" />{location.city}
                    </div>
                 </div>
-                {/* 移动端提示小箭头 */}
-                <div className="md:hidden">
-                  <ChevronLeft className="w-3 h-3 text-slate-300" />
-                </div>
+
+                {/* 移动端收起时极其精简，不再显示箭头，改用微妙的内阴影或光泽 */}
              </motion.div>
           )}
 
