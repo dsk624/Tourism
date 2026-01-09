@@ -16,6 +16,7 @@ const AdminModal = lazy(() => import('./components/AdminModal').then(module => (
 const ContactModal = lazy(() => import('./components/ContactModal').then(module => ({ default: module.ContactModal })));
 const LoginPromptModal = lazy(() => import('./components/LoginPromptModal').then(module => ({ default: module.LoginPromptModal })));
 const CalendarModal = lazy(() => import('./components/CalendarModal').then(module => ({ default: module.CalendarModal })));
+const ProfileView = lazy(() => import('./components/ProfileView').then(module => ({ default: module.ProfileView })));
 const LoginForm = lazy(() => import('./components/LoginForm'));
 const RegisterForm = lazy(() => import('./components/RegisterForm'));
 const FeedbackWidget = lazy(() => import('./components/FeedbackWidget').then(module => ({ default: module.FeedbackWidget })));
@@ -48,7 +49,6 @@ const App: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [activeProfileTab, setActiveProfileTab] = useState<'management' | 'favorites'>('favorites');
   const [viewCount, setViewCount] = useState<number>(0);
   const [isNotificationVisible, setIsNotificationVisible] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -121,7 +121,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initializeApp = async () => {
-      // 并行执行初始化任务
       const tasks = [
         api.auth.me().catch(() => ({ authenticated: false })),
         api.stats.incrementViews().catch(() => null),
@@ -155,13 +154,22 @@ const App: React.FC = () => {
   };
   const currentTheme = themes[theme];
 
+  const handleLogoutAction = () => {
+    api.auth.logout();
+    localStorage.removeItem('china_travel_user');
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    navigate('/');
+    location.reload();
+  };
+
   return (
     <div className={`min-h-screen transition-colors duration-500 ${currentTheme.bg} ${currentTheme.text} font-sans selection:bg-teal-500 selection:text-white`}>
       <ScrollToTop />
       <Navbar 
         theme={theme} setTheme={setTheme}
         isAuthenticated={isAuthenticated} currentUser={currentUser}
-        handleLogout={() => { api.auth.logout(); location.reload(); }}
+        handleLogout={handleLogoutAction}
         setIsContactModalOpen={setIsContactModalOpen}
         mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
         onOpenAdminNotifications={() => { setAdminModalTab('notification'); setIsAdminModalOpen(true); }}
@@ -193,9 +201,18 @@ const App: React.FC = () => {
                 currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage}
               />} 
             />
-            {/* 其他路由保持不变... */}
-            <Route path="/login" element={<div className="pt-32"><LoginForm onLoginSuccess={() => location.reload()} /></div>} />
-            <Route path="/profile" element={isAuthenticated ? <div className="pt-32 px-4"><h1>{currentUser?.username} 的空间</h1></div> : <Navigate to="/login" />} />
+            <Route path="/login" element={<div className="pt-32 max-w-md mx-auto px-4 pb-20"><LoginForm onLoginSuccess={() => { setIsAuthenticated(true); navigate('/profile'); }} /></div>} />
+            <Route path="/profile" element={
+              isAuthenticated ? (
+                <ProfileView 
+                  currentUser={currentUser} 
+                  theme={theme} 
+                  currentTheme={currentTheme} 
+                  handleLogout={handleLogoutAction}
+                  onSelectAttraction={setSelectedAttraction}
+                />
+              ) : <Navigate to="/login" />
+            } />
           </Routes>
         )}
 
