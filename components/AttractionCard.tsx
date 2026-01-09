@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Attraction } from '../types';
-import { MapPin, Star, Heart, FileText, Check, X, Loader2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { MapPin, Star, Heart, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface ThemeConfig {
   primary: string;
@@ -21,15 +21,12 @@ interface Props {
   searchTerm?: string;
   isFavorite?: boolean;
   onToggleFavorite?: (e: React.MouseEvent | null, id: string) => void;
-  note?: string;
-  onUpdateNote?: (id: string, note: string) => Promise<void>;
+  isFavoriteLoading?: boolean;
 }
 
-export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, currentTheme, searchTerm = '', isFavorite, onToggleFavorite, note, onUpdateNote }) => {
-  const [isEditingNote, setIsEditingNote] = useState(false);
-  const [tempNote, setTempNote] = useState(note || '');
-  const [isSavingNote, setIsSavingNote] = useState(false);
-
+export const AttractionCard: React.FC<Props> = ({ 
+  attraction, onClick, theme, currentTheme, isFavorite, onToggleFavorite, isFavoriteLoading 
+}) => {
   const isDark = theme === 'dark';
 
   return (
@@ -52,10 +49,19 @@ export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, cu
         {onToggleFavorite && (
           <button
             type="button"
-            onClick={(e) => onToggleFavorite(e, attraction.id)}
-            className="absolute top-4 right-4 z-10 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full text-white transition-all transform hover:scale-110"
+            disabled={isFavoriteLoading}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation(); // 阻止冒泡到父级 div 的 onClick
+              onToggleFavorite(e, attraction.id);
+            }}
+            className="absolute top-4 right-4 z-10 bg-white/20 hover:bg-white/40 backdrop-blur-md p-2.5 rounded-full text-white transition-all transform hover:scale-110 active:scale-95 disabled:opacity-50"
           >
-            <Heart className={`w-5 h-5 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+            {isFavoriteLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-white" />
+            ) : (
+              <Heart className={`w-5 h-5 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+            )}
           </button>
         )}
 

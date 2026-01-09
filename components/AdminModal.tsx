@@ -35,6 +35,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
   });
 
   const [notifList, setNotifList] = useState<Notification[]>([]);
+  const [isListLoading, setIsListLoading] = useState(false);
   const [newNotifContent, setNewNotifContent] = useState('');
   const [newNotifColor, setNewNotifColor] = useState('#0d9488');
   const [newNotifOpacity, setNewNotifOpacity] = useState(100);
@@ -57,17 +58,21 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
   }, [isOpen, defaultTab]);
 
   const fetchNotifs = async () => {
+    setIsListLoading(true);
     try {
       const data = await api.notifications.getAll();
       setNotifList(data);
     } catch (e) { console.error(e); }
+    finally { setIsListLoading(false); }
   };
 
   const fetchSettings = async () => {
+    setIsListLoading(true);
     try {
       const data = await api.settings.get();
       setSiteSettings(prev => ({ ...prev, ...data }));
     } catch (e) { console.error(e); }
+    finally { setIsListLoading(false); }
   };
 
   useEffect(() => {
@@ -298,7 +303,8 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                   </h4>
                   <div className="space-y-6">
                     <input 
-                      className="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-bold placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:ring-2 focus:ring-teal-500 transition-all shadow-sm"
+                      disabled={isSubmitting}
+                      className="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-bold placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:ring-2 focus:ring-teal-500 transition-all shadow-sm disabled:opacity-50"
                       placeholder="输入通知内容..."
                       value={newNotifContent}
                       onChange={(e) => setNewNotifContent(e.target.value)}
@@ -313,7 +319,7 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                           <div 
                             className="w-14 h-14 rounded-2xl shadow-inner border border-white/20 flex items-center justify-center cursor-pointer transition-transform active:scale-95"
                             style={{ backgroundColor: getRGBA(newNotifColor, newNotifOpacity) }}
-                            onClick={() => colorInputRef.current?.click()}
+                            onClick={() => !isSubmitting && colorInputRef.current?.click()}
                           >
                              <Palette className="w-6 h-6 text-white drop-shadow-md" />
                              <input 
@@ -344,9 +350,9 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                       <button 
                         onClick={handleAddNotif}
                         disabled={isSubmitting || !newNotifContent.trim()}
-                        className="w-full px-8 py-4 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-2xl font-black disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-teal-500/30 active:scale-95"
+                        className="w-full px-8 py-4 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-2xl font-black disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-teal-500/30 active:scale-95 flex items-center justify-center gap-2"
                       >
-                        发布通知
+                        {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : '发布通知'}
                       </button>
                     </div>
                   </div>
@@ -356,31 +362,44 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                   <h4 className="font-black text-slate-800 dark:text-white flex items-center gap-2">
                     <List className="w-5 h-5 text-teal-500" /> 通知列表
                   </h4>
-                  <div className="grid gap-3">
-                    {notifList.map(n => (
-                      <div key={n.id} className="p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-between group">
-                        <div className="flex items-center gap-4">
-                          <div 
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm`}
-                            style={{ backgroundColor: n.bg_color.includes('rgba') ? n.bg_color : '#0d9488' }}
-                          >
-                            {n.is_active ? <Eye className="w-5 h-5 text-white" /> : <EyeOff className="w-5 h-5 text-white opacity-60" />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`font-bold truncate ${n.is_active ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500 line-through'}`}>{n.content}</p>
-                            <span className="text-[10px] text-slate-400">{new Date(n.created_at).toLocaleString()}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => toggleNotif(n)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-teal-500 text-xs font-bold">
-                            {n.is_active ? '下架' : '上架'}
-                          </button>
-                          <button onClick={() => deleteNotif(n.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl text-red-500">
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="grid gap-3 min-h-[100px] relative">
+                    <AnimatePresence mode="wait">
+                      {isListLoading ? (
+                        <motion.div key="list-loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex justify-center py-10">
+                           <Loader2 className="w-6 h-6 text-teal-500 animate-spin" />
+                        </motion.div>
+                      ) : (
+                        <motion.div key="list-items" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+                          {notifList.map(n => (
+                            <div key={n.id} className="p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-between group">
+                              <div className="flex items-center gap-4">
+                                <div 
+                                  className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm`}
+                                  style={{ backgroundColor: n.bg_color.includes('rgba') ? n.bg_color : '#0d9488' }}
+                                >
+                                  {n.is_active ? <Eye className="w-5 h-5 text-white" /> : <EyeOff className="w-5 h-5 text-white opacity-60" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`font-bold truncate ${n.is_active ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500 line-through'}`}>{n.content}</p>
+                                  <span className="text-[10px] text-slate-400">{new Date(n.created_at).toLocaleString()}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => toggleNotif(n)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-teal-500 text-xs font-bold">
+                                  {n.is_active ? '下架' : '上架'}
+                                </button>
+                                <button onClick={() => deleteNotif(n.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl text-red-500">
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          {notifList.length === 0 && (
+                             <p className="text-center py-10 text-slate-400 italic text-sm">暂无历史通知</p>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               </div>
@@ -393,21 +412,21 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                   <div className="space-y-6">
                     <div>
                       <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">顶部 Slogan (Badge)</label>
-                      <input className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={siteSettings.hero_badge} onChange={e => setSiteSettings({...siteSettings, hero_badge: e.target.value})} />
+                      <input disabled={isSubmitting} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold disabled:opacity-50" value={siteSettings.hero_badge} onChange={e => setSiteSettings({...siteSettings, hero_badge: e.target.value})} />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">主标题文字 (白色)</label>
-                        <input className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={siteSettings.hero_title_main} onChange={e => setSiteSettings({...siteSettings, hero_title_main: e.target.value})} />
+                        <input disabled={isSubmitting} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold disabled:opacity-50" value={siteSettings.hero_title_main} onChange={e => setSiteSettings({...siteSettings, hero_title_main: e.target.value})} />
                       </div>
                       <div>
                         <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">标题高亮文字 (渐变色)</label>
-                        <input className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold" value={siteSettings.hero_title_highlight} onChange={e => setSiteSettings({...siteSettings, hero_title_highlight: e.target.value})} />
+                        <input disabled={isSubmitting} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold disabled:opacity-50" value={siteSettings.hero_title_highlight} onChange={e => setSiteSettings({...siteSettings, hero_title_highlight: e.target.value})} />
                       </div>
                     </div>
                     <div>
                       <label className="block text-xs font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-2">副标题描述</label>
-                      <textarea rows={4} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold resize-none" value={siteSettings.hero_subtitle} onChange={e => setSiteSettings({...siteSettings, hero_subtitle: e.target.value})} />
+                      <textarea disabled={isSubmitting} rows={4} className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-teal-500 outline-none transition-all text-sm font-bold resize-none disabled:opacity-50" value={siteSettings.hero_subtitle} onChange={e => setSiteSettings({...siteSettings, hero_subtitle: e.target.value})} />
                     </div>
                     <button 
                       onClick={handleUpdateSettings}

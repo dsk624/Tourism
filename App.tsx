@@ -6,12 +6,11 @@ import { Navbar } from './components/Navbar';
 import { HomeContent } from './components/HomeContent';
 import { AttractionCard } from './components/AttractionCard';
 import { WeatherWidget } from './components/WeatherWidget';
-import { WeChatOverlay } from './components/WeChatOverlay'; // 引入新组件
 import { api, FavoriteItem } from './services/api';
 import { Attraction, User } from './types';
 import { User as UserIcon, Map, Loader2, LogOut, Edit, Heart, FolderHeart, ShieldCheck, Eye } from 'lucide-react';
 
-// 懒加载非首屏必需组件
+// 懒加载组件
 const DetailModal = lazy(() => import('./components/DetailModal').then(module => ({ default: module.DetailModal })));
 const AdminModal = lazy(() => import('./components/AdminModal').then(module => ({ default: module.AdminModal })));
 const ContactModal = lazy(() => import('./components/ContactModal').then(module => ({ default: module.ContactModal })));
@@ -32,13 +31,31 @@ const ScrollToTop = () => {
   return null;
 };
 
+// 增强版全局加载页
 const PageLoader = () => (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900">
+  <motion.div 
+    initial={{ opacity: 0 }} 
+    animate={{ opacity: 1 }} 
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900"
+  >
     <div className="flex flex-col items-center">
-      <div className="w-16 h-16 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin"></div>
-      <p className="mt-6 text-teal-500 font-black text-[10px] tracking-widest uppercase animate-pulse">华夏游 · 加载中</p>
+      <div className="relative">
+        <div className="w-16 h-16 border-4 border-teal-500/10 border-t-teal-500 rounded-full animate-spin"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+           <div className="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></div>
+        </div>
+      </div>
+      <motion.p 
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="mt-6 text-teal-500 font-black text-[10px] tracking-[0.4em] uppercase"
+      >
+        China Travel · 华夏游
+      </motion.p>
     </div>
-  </div>
+  </motion.div>
 );
 
 const App: React.FC = () => {
@@ -53,9 +70,7 @@ const App: React.FC = () => {
   const [viewCount, setViewCount] = useState<number>(0);
   const [isNotificationVisible, setIsNotificationVisible] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isWeChat, setIsWeChat] = useState(false); // 微信检测状态
-  const hasIncrementedView = useRef(false);
-
+  
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('china_travel_user'));
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('china_travel_user');
@@ -63,10 +78,10 @@ const App: React.FC = () => {
   });
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
-  const [favoritesList, setFavoritesList] = useState<FavoriteItem[]>([]);
   const [favoritesIds, setFavoritesIds] = useState<Set<string>>(new Set());
   const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const [isFavoriteActionLoading, setIsFavoriteActionLoading] = useState<string | null>(null);
 
   const staticProvinces = ['全部', '河南', '北京', '四川', '云南', '陕西', '浙江', '江苏', '广东', '湖南', '新疆', '上海', '西藏'];
 
@@ -102,7 +117,6 @@ const App: React.FC = () => {
     try {
       const data = await api.favorites.getAll();
       if (Array.isArray(data)) {
-        setFavoritesList(data);
         setFavoritesIds(new Set(data.map(item => item.id)));
       }
     } catch (e) {
@@ -123,12 +137,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initializeApp = async () => {
-      // 微信环境检测逻辑
-      const ua = navigator.userAgent.toLowerCase();
-      if (ua.includes('micromessenger')) {
-        setIsWeChat(true);
-      }
-
+      setIsAuthChecking(true);
       const tasks = [
         api.auth.me().catch(() => ({ authenticated: false })),
         api.stats.incrementViews().catch(() => null),
@@ -171,12 +180,41 @@ const App: React.FC = () => {
     location.reload();
   };
 
+  const handleToggleFavorite = async (e: React.MouseEvent | null, id: string) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation(); // 关键：阻止事件冒泡到卡片的 onClick
+    }
+
+    if (!isAuthenticated) {
+      setIsLoginPromptOpen(true);
+      return;
+    }
+
+    if (isFavoriteActionLoading === id) return;
+
+    setIsFavoriteActionLoading(id);
+    try {
+      if (favoritesIds.has(id)) {
+        await api.favorites.remove(id);
+      } else {
+        await api.favorites.add(id);
+      }
+      await fetchFavorites(true);
+    } catch (err) {
+      console.error('Favorite action failed', err);
+    } finally {
+      setIsFavoriteActionLoading(null);
+    }
+  };
+
   return (
     <div className={`min-h-screen transition-colors duration-500 ${currentTheme.bg} ${currentTheme.text} font-sans selection:bg-teal-500 selection:text-white`}>
       <ScrollToTop />
       
-      {/* 微信引导遮罩 */}
-      {isWeChat && <WeChatOverlay />}
+      <AnimatePresence>
+        {isAuthChecking && <PageLoader />}
+      </AnimatePresence>
 
       <Navbar 
         theme={theme} setTheme={setTheme}
@@ -192,9 +230,7 @@ const App: React.FC = () => {
       <WeatherWidget topOffset={isNotificationVisible ? 40 : 0} />
 
       <Suspense fallback={<PageLoader />}>
-        {(isAuthChecking && attractions.length === 0) ? (
-          <PageLoader />
-        ) : (
+        {!isAuthChecking && (
           <Routes>
             <Route path="/" element={
               <HomeContent 
@@ -204,13 +240,13 @@ const App: React.FC = () => {
                 openAddModal={() => { setAdminModalTab('attraction'); setIsAdminModalOpen(true); }} 
                 selectedProvince={selectedProvince} setSelectedProvince={setSelectedProvince} 
                 isDataLoading={isDataLoading} dynamicProvinces={staticProvinces} 
-                filteredAttractions={attractions} handleToggleFavorite={(e, id) => { 
-                  if(!isAuthenticated) { setIsLoginPromptOpen(true); return; }
-                  api.favorites.add(id).then(() => fetchFavorites(true)); 
-                }} 
-                favorites={favoritesIds} setSelectedAttraction={setSelectedAttraction} 
+                filteredAttractions={attractions} 
+                handleToggleFavorite={handleToggleFavorite} 
+                favorites={favoritesIds} 
+                setSelectedAttraction={setSelectedAttraction} 
                 openEditModal={(e, a) => { e.stopPropagation(); setEditingAttraction(a); setIsAdminModalOpen(true); }}
                 currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage}
+                favoriteActionLoadingId={isFavoriteActionLoading}
               />} 
             />
             <Route path="/login" element={<div className="pt-32 max-w-md mx-auto px-4 pb-20"><LoginForm onLoginSuccess={() => { setIsAuthenticated(true); navigate('/profile'); }} /></div>} />
@@ -222,6 +258,8 @@ const App: React.FC = () => {
                   currentTheme={currentTheme} 
                   handleLogout={handleLogoutAction}
                   onSelectAttraction={setSelectedAttraction}
+                  onToggleFavorite={handleToggleFavorite}
+                  favoriteActionLoadingId={isFavoriteActionLoading}
                 />
               ) : <Navigate to="/login" />
             } />
@@ -233,14 +271,28 @@ const App: React.FC = () => {
             <div className="flex items-center gap-8 py-4 px-8 rounded-2xl bg-white/50 dark:bg-slate-800/40 backdrop-blur-sm border border-slate-200 dark:border-slate-800">
                <div className="flex flex-col items-center">
                   <span className="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest mb-1">站点浏览</span>
-                  <div className="flex items-center gap-2"><Eye className="w-4 h-4 text-teal-500" /><span className="text-xl font-black text-slate-800 dark:text-white">{viewCount.toLocaleString()}</span></div>
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-teal-500" />
+                    <span className="text-xl font-black text-slate-800 dark:text-white">
+                      {viewCount > 0 ? viewCount.toLocaleString() : '---'}
+                    </span>
+                  </div>
                </div>
             </div>
             <p className="text-sm opacity-60 font-bold tracking-wide">© 2025 China Travel Digital Experience.</p>
           </div>
         </footer>
 
-        {selectedAttraction && <DetailModal attraction={selectedAttraction} allAttractions={attractions} onClose={() => setSelectedAttraction(null)} theme={theme} />}
+        {selectedAttraction && (
+          <DetailModal 
+            attraction={selectedAttraction} 
+            allAttractions={attractions} 
+            onClose={() => setSelectedAttraction(null)} 
+            theme={theme} 
+            isFavorite={favoritesIds.has(selectedAttraction.id)}
+            onToggleFavorite={handleToggleFavorite}
+          />
+        )}
         <FeedbackWidget isAuthenticated={isAuthenticated} onOpenLogin={() => setIsLoginPromptOpen(true)} />
         <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
         {isAdminModalOpen && <AdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} defaultTab={adminModalTab} initialData={editingAttraction} onSubmit={async () => location.reload()} />}

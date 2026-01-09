@@ -19,10 +19,12 @@ interface ProfileViewProps {
   currentTheme: any;
   handleLogout: () => void;
   onSelectAttraction: (attraction: Attraction) => void;
+  onToggleFavorite: (e: React.MouseEvent | null, id: string) => Promise<void>;
+  favoriteActionLoadingId?: string | null;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ 
-  currentUser, theme, currentTheme, handleLogout, onSelectAttraction 
+  currentUser, theme, currentTheme, handleLogout, onSelectAttraction, onToggleFavorite, favoriteActionLoadingId 
 }) => {
   const [activeTab, setActiveTab] = useState<'favorites' | 'security'>('favorites');
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
@@ -51,14 +53,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     fetchData();
   }, [activeTab]);
 
-  const handleRemoveFavorite = async (e: React.MouseEvent | null, id: string) => {
-    e?.stopPropagation();
-    try {
-      await api.favorites.remove(id);
-      setFavorites(prev => prev.filter(item => item.id !== id));
-    } catch (e) {
-      alert('移除失败');
-    }
+  // 监听收藏状态变化，重新拉取列表以保持同步
+  const handleInternalToggleFavorite = async (e: React.MouseEvent | null, id: string) => {
+    await onToggleFavorite(e, id);
+    fetchData(); // 重新加载列表
   };
 
   const isDark = theme === 'dark';
@@ -132,7 +130,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                     currentTheme={currentTheme} 
                     onClick={() => onSelectAttraction(item)}
                     isFavorite={true}
-                    onToggleFavorite={handleRemoveFavorite}
+                    onToggleFavorite={handleInternalToggleFavorite}
+                    isFavoriteLoading={favoriteActionLoadingId === item.id}
                   />
                 ))
               ) : (
@@ -148,7 +147,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             </motion.div>
           ) : (
             <motion.div key="security" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto space-y-4">
-              {/* 优化后的信息提示框 */}
               <div className="bg-teal-500/10 border border-teal-500/20 p-6 rounded-[2.5rem] mb-8 flex items-start gap-4 shadow-sm">
                  <ShieldCheck className="w-6 h-6 text-teal-500 flex-shrink-0" />
                  <div>

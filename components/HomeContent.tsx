@@ -26,6 +26,7 @@ interface HomeContentProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  favoriteActionLoadingId?: string | null;
 }
 
 export const HomeContent: React.FC<HomeContentProps> = ({
@@ -47,7 +48,8 @@ export const HomeContent: React.FC<HomeContentProps> = ({
   openEditModal,
   currentPage,
   totalPages,
-  onPageChange
+  onPageChange,
+  favoriteActionLoadingId
 }) => {
   const [settings, setSettings] = useState({
     hero_badge: 'Discover The Oriental Beauty',
@@ -86,7 +88,6 @@ export const HomeContent: React.FC<HomeContentProps> = ({
             alt="Hero Background"
             loading="eager"
             fetchPriority="high"
-            decoding="sync"
           />
           <div className={`absolute inset-0 bg-gradient-to-b ${theme === 'dark' ? 'from-slate-900/40 via-slate-900/80 to-slate-900' : 'from-slate-900/20 via-slate-900/50 to-slate-50'}`} />
         </div>
@@ -94,7 +95,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-20 sm:pb-32 text-center">
           <FAnimatePresence mode="wait">
             {isSettingsLoading ? (
-              <FMotion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[280px] flex items-center justify-center">
+              <FMotion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-[280px] flex items-center justify-center">
                  <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
               </FMotion.div>
             ) : (
@@ -110,7 +111,6 @@ export const HomeContent: React.FC<HomeContentProps> = ({
                 </p>
 
                 <div className="relative max-w-xl mx-auto group px-2">
-                  <div className="absolute inset-0 bg-teal-500/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                   <div className="relative flex items-center bg-white/95 backdrop-blur-2xl shadow-2xl rounded-[2rem] p-1.5 focus-within:bg-white transition-all">
                     <div className="pl-4 pr-2"><Search className="w-5 h-5 text-teal-600" /></div>
                     <input type="text" placeholder="发现下一个目的地..." className="w-full bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-500 py-3 text-base font-bold outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
@@ -129,12 +129,13 @@ export const HomeContent: React.FC<HomeContentProps> = ({
               {dynamicProvinces.map((province) => (
                 <button
                   key={province}
+                  disabled={isDataLoading}
                   onClick={() => setSelectedProvince(province)}
                   className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all duration-300 ${
                     selectedProvince === province
                       ? 'bg-teal-500 text-white shadow-lg'
                       : `${theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`
-                  }`}
+                  } disabled:opacity-50`}
                 >
                   {province}
                 </button>
@@ -143,22 +144,38 @@ export const HomeContent: React.FC<HomeContentProps> = ({
           </div>
         </div>
 
-        {isDataLoading ? (
-          <div className="flex justify-center items-center py-32"><Loader2 className="w-10 h-10 text-teal-500 animate-spin" /></div>
-        ) : (
-          <FMotion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-             {filteredAttractions.map((attr) => (
-                <div key={attr.id} className="relative group">
-                  <AttractionCard attraction={attr} theme={theme} currentTheme={currentTheme} onClick={setSelectedAttraction} isFavorite={favorites.has(attr.id)} onToggleFavorite={handleToggleFavorite} />
-                  {isAuthenticated && currentUser?.isAdmin && (
-                    <button onClick={(e) => openEditModal(e, attr)} className="absolute top-4 right-14 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-2.5 rounded-xl text-teal-600 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity"><Edit className="w-4 h-4" /></button>
-                  )}
-                </div>
-             ))}
-          </FMotion.div>
-        )}
+        <FAnimatePresence mode="wait">
+          {isDataLoading ? (
+            <FMotion.div key="list-loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col justify-center items-center py-32 gap-4">
+              <Loader2 className="w-10 h-10 text-teal-500 animate-spin" />
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">正在为您挑选景点</p>
+            </FMotion.div>
+          ) : (
+            <FMotion.div key="list-content" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+               {filteredAttractions.map((attr) => (
+                  <div key={attr.id} className="relative group">
+                    <AttractionCard 
+                      attraction={attr} 
+                      theme={theme} 
+                      currentTheme={currentTheme} 
+                      onClick={setSelectedAttraction} 
+                      isFavorite={favorites.has(attr.id)} 
+                      onToggleFavorite={handleToggleFavorite}
+                      isFavoriteLoading={favoriteActionLoadingId === attr.id}
+                    />
+                    {isAuthenticated && currentUser?.isAdmin && (
+                      <button onClick={(e) => openEditModal(e, attr)} className="absolute top-4 right-14 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-2.5 rounded-xl text-teal-600 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity"><Edit className="w-4 h-4" /></button>
+                    )}
+                  </div>
+               ))}
+               {filteredAttractions.length === 0 && (
+                 <div className="col-span-full py-20 text-center text-slate-400 italic">未找到匹配景点</div>
+               )}
+            </FMotion.div>
+          )}
+        </FAnimatePresence>
 
-        {totalPages > 1 && (
+        {totalPages > 1 && !isDataLoading && (
           <div className="mt-20 flex justify-center items-center gap-6">
             <button disabled={currentPage === 1} onClick={() => onPageChange(currentPage - 1)} className="p-3 rounded-2xl border dark:border-slate-800 disabled:opacity-30 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"><ChevronLeft className="w-6 h-6" /></button>
             <div className="flex gap-2">
