@@ -74,13 +74,13 @@ export const AttractionCard: React.FC<Props> = ({ attraction, onClick, theme, cu
           <MapPin className="w-3 h-3" />
           {attraction.province}
         </div>
-        <p className={`${isDark ? 'text-slate-200' : 'text-slate-500'} text-sm line-clamp-2 leading-relaxed mb-4 flex-grow font-medium`}>
+        <p className={`${isDark ? 'text-slate-100' : 'text-slate-500'} text-sm line-clamp-2 leading-relaxed mb-4 flex-grow font-medium`}>
           {attraction.description}
         </p>
         
         <div className="flex flex-wrap gap-2">
           {attraction.tags.slice(0, 3).map((tag) => (
-            <span key={tag} className={`text-[10px] font-bold ${isDark ? 'text-teal-300 bg-teal-500/20' : 'text-slate-400 bg-slate-400/10'} px-2 py-1 rounded-lg transition-colors`}>
+            <span key={tag} className={`text-[10px] font-bold ${isDark ? 'text-teal-200 bg-teal-500/20 border border-teal-500/30' : 'text-slate-400 bg-slate-400/10'} px-2 py-1 rounded-lg transition-colors`}>
               {tag}
             </span>
           ))}

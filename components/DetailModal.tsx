@@ -44,7 +44,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md"
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-md"
           />
           
           <motion.div
@@ -73,7 +73,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
             </div>
 
             {/* Image Section */}
-            <div className="w-full md:w-1/2 h-64 sm:h-72 md:h-auto relative bg-slate-200 flex-shrink-0">
+            <div className="w-full md:w-1/2 h-64 sm:h-72 md:h-auto relative bg-slate-200 dark:bg-slate-800 flex-shrink-0">
                <img
                 src={attraction.imageUrl}
                 alt={attraction.name}
@@ -118,7 +118,7 @@ export const DetailModal: React.FC<Props> = ({ attraction, allAttractions, onClo
               {activeTab === 'info' ? (
                 <div className="flex flex-col flex-grow">
                   <div className="mb-6 flex-grow">
-                    <p className={`text-sm sm:text-base leading-relaxed font-medium ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>
+                    <p className={`text-sm sm:text-base leading-relaxed font-medium ${isDark ? 'text-slate-100' : 'text-slate-600'}`}>
                       {attraction.description}
                     </p>
                   </div>
