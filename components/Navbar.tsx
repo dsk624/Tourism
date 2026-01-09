@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Mountain, MessageCircle, Menu, X, Sun, Moon, Map, LogOut, Settings, User as UserIcon, ChevronDown, Bell, Volume2, Megaphone, Calendar as CalendarIcon, ShieldCheck, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,18 +27,31 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isDismissed, setIsDismissed] = useState(false);
-  const [headerHeight, setHeaderHeight] = useState(64); // 默认导航栏高度
+  const [headerHeight, setHeaderHeight] = useState(64);
   const headerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // 测量导航栏总高度（包含通知条）
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const data = await api.notifications.getActive();
+      setNotifications(data || []);
+      if (data && data.length > 0 && !isDismissed) {
+        onNotificationVisibilityChange?.(true);
+      } else {
+        onNotificationVisibilityChange?.(false);
+      }
+    } catch (e) {
+      // 静默处理错误
+      setNotifications([]);
+      onNotificationVisibilityChange?.(false);
+    }
+  }, [isDismissed, onNotificationVisibilityChange]);
+
   useEffect(() => {
     if (!headerRef.current) return;
 
     const updateHeight = () => {
       if (headerRef.current) {
-        // 只测量可见区域（即通知条+导航栏的高度）
-        // 排除掉绝对定位的移动端菜单
         const navElement = headerRef.current.querySelector('nav');
         const notificationElement = headerRef.current.querySelector('.notification-bar');
         const total = (navElement?.clientHeight || 64) + (notificationElement?.clientHeight || 0);
@@ -48,26 +61,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
     const resizeObserver = new ResizeObserver(updateHeight);
     resizeObserver.observe(headerRef.current);
-    
-    // 初始化调用
     updateHeight();
 
     return () => resizeObserver.disconnect();
   }, [notifications, isDismissed]);
-
-  const fetchNotifications = async () => {
-    try {
-      const data = await api.notifications.getActive();
-      setNotifications(data);
-      if (data.length > 0 && !isDismissed) {
-        onNotificationVisibilityChange?.(true);
-      } else {
-        onNotificationVisibilityChange?.(false);
-      }
-    } catch (e) {
-      console.error('Failed to fetch notifications');
-    }
-  };
 
   useEffect(() => {
     fetchNotifications();
@@ -77,7 +74,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       clearInterval(interval);
       window.removeEventListener('notificationsUpdated', fetchNotifications);
     };
-  }, [onNotificationVisibilityChange, isDismissed]);
+  }, [fetchNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -105,7 +102,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   
   const getSafeBgColor = (notif: Notification) => {
     const val = notif.bg_color;
-    if (val.startsWith('#') || val.startsWith('rgba') || val.startsWith('rgb')) return val;
+    if (val && (val.startsWith('#') || val.startsWith('rgba') || val.startsWith('rgb'))) return val;
     return "#0d9488";
   };
 

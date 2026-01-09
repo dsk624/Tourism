@@ -161,10 +161,16 @@ export const CalendarModal: React.FC<Props> = ({ isOpen, onClose, isAuthenticate
                           <div className="text-[10px] font-black text-slate-400 dark:text-teal-400/80 leading-none mb-0.5">{parseInt(dateArr[1])}月</div>
                           <div className="text-base font-black text-slate-800 dark:text-white leading-none">{dateArr[2]}</div>
                         </div>
-                        <div className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex justify-between items-center group hover:border-teal-500/30 transition-all">
+                        {/* 优化卡片背景与边框颜色 */}
+                        <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 flex justify-between items-center group hover:border-teal-500/30 transition-all shadow-sm">
                           <div className="flex-1 min-w-0 pr-2">
-                            <h4 className="font-black text-sm dark:text-slate-100 truncate">{s.title}</h4>
-                            <p className="text-[10px] text-slate-500 dark:text-slate-300 mt-1 font-bold">{s.schedule_date}</p>
+                            {/* 明确定义标题颜色：亮色为深，暗色为白 */}
+                            <h4 className="font-black text-sm text-slate-900 dark:text-white truncate">
+                              {s.title}
+                            </h4>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-bold">
+                              {s.schedule_date}
+                            </p>
                           </div>
                           <button onClick={() => handleDelete(s.id)} className="p-1.5 text-slate-300 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors">
                             <Trash2 className="w-4 h-4" />

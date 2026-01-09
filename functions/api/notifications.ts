@@ -33,10 +33,17 @@ export const onRequest = async (context: any) => {
       }
       query += 'ORDER BY priority DESC, created_at DESC';
       
-      const { results } = await db.prepare(query).all();
-      return new Response(JSON.stringify(results), { 
-        headers: { 'Content-Type': 'application/json' }
-      });
+      try {
+        const { results } = await db.prepare(query).all();
+        return new Response(JSON.stringify(results), { 
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } catch (dbError) {
+        // 如果表不存在，返回空数组
+        return new Response(JSON.stringify([]), { 
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     const admin = await getAdminUser();

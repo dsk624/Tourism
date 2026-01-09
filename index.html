@@ -6,11 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>华夏游 | China Travel</title>
     
-    <!-- 性能优化：预连接到常用 CDN -->
+    <!-- 性能优化：核心域名预连接 -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" />
     <link rel="preconnect" href="https://esm.sh" />
-    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
-    <link rel="dns-prefetch" href="https://esm.sh" />
+    <link rel="preconnect" href="https://api.open-meteo.com" />
+    
+    <!-- 关键路径资源预加载 (Module Preload) -->
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/react@19.0.0/+esm" />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/react-dom@19.0.0/+esm" />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/framer-motion@12.0.0/+esm" />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/lucide-react@0.469.0/+esm" />
 
     <!-- SEO优化 -->
     <meta name="description" content="华夏游 - 探索中华之美，寻访名山大川，品味千年文化。从河南出发，丈量每一寸锦绣河山。" />
@@ -23,6 +28,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/noto-sans-sc@latest/css/noto-sans-sc.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     
     <script type="importmap">
 {
@@ -34,6 +40,7 @@
     "framer-motion": "https://cdn.jsdelivr.net/npm/framer-motion@12.0.0/+esm",
     "lucide-react": "https://cdn.jsdelivr.net/npm/lucide-react@0.469.0/+esm",
     "leaflet": "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/+esm",
+    "leaflet-routing-machine": "https://cdn.jsdelivr.net/npm/leaflet-routing-machine@3.2.12/+esm",
     "vite": "https://esm.sh/vite@^7.3.1",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
@@ -44,9 +51,8 @@
 }
 </script>
   </head>
-  <body>
+  <body class="antialiased">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-    <script src="https://myhkw.cn/api/player/demo" id="myhk" key="demo" m="1" skin="yellowcat" au="0" lr="l" async></script>
   </body>
 </html>

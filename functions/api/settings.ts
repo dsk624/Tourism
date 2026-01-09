@@ -1,3 +1,4 @@
+
 import type { Env } from '../../types';
 
 export const onRequest = async (context: any) => {
@@ -23,14 +24,20 @@ export const onRequest = async (context: any) => {
 
   try {
     if (request.method === 'GET') {
-      const { results } = await db.prepare('SELECT key, value FROM site_settings').all();
-      const settings = results.reduce((acc: any, curr: any) => {
-        acc[curr.key] = curr.value;
-        return acc;
-      }, {});
-      return new Response(JSON.stringify(settings), {
-        headers: { 'Content-Type': 'application/json' }
-      });
+      try {
+        const { results } = await db.prepare('SELECT key, value FROM site_settings').all();
+        const settings = results.reduce((acc: any, curr: any) => {
+          acc[curr.key] = curr.value;
+          return acc;
+        }, {});
+        return new Response(JSON.stringify(settings), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } catch (dbError) {
+        return new Response(JSON.stringify({}), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     if (request.method === 'PUT') {

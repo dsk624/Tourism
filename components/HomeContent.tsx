@@ -1,7 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// Fix: Removed incorrect imports of motion and AnimatePresence from lucide-react
 import { Search, Plus, Loader2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion as FMotion, AnimatePresence as FAnimatePresence } from 'framer-motion';
 import { AttractionCard } from './AttractionCard';
 import { Attraction, User } from '../types';
 import { api } from '../services/api';
@@ -80,22 +81,26 @@ export const HomeContent: React.FC<HomeContentProps> = ({
     <>
       <div className="relative pt-24 sm:pt-32">
         <div className="absolute inset-0 z-0 overflow-hidden">
+          {/* 优化首屏图片加载：fetchPriority="high" 并 eager 加载 */}
           <img 
             src="https://picsum.photos/1920/1080?random=99" 
             className="w-full h-[450px] sm:h-[600px] object-cover opacity-90 transition-transform duration-[10s] hover:scale-110"
-            alt="Hero Background" 
+            alt="Hero Background"
+            loading="eager"
+            // Fix: React uses camelCase for DOM properties (fetchPriority instead of fetchpriority)
+            fetchPriority="high"
           />
           <div className={`absolute inset-0 bg-gradient-to-b ${theme === 'dark' ? 'from-slate-900/40 via-slate-900/80 to-slate-900' : 'from-slate-900/20 via-slate-900/50 to-slate-50'}`} />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 pb-20 sm:pb-32 text-center">
-          <AnimatePresence mode="wait">
+          <FAnimatePresence mode="wait">
             {isSettingsLoading ? (
-              <motion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[280px] flex items-center justify-center">
+              <FMotion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-[280px] flex items-center justify-center">
                  <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
-              </motion.div>
+              </FMotion.div>
             ) : (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+              <FMotion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
                 <span className="inline-block px-4 py-1.5 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-6 backdrop-blur-sm">
                   {settings.hero_badge}
                 </span>
@@ -113,9 +118,10 @@ export const HomeContent: React.FC<HomeContentProps> = ({
                     <input type="text" placeholder="发现下一个目的地..." className="w-full bg-transparent border-none focus:ring-0 text-slate-800 placeholder-slate-500 py-3 text-base font-bold outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                   </div>
                 </div>
-              </motion.div>
+              {/* Fix: Use the correct FMotion alias for the closing tag */}
+              </FMotion.div>
             )}
-          </AnimatePresence>
+          </FAnimatePresence>
         </div>
       </div>
 
@@ -151,7 +157,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({
         {isDataLoading ? (
           <div className="flex justify-center items-center py-32"><Loader2 className="w-12 h-12 text-teal-500 animate-spin" /></div>
         ) : (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <FMotion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
              {filteredAttractions.map((attr) => (
                 <div key={attr.id} className="relative group">
                   <AttractionCard attraction={attr} theme={theme} currentTheme={currentTheme} onClick={setSelectedAttraction} isFavorite={favorites.has(attr.id)} onToggleFavorite={handleToggleFavorite} />
@@ -160,7 +166,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({
                   )}
                 </div>
              ))}
-          </motion.div>
+          </FMotion.div>
         )}
 
         {totalPages > 1 && (

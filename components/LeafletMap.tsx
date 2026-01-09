@@ -1,6 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
+import 'leaflet-routing-machine';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Navigation, Loader2, MapPin, Info, Car } from 'lucide-react';
 import { Attraction } from '../types';
@@ -28,7 +29,6 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({ lat, lng, name, allAttra
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [routeSummary, setRouteSummary] = useState<RouteSummary | null>(null);
 
-  // Helper to create user icon with pulsing effect
   const createUserIcon = () => L.divIcon({
      className: 'bg-transparent',
      html: `<div class="relative flex h-4 w-4">
@@ -39,7 +39,6 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({ lat, lng, name, allAttra
      iconAnchor: [8, 8]
   });
 
-  // Helper for small nearby markers
   const createNearbyIcon = (isTarget = false) => L.divIcon({
     className: 'bg-transparent',
     html: `<div class="flex items-center justify-center h-6 w-6 ${isTarget ? 'text-rose-500' : 'text-slate-400 opacity-70'} hover:opacity-100 hover:scale-125 transition-all">
@@ -52,19 +51,15 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({ lat, lng, name, allAttra
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Fix: Move function declarations before their usage in the setup logic
     const renderNearbyAttractions = (map: L.Map) => {
-        // Clear old markers
         nearbyMarkersRef.current.forEach(m => m.remove());
         nearbyMarkersRef.current = [];
 
         const targetLatLng = L.latLng(lat, lng);
-        
-        // Find attractions within 100km
         const nearby = allAttractions.filter(attr => {
             if (!attr.coordinates || attr.id === name || (attr.coordinates.lat === lat && attr.coordinates.lng === lng)) return false;
             const dist = targetLatLng.distanceTo(L.latLng(attr.coordinates.lat, attr.coordinates.lng));
-            return dist < 100000; // 100km
+            return dist < 100000;
         });
 
         nearby.forEach(attr => {
@@ -146,19 +141,16 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({ lat, lng, name, allAttra
             attribution: '&copy; Tencent Maps'
         }).addTo(map);
 
-        // Destination Marker
         L.marker([lat, lng], { icon: createNearbyIcon(true) })
             .addTo(map)
             .bindPopup(`<b>${name}</b>`)
             .openPopup();
 
-        // Handle clicks for starting point
         map.on('click', (e) => {
             const { lat: clickLat, lng: clickLng } = e.latlng;
             updateRouteStart(clickLat, clickLng, '已选起点');
         });
 
-        // Add nearby attractions
         renderNearbyAttractions(map);
     }
 
@@ -194,7 +186,6 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({ lat, lng, name, allAttra
     <div className="w-full h-full rounded-xl overflow-hidden shadow-inner border border-slate-200 dark:border-slate-700 relative z-0 group">
       <div ref={mapContainerRef} className="w-full h-full bg-slate-100" />
       
-      {/* Overlay Status */}
       <div className="absolute top-2 right-2 z-[400] flex flex-col gap-2 pointer-events-none">
         {loadingLocation && (
             <div className="bg-white/95 backdrop-blur-sm text-[10px] px-3 py-1.5 rounded-full shadow-sm text-slate-600 flex items-center gap-2 animate-pulse border border-slate-100">
@@ -208,7 +199,6 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({ lat, lng, name, allAttra
         </div>
       </div>
 
-      {/* Route Summary Overlay */}
       <AnimatePresence>
         {routeSummary && (
           <motion.div 
@@ -238,7 +228,6 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({ lat, lng, name, allAttra
         )}
       </AnimatePresence>
       
-      {/* External Map Link */}
       <a 
          href={`https://apis.map.qq.com/uri/v1/routeplan?type=drive&to=${name}&tocoord=${lat},${lng}&policy=1&referer=ChinaTravel`}
          target="_blank"
