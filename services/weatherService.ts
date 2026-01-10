@@ -2,7 +2,7 @@
 import { LocationData, WeatherData } from '../types';
 
 /**
- * 默认位置：郑州（华夏文明腹地）
+ * 默认位置：郑州市（华夏文明腹地）
  */
 const DEFAULT_LOCATION: LocationData = {
   city: '郑州市',
@@ -13,41 +13,54 @@ const DEFAULT_LOCATION: LocationData = {
 
 /**
  * 获取用户位置（增强型无感模式）
- * 依次尝试 Cloudflare 边缘定位和 GeoJS IP 定位
- * 如果全部失败，回退到默认位置，确保组件始终可见
+ * 1. 尝试浏览器原生 Geolocation (最精确)
+ * 2. 尝试 GeoJS IP 定位 (静默备选)
+ * 3. 最终回退到默认郑州位置
  */
 export const getUserLocation = async (): Promise<LocationData | null> => {
+  // 策略 A: 尝试浏览器原生定位
+  const getBrowserGeo = (): Promise<LocationData> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject('Not supported');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          resolve({
+            city: '您的位置',
+            province: '',
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude
+          });
+        },
+        (err) => reject(err),
+        { timeout: 5000 }
+      );
+    });
+  };
+
   try {
-    // 1. 优先尝试 Cloudflare 边缘节点定位
-    const response = await fetch('/api/location');
-    if (!response.ok) {
-        throw new Error('Edge location unavailable');
-    }
-    
-    const data = await response.json();
-    
-    // 严格校验坐标
-    if (!data.latitude || !data.longitude || isNaN(data.latitude) || isNaN(data.longitude)) {
-      throw new Error('Invalid coordinates');
-    }
-    return data;
+    // 优先尝试原生定位
+    return await getBrowserGeo();
   } catch (error) {
-    console.warn('Seamless edge location unavailable, trying fallback...');
-    return fetchIPLocation();
+    console.warn('Browser geolocation failed, trying IP fallback...');
+    // 策略 B: 尝试 IP 定位
+    return await fetchIPLocation();
   }
 };
 
 /**
- * IP 定位作为二级备选
+ * IP 定位实现
  */
 const fetchIPLocation = async (): Promise<LocationData | null> => {
   try {
+    // 使用公开的 GeoJS API，无需内部转发，避免 404
     const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
     if (!response.ok) throw new Error('IP Location API failed');
     const data = await response.json();
-    
-    // 必须有经纬度才视为成功
-    if (!data.latitude || !data.longitude || isNaN(parseFloat(data.latitude))) {
+     
+    if (!data.latitude || !data.longitude) {
       throw new Error('IP coordinates missing');
     }
     
@@ -58,8 +71,7 @@ const fetchIPLocation = async (): Promise<LocationData | null> => {
       longitude: parseFloat(data.longitude)
     };
   } catch (error) {
-    console.warn('All automatic location methods failed. Using default location (Zhengzhou).');
-    // 如果所有自动手段都失败，返回默认值而不是 null，保证天气组件不消失
+    console.warn('All location methods failed. Using default.');
     return DEFAULT_LOCATION;
   }
 };
