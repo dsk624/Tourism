@@ -60,8 +60,10 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
   const fetchNotifs = async () => {
     setIsListLoading(true);
     try {
-      const data = await api.notifications.getAll();
-      setNotifList(data);
+      const data = await api.notifications.getActive();
+      // 这里获取所有通知以便管理
+      const allData = await api.notifications.getAll();
+      setNotifList(allData);
     } catch (e) { console.error(e); }
     finally { setIsListLoading(false); }
   };
@@ -302,9 +304,10 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                     <Megaphone className="w-5 h-5 text-teal-500" /> 发布新通知
                   </h4>
                   <div className="space-y-6">
-                    <input 
+                    <textarea 
                       disabled={isSubmitting}
-                      className="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-bold placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:ring-2 focus:ring-teal-500 transition-all shadow-sm disabled:opacity-50"
+                      rows={3}
+                      className="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-bold placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:ring-2 focus:ring-teal-500 transition-all shadow-sm disabled:opacity-50 resize-none"
                       placeholder="输入通知内容..."
                       value={newNotifContent}
                       onChange={(e) => setNewNotifContent(e.target.value)}
@@ -371,20 +374,21 @@ export const AdminModal: React.FC<Props> = ({ isOpen, onClose, onSubmit, onDelet
                       ) : (
                         <motion.div key="list-items" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
                           {notifList.map(n => (
-                            <div key={n.id} className="p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-between group">
-                              <div className="flex items-center gap-4">
+                            <div key={n.id} className="p-4 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl flex items-start justify-between group">
+                              <div className="flex items-start gap-4 flex-1">
                                 <div 
-                                  className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm`}
+                                  className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 mt-1`}
                                   style={{ backgroundColor: n.bg_color.includes('rgba') ? n.bg_color : '#0d9488' }}
                                 >
                                   {n.is_active ? <Eye className="w-5 h-5 text-white" /> : <EyeOff className="w-5 h-5 text-white opacity-60" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className={`font-bold truncate ${n.is_active ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500 line-through'}`}>{n.content}</p>
+                                  {/* 修改此处：移除 truncate 类，添加 break-words 和 whitespace-normal，实现换行 */}
+                                  <p className={`font-bold break-words whitespace-normal mb-1 leading-relaxed ${n.is_active ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500 line-through'}`}>{n.content}</p>
                                   <span className="text-[10px] text-slate-400">{new Date(n.created_at).toLocaleString()}</span>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                              <div className="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ml-4 flex-shrink-0">
                                 <button onClick={() => toggleNotif(n)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-teal-500 text-xs font-bold">
                                   {n.is_active ? '下架' : '上架'}
                                 </button>
